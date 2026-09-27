@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Nuestro Árbol</title>
+<style>
+  :root{
+    --verde:#3f6b52; --verde2:#2f5340; --crema:#faf5ea; --tarjeta:#fffdf8;
+    --texto:#33291f; --suave:#8a7a63; --linea:#e7dcc6; --oro:#c9a24b;
+    --error:#b23b3b; --ok:#3f6b52;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:linear-gradient(160deg,#eef3ec,#f6efe0);
+    color:var(--texto); min-height:100vh; display:flex; justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{width:100%; max-width:460px; min-height:100vh; background:var(--crema);
+       display:flex; flex-direction:column; box-shadow:0 0 40px rgba(0,0,0,.06)}
+  header{background:linear-gradient(135deg,var(--verde),var(--verde2)); color:#fff;
+         padding:22px 20px 18px; text-align:center}
+  header h1{margin:0; font-size:22px; letter-spacing:.3px}
+  header p{margin:6px 0 0; font-size:13px; opacity:.85}
+  .cont{flex:1; padding:20px 18px 40px}
+  .tarjeta{background:var(--tarjeta); border:1px solid var(--linea); border-radius:16px;
+           padding:18px; margin-bottom:16px; box-shadow:0 4px 14px rgba(90,70,30,.05)}
+  label{display:block; font-size:13px; color:var(--suave); margin:12px 0 5px; font-weight:600}
+  input,select,textarea{width:100%; padding:12px 13px; border:1px solid var(--linea);
+    border-radius:11px; font-size:15px; background:#fff; color:var(--texto); font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--verde)}
+  .btn{display:block; width:100%; padding:13px; border:none; border-radius:12px;
+    background:var(--verde); color:#fff; font-size:15px; font-weight:600; cursor:pointer;
+    margin-top:14px; transition:.15s}
+  .btn:active{transform:scale(.99)}
+  .btn.sec{background:#fff; color:var(--verde); border:1.5px solid var(--verde)}
+  .btn.gris{background:#efe8d8; color:var(--suave); box-shadow:none}
+  .link{background:none;border:none;color:var(--verde);font-size:13px;cursor:pointer;
+    text-decoration:underline; padding:6px; width:100%; margin-top:6px}
+  h2{font-size:17px; margin:0 0 4px}
+  .sub{font-size:13px; color:var(--suave); margin:0 0 10px}
+  .msg{border-radius:10px; padding:10px 12px; font-size:13px; margin-top:12px; display:none; line-height:1.4}
+  .msg.err{background:#fbeaea; color:var(--error); border:1px solid #eecaca; display:block}
+  .msg.ok{background:#e9f2ea; color:var(--ok); border:1px solid #cfe4d1; display:block}
+  .miembro{display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--linea)}
+  .miembro:last-child{border-bottom:none}
+  .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dfc98a,#c9a24b);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
+  .miembro .nom{font-weight:600;font-size:15px}
+  .miembro .rel{font-size:12px;color:var(--suave)}
+  .vacio{text-align:center; color:var(--suave); font-size:14px; padding:24px 10px}
+  .fila{display:flex; gap:10px}
+  .fila>*{flex:1}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+  .chip{font-size:11px;background:#efe8d8;color:var(--suave);padding:4px 10px;border-radius:20px}
+  .cargando{text-align:center;color:var(--suave);padding:40px 0;font-size:14px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🌳 Nuestro Árbol</h1>
+    <p id="subhead">Donde la familia no se pierde</p>
+  </header>
+  <div class="cont">
+
+    <!-- CARGANDO -->
+    <div id="v-carga" class="cargando">Cargando…</div>
+
+    <!-- LOGIN / REGISTRO -->
+    <div id="v-auth" class="hide">
+      <div class="tarjeta">
+        <h2 id="auth-titulo">Entrar</h2>
+        <p class="sub" id="auth-sub">Usa el mismo correo en todos tus móviles para ver lo mismo.</p>
+        <label>Correo</label>
+        <input id="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
+        <label>Contraseña</label>
+        <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+        <button class="btn" id="btn-entrar" onclick="entrar()">Entrar</button>
+        <button class="btn sec" id="btn-crear" onclick="crearCuenta()">Crear cuenta nueva</button>
+        <div id="auth-msg" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- CREAR ÁRBOL -->
+    <div id="v-crear" class="hide">
+      <div class="tarjeta">
+        <h2>Crea tu árbol</h2>
+        <p class="sub">Ponle nombre y elige de qué es.</p>
+        <label>Nombre del árbol</label>
+        <input id="t-nombre" placeholder="Familia Pérez / Mis amigos del barrio">
+        <label>¿De qué es?</label>
+        <select id="t-tipo">
+          <option value="familia">Familia</option>
+          <option value="amigos">Amigos</option>
+        </select>
+        <button class="btn" onclick="guardarArbol()">Crear árbol</button>
+        <div id="crear-msg" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- ÁRBOL -->
+    <div id="v-arbol" class="hide">
+      <div class="tarjeta">
+        <div class="topbar">
+          <h2 id="arbol-nombre">Mi árbol</h2>
+          <span class="chip" id="arbol-tipo">familia</span>
+        </div>
+        <p class="sub" id="arbol-cuenta">0 personas</p>
+        <div id="lista"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Añadir familiar</h2>
+        <label>Nombre</label>
+        <input id="m-nombre" placeholder="Ej. Abuela Rosa">
+        <div class="fila">
+          <div>
+            <label>Relación</label>
+            <input id="m-rel" placeholder="abuela, tío, primo…">
+          </div>
+          <div>
+            <label>Tipo</label>
+            <select id="m-clase">
+              <option value="persona">Persona</option>
+              <option value="mascota">Mascota</option>
+              <option value="amigo">Amigo</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="anadirMiembro()">Añadir al árbol</button>
+        <div id="add-msg" class="msg"></div>
+      </div>
+
+      <button class="link" onclick="salir()">Cerrar sesión</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ====== CONFIGURACIÓN (datos públicos de Luis) ====== */
+const SUPABASE_URL  = "https://pegxsuoujyvtvoqenunz.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ3hzdW91anl2dHZvcWVudW56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDg0NTcsImV4cCI6MjEwNjAyNDQ1N30.f78D-1Z45n-yRFb70A_XBPqrg6aYdkUVuqJvspE3BVQ";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let arbolActual = null;
+
+/* ====== UTILIDADES ====== */
+function ver(id){
+  ["v-carga","v-auth","v-crear","v-arbol"].forEach(v=>{
+    document.getElementById(v).classList.toggle("hide", v!==id);
+  });
+}
+function msg(id, texto, tipo){
+  const e = document.getElementById(id);
+  e.textContent = texto;
+  e.className = "msg " + (tipo||"err");
+}
+function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
+
+/* ====== ARRANQUE ====== */
+async function arranque(){
+  ver("v-carga");
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session){ await entrarAlArbol(); }
+  else { ver("v-auth"); }
+}
+
+/* ====== AUTENTICACIÓN ====== */
+async function crearCuenta(){
+  limpiar("auth-msg");
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("pass").value;
+  if(!email || pass.length<6){ msg("auth-msg","Escribe un correo y una contraseña de 6 o más caracteres."); return; }
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  if(error){ msg("auth-msg","No se pudo crear la cuenta: "+error.message); return; }
+  if(data.session){ await entrarAlArbol(); }
+  else { msg("auth-msg","Cuenta creada. Revisa tu correo y confirma el enlace; luego pulsa «Entrar».","ok"); }
+}
+async function entrar(){
+  limpiar("auth-msg");
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("pass").value;
+  if(!email || !pass){ msg("auth-msg","Escribe tu correo y tu contraseña."); return; }
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error){ msg("auth-msg","No se pudo entrar: "+error.message); return; }
+  await entrarAlArbol();
+}
+async function salir(){
+  await sb.auth.signOut();
+  arbolActual = null;
+  document.getElementById("pass").value = "";
+  ver("v-auth");
+}
+
+/* ====== ÁRBOL ====== */
+async function entrarAlArbol(){
+  ver("v-carga");
+  const { data, error } = await sb.from("arboles").select("*").order("creado").limit(1);
+  if(error){ ver("v-auth"); msg("auth-msg","Error al leer tus datos: "+error.message); return; }
+  if(data && data.length){ arbolActual = data[0]; mostrarArbol(); }
+  else { ver("v-crear"); }
+}
+async function guardarArbol(){
+  limpiar("crear-msg");
+  const nombre = document.getElementById("t-nombre").value.trim();
+  const tipo   = document.getElementById("t-tipo").value;
+  if(!nombre){ msg("crear-msg","Ponle un nombre al árbol."); return; }
+  const { data:{ user } } = await sb.auth.getUser();
+  const { data, error } = await sb.from("arboles")
+    .insert({ dueno:user.id, nombre, tipo }).select().single();
+  if(error){ msg("crear-msg","No se pudo crear: "+error.message); return; }
+  arbolActual = data;
+  mostrarArbol();
+}
+async function mostrarArbol(){
+  ver("v-arbol");
+  document.getElementById("arbol-nombre").textContent = arbolActual.nombre;
+  document.getElementById("arbol-tipo").textContent = arbolActual.tipo;
+  document.getElementById("subhead").textContent =
+    arbolActual.tipo==="amigos" ? "Los amigos también son familia" : "Donde la familia no se pierde";
+  await cargarMiembros();
+}
+async function cargarMiembros(){
+  const lista = document.getElementById("lista");
+  lista.innerHTML = '<div class="cargando" style="padding:14px 0">Cargando…</div>';
+  const { data, error } = await sb.from("miembros")
+    .select("*").eq("arbol_id", arbolActual.id).order("creado");
+  if(error){ lista.innerHTML=""; msg("add-msg","Error al leer: "+error.message); return; }
+  document.getElementById("arbol-cuenta").textContent =
+    (data.length===1?"1 ficha":data.length+" fichas");
+  if(!data.length){ lista.innerHTML='<div class="vacio">Aún no hay nadie.<br>Añade a la primera persona abajo. 👇</div>'; return; }
+  const icono = { persona:"", mascota:"🐾", amigo:"" };
+  lista.innerHTML = data.map(m=>{
+    const ini = (m.nombre||"?").trim().charAt(0).toUpperCase();
+    const av = m.clase==="mascota" ? "🐾" : ini;
+    return `<div class="miembro">
+      <div class="av">${av}</div>
+      <div><div class="nom">${escapar(m.nombre)}</div>
+      <div class="rel">${escapar(m.relacion||m.clase)}</div></div>
+    </div>`;
+  }).join("");
+}
+async function anadirMiembro(){
+  limpiar("add-msg");
+  const nombre = document.getElementById("m-nombre").value.trim();
+  const rel    = document.getElementById("m-rel").value.trim();
+  const clase  = document.getElementById("m-clase").value;
+  if(!nombre){ msg("add-msg","Escribe un nombre."); return; }
+  const { error } = await sb.from("miembros")
+    .insert({ arbol_id:arbolActual.id, nombre, relacion:rel, clase });
+  if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
+  document.getElementById("m-nombre").value="";
+  document.getElementById("m-rel").value="";
+  msg("add-msg","Guardado ✔","ok");
+  setTimeout(()=>limpiar("add-msg"),1500);
+  await cargarMiembros();
+}
+
+function escapar(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* Enter para avanzar */
+document.getElementById("pass").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
+
+arranque();
+</script>
+</body>
+</html>
