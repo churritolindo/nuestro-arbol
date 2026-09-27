@@ -21,66 +21,94 @@
   .app{width:100%; max-width:460px; min-height:100vh; background:var(--crema);
        display:flex; flex-direction:column; box-shadow:0 0 40px rgba(0,0,0,.06)}
   header{background:linear-gradient(135deg,var(--verde),var(--verde2)); color:#fff;
-         padding:22px 20px 18px; text-align:center}
-  header h1{margin:0; font-size:22px; letter-spacing:.3px}
-  header p{margin:6px 0 0; font-size:13px; opacity:.85}
-  .cont{flex:1; padding:20px 18px 40px}
+         padding:20px 18px 16px; text-align:center; position:relative}
+  header h1{margin:0; font-size:21px; letter-spacing:.3px}
+  header p{margin:5px 0 0; font-size:12.5px; opacity:.85}
+  .cont{flex:1; padding:18px 16px 40px}
   .tarjeta{background:var(--tarjeta); border:1px solid var(--linea); border-radius:16px;
            padding:18px; margin-bottom:16px; box-shadow:0 4px 14px rgba(90,70,30,.05)}
   label{display:block; font-size:13px; color:var(--suave); margin:12px 0 5px; font-weight:600}
   input,select,textarea{width:100%; padding:12px 13px; border:1px solid var(--linea);
     border-radius:11px; font-size:15px; background:#fff; color:var(--texto); font-family:inherit}
+  textarea{min-height:90px; resize:vertical}
   input:focus,select:focus,textarea:focus{outline:none; border-color:var(--verde)}
   .btn{display:block; width:100%; padding:13px; border:none; border-radius:12px;
     background:var(--verde); color:#fff; font-size:15px; font-weight:600; cursor:pointer;
     margin-top:14px; transition:.15s}
   .btn:active{transform:scale(.99)}
+  .btn:disabled{opacity:.55}
   .btn.sec{background:#fff; color:var(--verde); border:1.5px solid var(--verde)}
-  .btn.gris{background:#efe8d8; color:var(--suave); box-shadow:none}
-  .link{background:none;border:none;color:var(--verde);font-size:13px;cursor:pointer;
-    text-decoration:underline; padding:6px; width:100%; margin-top:6px}
   h2{font-size:17px; margin:0 0 4px}
   .sub{font-size:13px; color:var(--suave); margin:0 0 10px}
   .msg{border-radius:10px; padding:10px 12px; font-size:13px; margin-top:12px; display:none; line-height:1.4}
   .msg.err{background:#fbeaea; color:var(--error); border:1px solid #eecaca; display:block}
   .msg.ok{background:#e9f2ea; color:var(--ok); border:1px solid #cfe4d1; display:block}
-  .miembro{display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--linea)}
+  .miembro{display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--linea); cursor:pointer}
   .miembro:last-child{border-bottom:none}
+  .miembro:active{background:#f4eede}
   .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dfc98a,#c9a24b);
-    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;
+    box-shadow:0 0 0 2px #fff,0 0 0 3px var(--oro)}
   .miembro .nom{font-weight:600;font-size:15px}
   .miembro .rel{font-size:12px;color:var(--suave)}
-  .vacio{text-align:center; color:var(--suave); font-size:14px; padding:24px 10px}
+  .chev{margin-left:auto;color:#cdbf9f;font-size:20px}
+  .vacio{text-align:center; color:var(--suave); font-size:14px; padding:22px 10px}
   .fila{display:flex; gap:10px}
   .fila>*{flex:1}
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
   .chip{font-size:11px;background:#efe8d8;color:var(--suave);padding:4px 10px;border-radius:20px}
   .cargando{text-align:center;color:var(--suave);padding:40px 0;font-size:14px}
   .hide{display:none}
+  .link{background:none;border:none;color:var(--verde);font-size:13px;cursor:pointer;text-decoration:underline;padding:6px;width:100%;margin-top:6px}
+  /* Botón atrás */
+  .back{position:absolute;left:14px;top:20px;background:rgba(255,255,255,.18);border:none;color:#fff;
+    width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1}
+  /* Ficha */
+  .ficha-cab{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .av-grande{width:64px;height:64px;font-size:26px}
+  .ficha-cab .nom{font-size:20px;font-weight:700}
+  .ficha-cab .rel{font-size:13px;color:var(--suave)}
+  .subir-fila{display:flex;gap:8px;margin-top:6px}
+  .subir-fila button{flex:1;padding:11px 4px;border:1px solid var(--linea);background:#fff;border-radius:12px;
+    font-size:12px;font-weight:600;color:var(--verde);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .subir-fila button:active{background:#f4eede}
+  .subir-fila .ic{font-size:20px}
+  .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .rec{border:1px solid var(--linea);border-radius:12px;overflow:hidden;background:#fff;position:relative}
+  .rec img,.rec video{width:100%;height:120px;object-fit:cover;display:block;background:#eee}
+  .rec .tit{font-size:11px;color:var(--suave);padding:6px 8px}
+  .rec.texto{grid-column:span 2;padding:12px}
+  .rec.texto .cuerpo{font-size:14px;color:var(--texto);white-space:pre-wrap;line-height:1.45}
+  .rec.audio{grid-column:span 2;padding:10px}
+  .rec.audio audio{width:100%}
+  .rec .borrar{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;border:none;
+    width:24px;height:24px;border-radius:50%;font-size:13px;cursor:pointer;line-height:1}
+  .seccion-tit{font-size:13px;font-weight:700;color:var(--suave);margin:16px 2px 2px;text-transform:uppercase;letter-spacing:.5px}
+  .prog{font-size:12px;color:var(--verde);margin-top:8px;display:none}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
+    <button class="back hide" id="btn-back" onclick="volverArbol()">‹</button>
     <h1>🌳 Nuestro Árbol</h1>
     <p id="subhead">Donde la familia no se pierde</p>
   </header>
   <div class="cont">
 
-    <!-- CARGANDO -->
     <div id="v-carga" class="cargando">Cargando…</div>
 
-    <!-- LOGIN / REGISTRO -->
+    <!-- LOGIN -->
     <div id="v-auth" class="hide">
       <div class="tarjeta">
-        <h2 id="auth-titulo">Entrar</h2>
-        <p class="sub" id="auth-sub">Usa el mismo correo en todos tus móviles para ver lo mismo.</p>
+        <h2>Entrar</h2>
+        <p class="sub">Usa el mismo correo en todos tus móviles para ver lo mismo.</p>
         <label>Correo</label>
         <input id="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
         <label>Contraseña</label>
         <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
-        <button class="btn" id="btn-entrar" onclick="entrar()">Entrar</button>
-        <button class="btn sec" id="btn-crear" onclick="crearCuenta()">Crear cuenta nueva</button>
+        <button class="btn" onclick="entrar()">Entrar</button>
+        <button class="btn sec" onclick="crearCuenta()">Crear cuenta nueva</button>
         <div id="auth-msg" class="msg"></div>
       </div>
     </div>
@@ -109,21 +137,16 @@
           <h2 id="arbol-nombre">Mi árbol</h2>
           <span class="chip" id="arbol-tipo">familia</span>
         </div>
-        <p class="sub" id="arbol-cuenta">0 personas</p>
+        <p class="sub" id="arbol-cuenta">0 fichas</p>
         <div id="lista"></div>
       </div>
-
       <div class="tarjeta">
         <h2>Añadir familiar</h2>
         <label>Nombre</label>
         <input id="m-nombre" placeholder="Ej. Abuela Rosa">
         <div class="fila">
-          <div>
-            <label>Relación</label>
-            <input id="m-rel" placeholder="abuela, tío, primo…">
-          </div>
-          <div>
-            <label>Tipo</label>
+          <div><label>Relación</label><input id="m-rel" placeholder="abuela, tío…"></div>
+          <div><label>Tipo</label>
             <select id="m-clase">
               <option value="persona">Persona</option>
               <option value="mascota">Mascota</option>
@@ -134,8 +157,44 @@
         <button class="btn" onclick="anadirMiembro()">Añadir al árbol</button>
         <div id="add-msg" class="msg"></div>
       </div>
-
       <button class="link" onclick="salir()">Cerrar sesión</button>
+    </div>
+
+    <!-- FICHA -->
+    <div id="v-ficha" class="hide">
+      <div class="tarjeta">
+        <div class="ficha-cab">
+          <div class="av av-grande" id="f-av">?</div>
+          <div>
+            <div class="nom" id="f-nom">Nombre</div>
+            <div class="rel" id="f-rel">relación</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Añadir un recuerdo</h2>
+        <p class="sub">Foto, vídeo, audio o un texto. Se guarda en la nube.</p>
+        <div class="subir-fila">
+          <button onclick="elegir('foto')"><span class="ic">📷</span>Foto</button>
+          <button onclick="elegir('video')"><span class="ic">🎬</span>Vídeo</button>
+          <button onclick="elegir('audio')"><span class="ic">🎤</span>Audio</button>
+          <button onclick="abrirTexto()"><span class="ic">✍️</span>Texto</button>
+        </div>
+        <input type="file" id="file-input" class="hide" onchange="archivoElegido()">
+        <div id="texto-box" class="hide">
+          <label>Escribe el recuerdo</label>
+          <textarea id="texto-cuerpo" placeholder="Una anécdota, una carta, lo que quieras contar…"></textarea>
+          <input id="texto-titulo" placeholder="Título (opcional)" style="margin-top:8px">
+          <button class="btn" onclick="guardarTexto()">Guardar texto</button>
+        </div>
+        <div id="prog" class="prog">Subiendo… un momento ⏳</div>
+        <div id="rec-msg" class="msg"></div>
+      </div>
+
+      <div class="seccion-tit">Recuerdos</div>
+      <div id="galeria" class="galeria"></div>
+      <div id="galeria-vacio" class="vacio hide">Aún no hay recuerdos.<br>Añade el primero arriba. 👆</div>
     </div>
 
   </div>
@@ -143,131 +202,210 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ====== CONFIGURACIÓN (datos públicos de Luis) ====== */
+/* ====== CONFIG ====== */
 const SUPABASE_URL  = "https://pegxsuoujyvtvoqenunz.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ3hzdW91anl2dHZvcWVudW56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDg0NTcsImV4cCI6MjEwNjAyNDQ1N30.f78D-1Z45n-yRFb70A_XBPqrg6aYdkUVuqJvspE3BVQ";
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const BUCKET = "media";
+const LIMITE_MB = 45; // aviso si el archivo es mayor (límite del plan gratis ~50MB)
 
-let arbolActual = null;
+let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
 
 /* ====== UTILIDADES ====== */
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
+  document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
 }
-function msg(id, texto, tipo){
-  const e = document.getElementById(id);
-  e.textContent = texto;
-  e.className = "msg " + (tipo||"err");
-}
+function msg(id,t,tipo){ const e=document.getElementById(id); e.textContent=t; e.className="msg "+(tipo||"err"); }
 function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
+function escapar(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function inicial(n){ return (n||"?").trim().charAt(0).toUpperCase(); }
 
 /* ====== ARRANQUE ====== */
 async function arranque(){
   ver("v-carga");
   const { data:{ session } } = await sb.auth.getSession();
-  if(session){ await entrarAlArbol(); }
-  else { ver("v-auth"); }
+  if(session){ usuario=session.user; await entrarAlArbol(); }
+  else ver("v-auth");
 }
 
-/* ====== AUTENTICACIÓN ====== */
+/* ====== AUTH ====== */
 async function crearCuenta(){
   limpiar("auth-msg");
-  const email = document.getElementById("email").value.trim();
-  const pass  = document.getElementById("pass").value;
-  if(!email || pass.length<6){ msg("auth-msg","Escribe un correo y una contraseña de 6 o más caracteres."); return; }
-  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  const email=document.getElementById("email").value.trim(), pass=document.getElementById("pass").value;
+  if(!email||pass.length<6){ msg("auth-msg","Escribe un correo y una contraseña de 6 o más caracteres."); return; }
+  const { data,error }=await sb.auth.signUp({email,password:pass});
   if(error){ msg("auth-msg","No se pudo crear la cuenta: "+error.message); return; }
-  if(data.session){ await entrarAlArbol(); }
-  else { msg("auth-msg","Cuenta creada. Revisa tu correo y confirma el enlace; luego pulsa «Entrar».","ok"); }
+  if(data.session){ usuario=data.session.user; await entrarAlArbol(); }
+  else msg("auth-msg","Cuenta creada. Revisa tu correo, confirma el enlace y pulsa «Entrar».","ok");
 }
 async function entrar(){
   limpiar("auth-msg");
-  const email = document.getElementById("email").value.trim();
-  const pass  = document.getElementById("pass").value;
-  if(!email || !pass){ msg("auth-msg","Escribe tu correo y tu contraseña."); return; }
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  const email=document.getElementById("email").value.trim(), pass=document.getElementById("pass").value;
+  if(!email||!pass){ msg("auth-msg","Escribe tu correo y tu contraseña."); return; }
+  const { data,error }=await sb.auth.signInWithPassword({email,password:pass});
   if(error){ msg("auth-msg","No se pudo entrar: "+error.message); return; }
-  await entrarAlArbol();
+  usuario=data.session.user; await entrarAlArbol();
 }
-async function salir(){
-  await sb.auth.signOut();
-  arbolActual = null;
-  document.getElementById("pass").value = "";
-  ver("v-auth");
-}
+async function salir(){ await sb.auth.signOut(); arbolActual=null; miembroActual=null; usuario=null;
+  document.getElementById("pass").value=""; ver("v-auth"); }
 
 /* ====== ÁRBOL ====== */
 async function entrarAlArbol(){
   ver("v-carga");
-  const { data, error } = await sb.from("arboles").select("*").order("creado").limit(1);
+  const { data,error }=await sb.from("arboles").select("*").order("creado").limit(1);
   if(error){ ver("v-auth"); msg("auth-msg","Error al leer tus datos: "+error.message); return; }
-  if(data && data.length){ arbolActual = data[0]; mostrarArbol(); }
-  else { ver("v-crear"); }
+  if(data&&data.length){ arbolActual=data[0]; mostrarArbol(); } else ver("v-crear");
 }
 async function guardarArbol(){
   limpiar("crear-msg");
-  const nombre = document.getElementById("t-nombre").value.trim();
-  const tipo   = document.getElementById("t-tipo").value;
+  const nombre=document.getElementById("t-nombre").value.trim(), tipo=document.getElementById("t-tipo").value;
   if(!nombre){ msg("crear-msg","Ponle un nombre al árbol."); return; }
-  const { data:{ user } } = await sb.auth.getUser();
-  const { data, error } = await sb.from("arboles")
-    .insert({ dueno:user.id, nombre, tipo }).select().single();
+  const { data,error }=await sb.from("arboles").insert({dueno:usuario.id,nombre,tipo}).select().single();
   if(error){ msg("crear-msg","No se pudo crear: "+error.message); return; }
-  arbolActual = data;
-  mostrarArbol();
+  arbolActual=data; mostrarArbol();
 }
 async function mostrarArbol(){
   ver("v-arbol");
-  document.getElementById("arbol-nombre").textContent = arbolActual.nombre;
-  document.getElementById("arbol-tipo").textContent = arbolActual.tipo;
+  document.getElementById("arbol-nombre").textContent=arbolActual.nombre;
+  document.getElementById("arbol-tipo").textContent=arbolActual.tipo;
   document.getElementById("subhead").textContent =
     arbolActual.tipo==="amigos" ? "Los amigos también son familia" : "Donde la familia no se pierde";
   await cargarMiembros();
 }
 async function cargarMiembros(){
-  const lista = document.getElementById("lista");
-  lista.innerHTML = '<div class="cargando" style="padding:14px 0">Cargando…</div>';
-  const { data, error } = await sb.from("miembros")
-    .select("*").eq("arbol_id", arbolActual.id).order("creado");
+  const lista=document.getElementById("lista");
+  lista.innerHTML='<div class="cargando" style="padding:14px 0">Cargando…</div>';
+  const { data,error }=await sb.from("miembros").select("*").eq("arbol_id",arbolActual.id).order("creado");
   if(error){ lista.innerHTML=""; msg("add-msg","Error al leer: "+error.message); return; }
-  document.getElementById("arbol-cuenta").textContent =
-    (data.length===1?"1 ficha":data.length+" fichas");
+  document.getElementById("arbol-cuenta").textContent=(data.length===1?"1 ficha":data.length+" fichas");
   if(!data.length){ lista.innerHTML='<div class="vacio">Aún no hay nadie.<br>Añade a la primera persona abajo. 👇</div>'; return; }
-  const icono = { persona:"", mascota:"🐾", amigo:"" };
-  lista.innerHTML = data.map(m=>{
-    const ini = (m.nombre||"?").trim().charAt(0).toUpperCase();
-    const av = m.clase==="mascota" ? "🐾" : ini;
-    return `<div class="miembro">
+  window._miembros={};
+  lista.innerHTML=data.map(m=>{ window._miembros[m.id]=m;
+    const av=m.clase==="mascota"?"🐾":inicial(m.nombre);
+    return `<div class="miembro" onclick="abrirFicha('${m.id}')">
       <div class="av">${av}</div>
-      <div><div class="nom">${escapar(m.nombre)}</div>
-      <div class="rel">${escapar(m.relacion||m.clase)}</div></div>
-    </div>`;
+      <div><div class="nom">${escapar(m.nombre)}</div><div class="rel">${escapar(m.relacion||m.clase)}</div></div>
+      <div class="chev">›</div></div>`;
   }).join("");
 }
 async function anadirMiembro(){
   limpiar("add-msg");
-  const nombre = document.getElementById("m-nombre").value.trim();
-  const rel    = document.getElementById("m-rel").value.trim();
-  const clase  = document.getElementById("m-clase").value;
+  const nombre=document.getElementById("m-nombre").value.trim(),
+        rel=document.getElementById("m-rel").value.trim(),
+        clase=document.getElementById("m-clase").value;
   if(!nombre){ msg("add-msg","Escribe un nombre."); return; }
-  const { error } = await sb.from("miembros")
-    .insert({ arbol_id:arbolActual.id, nombre, relacion:rel, clase });
+  const { error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,relacion:rel,clase});
   if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
-  document.getElementById("m-nombre").value="";
-  document.getElementById("m-rel").value="";
-  msg("add-msg","Guardado ✔","ok");
-  setTimeout(()=>limpiar("add-msg"),1500);
+  document.getElementById("m-nombre").value=""; document.getElementById("m-rel").value="";
+  msg("add-msg","Guardado ✔","ok"); setTimeout(()=>limpiar("add-msg"),1500);
   await cargarMiembros();
 }
 
-function escapar(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+/* ====== FICHA ====== */
+function abrirFicha(id){
+  miembroActual=window._miembros[id];
+  document.getElementById("f-av").textContent = miembroActual.clase==="mascota"?"🐾":inicial(miembroActual.nombre);
+  document.getElementById("f-nom").textContent = miembroActual.nombre;
+  document.getElementById("f-rel").textContent = miembroActual.relacion||miembroActual.clase;
+  document.getElementById("texto-box").classList.add("hide");
+  limpiar("rec-msg");
+  ver("v-ficha");
+  window.scrollTo(0,0);
+  cargarRecuerdos();
+}
+function volverArbol(){ miembroActual=null; ver("v-arbol"); }
 
-/* Enter para avanzar */
+function elegir(tipo){
+  tipoElegido=tipo;
+  document.getElementById("texto-box").classList.add("hide");
+  const inp=document.getElementById("file-input");
+  inp.accept = tipo==="foto"?"image/*" : tipo==="video"?"video/*" : "audio/*";
+  inp.value="";
+  inp.click();
+}
+function abrirTexto(){
+  document.getElementById("texto-box").classList.toggle("hide");
+  document.getElementById("texto-cuerpo").value="";
+  document.getElementById("texto-titulo").value="";
+}
+
+async function archivoElegido(){
+  limpiar("rec-msg");
+  const inp=document.getElementById("file-input");
+  const file=inp.files[0]; if(!file) return;
+  if(file.size > LIMITE_MB*1024*1024){
+    msg("rec-msg","Ese archivo pesa "+(file.size/1048576).toFixed(0)+" MB. De momento el máximo por archivo es "+LIMITE_MB+" MB. Prueba con uno más ligero o un vídeo más corto.");
+    return;
+  }
+  const prog=document.getElementById("prog"); prog.style.display="block";
+  const ext=(file.name.split(".").pop()||"dat").toLowerCase();
+  const ruta = usuario.id+"/"+miembroActual.id+"/"+Date.now()+"."+ext;
+  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,file,{contentType:file.type});
+  if(upErr){ prog.style.display="none"; msg("rec-msg","No se pudo subir: "+upErr.message); return; }
+  const tipoBD = tipoElegido==="foto"?"foto":tipoElegido;
+  const { error:dbErr }=await sb.from("contenido").insert({
+    miembro_id:miembroActual.id, tipo:tipoBD, archivo_path:ruta, titulo:file.name, subido_por:usuario.id
+  });
+  prog.style.display="none";
+  if(dbErr){ msg("rec-msg","Subido, pero no se guardó la ficha: "+dbErr.message); return; }
+  msg("rec-msg","¡Recuerdo guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
+  cargarRecuerdos();
+}
+
+async function guardarTexto(){
+  limpiar("rec-msg");
+  const cuerpo=document.getElementById("texto-cuerpo").value.trim();
+  const titulo=document.getElementById("texto-titulo").value.trim();
+  if(!cuerpo){ msg("rec-msg","Escribe algo primero."); return; }
+  const { error }=await sb.from("contenido").insert({
+    miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo, titulo:titulo||null, subido_por:usuario.id
+  });
+  if(error){ msg("rec-msg","No se pudo guardar: "+error.message); return; }
+  document.getElementById("texto-box").classList.add("hide");
+  msg("rec-msg","¡Texto guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
+  cargarRecuerdos();
+}
+
+async function cargarRecuerdos(){
+  const g=document.getElementById("galeria"), vac=document.getElementById("galeria-vacio");
+  g.innerHTML='<div class="cargando" style="grid-column:span 2;padding:14px 0">Cargando…</div>';
+  vac.classList.add("hide");
+  const { data,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).order("creado",{ascending:false});
+  if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
+  if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
+  // URLs firmadas para los archivos
+  const piezas=await Promise.all(data.map(async r=>{
+    if(r.tipo==="texto"){
+      return `<div class="rec texto"><button class="borrar" onclick="borrar('${r.id}',null)">×</button>
+        ${r.titulo?`<div class="tit" style="font-weight:700;color:var(--texto);padding:0 0 6px">${escapar(r.titulo)}</div>`:""}
+        <div class="cuerpo">${escapar(r.texto)}</div></div>`;
+    }
+    let url="";
+    if(r.archivo_path){
+      const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(r.archivo_path,3600);
+      url=sig?sig.signedUrl:"";
+    }
+    const del=`<button class="borrar" onclick="borrar('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
+    if(r.tipo==="foto") return `<div class="rec">${del}<img src="${url}" loading="lazy"><div class="tit">${escapar(r.titulo||"Foto")}</div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}<video src="${url}" controls></video><div class="tit">${escapar(r.titulo||"Vídeo")}</div></div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio></div>`;
+    return "";
+  }));
+  g.innerHTML=piezas.join("");
+}
+
+async function borrar(id,ruta){
+  if(!confirm("¿Borrar este recuerdo? No se puede deshacer.")) return;
+  if(ruta){ await sb.storage.from(BUCKET).remove([ruta]); }
+  const { error }=await sb.from("contenido").delete().eq("id",id);
+  if(error){ msg("rec-msg","No se pudo borrar: "+error.message); return; }
+  cargarRecuerdos();
+}
+
 document.getElementById("pass").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
-
 arranque();
 </script>
 </body>
