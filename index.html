@@ -137,10 +137,11 @@
   .banner-arb{position:relative;width:100%;max-width:330px;margin:0 auto 4px;border-radius:16px;overflow:hidden;
     box-shadow:0 0 0 2px var(--oroO),0 0 0 4px var(--oroC),0 6px 16px rgba(20,30,25,.32)}
   .banner-arb img.main{width:100%;display:block;transform-origin:50% 100%;animation:mecer 6.5s ease-in-out infinite}
-  .banner-pet{position:absolute;right:6px;bottom:6px;width:31%;border-radius:9px;overflow:hidden;
-    box-shadow:0 0 0 1.5px var(--oroC),0 3px 9px rgba(0,0,0,.45)}
-  .banner-pet img{width:100%;display:block;transform-origin:50% 100%;animation:mecer 5.4s ease-in-out infinite}
-  .banner-pet .arbpaw{right:4px;bottom:4px}.banner-pet .arbpaw .p1{width:17px;height:17px}.banner-pet .arbpaw .p2{width:12px;height:12px;margin-bottom:4px}
+  .banner-pet{position:absolute;right:1%;bottom:0;width:36%}
+  .banner-pet img{width:100%;display:block;transform-origin:50% 100%;animation:mecer 5.4s ease-in-out infinite;
+    -webkit-mask:radial-gradient(120% 108% at 50% 46%,#000 48%,rgba(0,0,0,0) 80%);
+            mask:radial-gradient(120% 108% at 50% 46%,#000 48%,rgba(0,0,0,0) 80%)}
+  .banner-pet .arbpaw{right:6%;bottom:14%}.banner-pet .arbpaw .p1{width:17px;height:17px}.banner-pet .arbpaw .p2{width:12px;height:12px;margin-bottom:4px}
   /* galeria */
   .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .rec{background:rgba(255,253,247,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;
