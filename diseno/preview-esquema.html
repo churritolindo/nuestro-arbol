@@ -1,0 +1,68 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--oroC:#b8860b;--oroO:#e8c874;--verde:#2f5340;--tinta:#4a3b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,'Times New Roman',serif;
+ background:
+  radial-gradient(120% 90% at 50% 0%, #f7edcf 0%, #efe0b8 55%, #e6d3a3 100%),
+  repeating-linear-gradient(0deg, rgba(120,90,30,.05) 0 2px, transparent 2px 6px);
+ background-blend-mode:multiply;color:var(--tinta);min-height:100vh;padding:16px 12px 40px}
+.top{text-align:center;margin-bottom:14px}
+.top .rama{font-size:12px;letter-spacing:2px;color:#8a6d2a;text-transform:uppercase}
+.top h1{font-size:20px;color:var(--verde);margin-top:2px}
+.wrap{max-width:440px;margin:0 auto}
+/* tarjeta persona */
+.card{display:inline-flex;align-items:center;gap:8px;background:#fbf4df;border-radius:12px;padding:6px 12px 6px 6px;
+ box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 3px 8px rgba(60,40,10,.22)}
+.av{width:38px;height:38px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+ color:#fff;font-weight:bold;font-size:15px;box-shadow:0 0 0 2px var(--oroC)}
+.nm{font-size:14px;color:var(--tinta);font-weight:bold;line-height:1.1}
+.rel{font-size:11px;color:#8a7340;font-style:italic}
+.expand{margin-left:4px;font-size:14px;color:var(--oroC);font-weight:bold}
+.badge{margin-left:2px;background:var(--verde);color:#fff;border-radius:10px;font-size:11px;padding:1px 7px}
+/* estructura */
+.pareja{display:flex;justify-content:center;gap:10px;align-items:center}
+.mas{font-size:20px;color:#a98a3a}
+.linea-v{width:3px;height:20px;background:var(--oroC);margin:0 auto;border-radius:2px}
+.hijos{display:flex;flex-direction:column;gap:10px;margin-top:4px;
+ border-left:3px solid var(--oroC);margin-left:26px;padding-left:18px;position:relative}
+.hijo-row{position:relative}
+.hijo-row::before{content:"";position:absolute;left:-18px;top:24px;width:18px;height:3px;background:var(--oroC)}
+.nietos{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px;
+ border-left:2px dashed #c9a94e;margin-left:22px;padding-left:16px}
+.nietos .card{padding:4px 10px 4px 5px}
+.nietos .av{width:30px;height:30px;font-size:12px}
+.nietos .nm{font-size:12.5px}
+.hint{text-align:center;font-size:11.5px;color:#8a7340;margin-top:16px;font-style:italic}
+</style></head><body>
+<div class="top"><div class="rama">Rama de la familia</div><h1>Abuelos Pío y Pía</h1></div>
+<div class="wrap">
+
+  <div class="pareja">
+    <div class="card"><div class="av" style="background:#5c8a6d">P</div><div><div class="nm">Abuelo Pío</div><div class="rel">bisabuelo</div></div></div>
+    <span class="mas">♥</span>
+    <div class="card"><div class="av" style="background:#b06a8a">P</div><div><div class="nm">Abuela Pía</div><div class="rel">bisabuela</div></div></div>
+  </div>
+  <div class="linea-v"></div>
+
+  <div class="hijos">
+    <!-- hijo desplegado -->
+    <div class="hijo-row">
+      <div class="card"><div class="av" style="background:#3f6b52">P</div><div><div class="nm">Pepe</div><div class="rel">hijo</div></div><span class="expand">▾</span></div>
+      <div class="nietos">
+        <div class="card"><div class="av" style="background:#c98a3a">L</div><div><div class="nm">Lucía</div><div class="rel">nieta</div></div></div>
+        <div class="card"><div class="av" style="background:#6a86b0">M</div><div><div class="nm">Mateo</div><div class="rel">nieto</div></div></div>
+        <div class="card"><div class="av" style="background:#8a6db0">S</div><div><div class="nm">Sara</div><div class="rel">nieta</div></div></div>
+      </div>
+    </div>
+    <!-- hijos plegados -->
+    <div class="hijo-row"><div class="card"><div class="av" style="background:#5c8a6d">J</div><div><div class="nm">Juan</div><div class="rel">hijo</div></div><span class="badge">4</span><span class="expand">▸</span></div></div>
+    <div class="hijo-row"><div class="card"><div class="av" style="background:#b06a8a">M</div><div><div class="nm">María</div><div class="rel">hija</div></div><span class="badge">5</span><span class="expand">▸</span></div></div>
+    <div class="hijo-row"><div class="card"><div class="av" style="background:#3f6b52">A</div><div><div class="nm">Antonio</div><div class="rel">hijo</div></div><span class="badge">3</span><span class="expand">▸</span></div></div>
+    <div class="hijo-row"><div class="card" style="opacity:.9"><div class="av" style="background:#9a8a6a">+6</div><div><div class="nm">y 6 hijos más</div><div class="rel">toca para ver</div></div><span class="expand">▸</span></div></div>
+  </div>
+
+  <div class="hint">Toca ▸ en cada hijo para desplegar sus nietos · toca una persona para abrir su ficha</div>
+</div>
+</body></html>
