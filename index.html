@@ -83,6 +83,9 @@
   .perfil .rel{font-size:13.5px;color:var(--suave);font-style:italic;margin:3px 0 10px}
   .fechas{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#6b5c40;background:rgba(243,234,210,.9);
     padding:6px 15px;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--oro)}
+  .cam-badge{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:linear-gradient(135deg,#4a7a5e,#2f5340);
+    color:#fff;border:2px solid #fff;border-radius:20px;font-size:13px;padding:2px 12px;cursor:pointer;line-height:1.5;
+    box-shadow:0 0 0 1px var(--oroO),0 2px 6px rgba(0,0,0,.3);z-index:3}
   .olivo{position:absolute;width:56px;bottom:8px;pointer-events:none}
   .olivo.izq{left:4px;transform:scaleX(-1)}.olivo.der{right:4px}
   .olivo img{width:100%;display:block;transform-origin:50% 92%;animation:sway 5s ease-in-out infinite}
@@ -202,7 +205,8 @@
       <div class="vidrio perfil">
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
-        <div class="lauro"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div></div>
+        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
+        <input type="file" id="foto-input" accept="image/*" class="hide" onchange="fotoPerfilElegida()">
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
@@ -348,11 +352,17 @@ async function cargarMiembros(){
   if(error){ lista.innerHTML=""; msg("add-msg","Error al leer: "+error.message); return; }
   document.getElementById("arbol-cuenta").textContent=(data.length===1?"1 ficha":data.length+" fichas");
   if(!data.length){ lista.innerHTML='<div class="vacio" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay nadie.<br>Añade a la primera persona abajo. 👇</div>'; return; }
-  window._miembros={};
-  lista.innerHTML=data.map(m=>{ window._miembros[m.id]=m;
-    const av=m.clase==="mascota"?"🐾":inicial(m.nombre);
+  window._miembros={}; data.forEach(m=>window._miembros[m.id]=m);
+  let urls={};
+  const conFoto=data.filter(m=>m.foto);
+  if(conFoto.length){
+    const { data:sigs }=await sb.storage.from(BUCKET).createSignedUrls(conFoto.map(m=>m.foto),3600);
+    if(sigs) sigs.forEach((s,i)=>{ if(s&&s.signedUrl) urls[conFoto[i].foto]=s.signedUrl; });
+  }
+  lista.innerHTML=data.map(m=>{
+    const cara=(m.foto&&urls[m.foto])?`<img src="${urls[m.foto]}">`:(m.clase==="mascota"?"🐾":inicial(m.nombre));
     return `<div class="vidrio mcard" onclick="abrirFicha('${m.id}')">
-      <div class="lauro"><img class="lau" src="corona.png"><div class="foto">${av}</div></div>
+      <div class="lauro"><img class="lau" src="corona.png"><div class="foto">${cara}</div></div>
       <div class="info"><div class="nom serif">${escapar(m.nombre)}</div><div class="rel">${escapar(m.relacion||m.clase)}</div></div>
       <div class="chev">›</div></div>`;
   }).join("");
@@ -378,7 +388,7 @@ async function anadirMiembro(){
 function abrirFicha(id){
   miembroActual=window._miembros[id];
   const m=miembroActual;
-  document.getElementById("f-av").textContent = m.clase==="mascota"?"🐾":inicial(m.nombre);
+  pintarFotoFicha(m);
   document.getElementById("f-nom").textContent = m.nombre;
   document.getElementById("f-rel").textContent = m.relacion||m.clase;
   // fechas + fondo según vivo/fallecido
@@ -392,6 +402,30 @@ function abrirFicha(id){
   ver("v-ficha");
   window.scrollTo(0,0);
   cargarRecuerdos();
+}
+async function pintarFotoFicha(m){
+  const el=document.getElementById("f-av");
+  if(m.foto){
+    const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(m.foto,3600);
+    el.innerHTML = (sig&&sig.signedUrl) ? `<img src="${sig.signedUrl}">` : (m.clase==="mascota"?"🐾":inicial(m.nombre));
+  } else el.textContent = m.clase==="mascota"?"🐾":inicial(m.nombre);
+}
+function pedirFotoPerfil(){ const i=document.getElementById("foto-input"); i.value=""; i.click(); }
+async function fotoPerfilElegida(){
+  limpiar("rec-msg");
+  const inp=document.getElementById("foto-input"); const file=inp.files[0]; if(!file||!miembroActual) return;
+  if(file.size>LIMITE_MB*1024*1024){ msg("rec-msg","La foto pesa demasiado (máx "+LIMITE_MB+" MB)."); return; }
+  const prog=document.getElementById("prog"); prog.style.display="block";
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+  const ruta=usuario.id+"/"+miembroActual.id+"/perfil_"+Date.now()+"."+ext;
+  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,file,{contentType:file.type,upsert:true});
+  if(upErr){ prog.style.display="none"; msg("rec-msg","No se pudo subir la foto: "+upErr.message); return; }
+  const { error:dbErr }=await sb.from("miembros").update({foto:ruta}).eq("id",miembroActual.id);
+  prog.style.display="none";
+  if(dbErr){ msg("rec-msg","Subida, pero no se guardó: "+dbErr.message); return; }
+  miembroActual.foto=ruta; if(window._miembros[miembroActual.id]) window._miembros[miembroActual.id].foto=ruta;
+  await pintarFotoFicha(miembroActual);
+  msg("rec-msg","¡Foto de perfil guardada! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
 }
 function volverArbol(){ miembroActual=null; fondo("bgL"); ver("v-arbol"); }
 
