@@ -172,6 +172,36 @@
   .faq summary:before{content:"＋";color:var(--oro);font-weight:700;margin-right:8px}
   .faq details[open] summary:before{content:"–"}
   .faq p{font-size:13.5px;color:var(--texto);line-height:1.55;margin:8px 0 2px;padding-left:20px}
+  /* ===== árbol genealógico (esquema) ===== */
+  .esq{position:fixed;inset:0;z-index:60;overflow:auto;background:#c9b389;display:none}
+  .esq.show{display:block}
+  .esq-scroll{min-height:100vh;border-style:solid;border-width:56px 14px 56px 14px;
+    border-image:url('diseno/papiro.png') 100 26 100 26 fill stretch;padding:8px 6px 16px}
+  .esq .top{text-align:center;margin:2px 0 4px}
+  .esq .rama{font-size:11px;letter-spacing:2px;color:#8a6d2a;text-transform:uppercase}
+  .esq .top h1{font-size:20px;color:var(--verde);margin-top:2px}
+  .esq-back{position:fixed;top:10px;left:10px;z-index:61;background:rgba(251,244,223,.92);border:none;
+    border-radius:20px;padding:7px 14px;font-family:Georgia,serif;font-weight:700;color:var(--verde);
+    box-shadow:0 0 0 1.5px var(--oroC),0 2px 6px rgba(60,40,10,.3);cursor:pointer}
+  .tree{overflow-x:auto;padding:8px 2px 10px;text-align:center}
+  .tree ul{display:flex;justify-content:center;padding-top:18px;position:relative;list-style:none}
+  .tree li{list-style:none;position:relative;padding:18px 6px 0;text-align:center}
+  .tree li::before,.tree li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:18px;border-top:2px solid #6b4f2a}
+  .tree li::after{right:auto;left:50%;border-left:2px solid #6b4f2a}
+  .tree li:only-child::before,.tree li:only-child::after{display:none}
+  .tree li:first-child::before,.tree li:last-child::after{border:0}
+  .tree li:last-child::before{border-right:2px solid #6b4f2a;border-radius:0 7px 0 0}
+  .tree li:first-child::after{border-radius:7px 0 0 0}
+  .tree ul ul::before{content:"";position:absolute;top:0;left:50%;width:2px;height:18px;background:#6b4f2a}
+  .tree .node{display:inline-block;vertical-align:top}
+  .tree .pareja{display:inline-flex;gap:2px;align-items:flex-start}
+  .tree .pareja .corazon{align-self:center;color:#a15a6a;font-size:14px;margin-top:-14px}
+  .tree .pnode{display:inline-block;cursor:pointer;width:72px}
+  .tree .lauro{width:58px;height:62px;margin:0 auto}
+  .tree .foto{width:33px;height:33px;font-size:14px}
+  .tree .pn{font-size:12px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
+  .tree .pr{font-size:10px;color:#8a7340;font-style:italic}
+  .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
 <body>
@@ -230,6 +260,7 @@
       <div id="especies-cap" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
+      <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
       <div id="lista"></div>
       <div class="vidrio" style="margin-top:16px">
         <h2>Añadir familiar</h2>
@@ -244,6 +275,14 @@
               <option value="amigo">Amigo</option>
             </select>
           </div>
+        </div>
+        <div class="fila">
+          <div><label>Hijo/a de… (padre)</label><select id="m-padre"></select></div>
+          <div><label>…y de (madre)</label><select id="m-madre"></select></div>
+        </div>
+        <div class="fila">
+          <div><label>Pareja de… (opcional)</label><select id="m-pareja"></select></div>
+          <div><label>Apellidos (opcional)</label><input id="m-apellidos" placeholder="Rodríguez Barbero"></div>
         </div>
         <div class="fila">
           <div><label>Nacimiento (opcional)</label><input id="m-nac" placeholder="1938"></div>
@@ -266,6 +305,7 @@
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
+        <button class="btn sec" style="margin-top:10px" onclick="abrirEsquema(miembroActual.id)">📜 Ver su rama</button>
       </div>
 
       <div class="vidrio">
@@ -313,6 +353,14 @@
           </div>
         </div>
         <div class="fila">
+          <div><label>Hijo/a de… (padre)</label><select id="e-padre"></select></div>
+          <div><label>…y de (madre)</label><select id="e-madre"></select></div>
+        </div>
+        <div class="fila">
+          <div><label>Pareja de… (opcional)</label><select id="e-pareja"></select></div>
+          <div><label>Apellidos (opcional)</label><input id="e-apellidos" placeholder="Rodríguez Barbero"></div>
+        </div>
+        <div class="fila">
           <div><label>Nacimiento</label><input id="e-nac" placeholder="1938"></div>
           <div><label>Fallecimiento</label><input id="e-fall" placeholder="—"></div>
         </div>
@@ -322,6 +370,16 @@
         <div id="edit-msg" class="msg"></div>
       </div>
       <button class="link" style="color:#ffd7c2" onclick="borrarMiembro()">🗑️ Borrar este familiar</button>
+    </div>
+
+    <!-- ÁRBOL GENEALÓGICO (esquema, papiro a pantalla completa) -->
+    <div id="v-esquema" class="esq">
+      <button class="esq-back" onclick="cerrarEsquema()">‹ Volver</button>
+      <div class="esq-scroll">
+        <div class="top"><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
+        <div class="tree" id="esq-tree"></div>
+        <div class="hint">Desliza para ver toda la rama · toca una persona para abrir su ficha</div>
+      </div>
     </div>
 
     <!-- AYUDA -->
@@ -452,6 +510,8 @@ async function cargarMiembros(){
     const { data:sigs }=await sb.storage.from(BUCKET).createSignedUrls(conFoto.map(m=>m.foto),3600);
     if(sigs) sigs.forEach((s,i)=>{ if(s&&s.signedUrl) urls[conFoto[i].foto]=s.signedUrl; });
   }
+  data.forEach(m=>{ if(m.foto&&urls[m.foto]) window._miembros[m.id]._url=urls[m.foto]; });
+  ["m-padre","m-madre","m-pareja"].forEach(id=>pintaSelect(id,"",null));
   lista.innerHTML=data.map(m=>{
     const cara=(m.foto&&urls[m.foto])?`<img src="${urls[m.foto]}">`:(m.clase==="mascota"?"🐾":inicial(m.nombre));
     return `<div class="vidrio mcard" onclick="abrirFicha('${m.id}')">
@@ -468,11 +528,16 @@ async function anadirMiembro(){
         nac=document.getElementById("m-nac").value.trim(),
         fall=document.getElementById("m-fall").value.trim();
   if(!nombre){ msg("add-msg","Escribe un nombre."); return; }
-  const { error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,relacion:rel,clase,
-        nacimiento:nac||null,fallecimiento:fall||null});
+  const padre=document.getElementById("m-padre").value||null,
+        madre=document.getElementById("m-madre").value||null,
+        pareja=document.getElementById("m-pareja").value||null,
+        apellidos=document.getElementById("m-apellidos").value.trim()||null;
+  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,relacion:rel,clase,
+        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,apellidos}).select().single();
   if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
-  document.getElementById("m-nombre").value=""; document.getElementById("m-rel").value="";
-  document.getElementById("m-nac").value=""; document.getElementById("m-fall").value="";
+  if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id}).eq("id",pareja);
+  ["m-nombre","m-rel","m-nac","m-fall","m-apellidos"].forEach(id=>document.getElementById(id).value="");
+  ["m-padre","m-madre","m-pareja"].forEach(id=>document.getElementById(id).value="");
   msg("add-msg","Guardado ✔","ok"); setTimeout(()=>limpiar("add-msg"),1500);
   await cargarMiembros();
 }
@@ -596,7 +661,11 @@ function abrirEditar(){
   document.getElementById("e-clase").value=m.clase||"persona";
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
+  document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-historia").value=m.historia||"";
+  pintaSelect("e-padre",m.padre_id,m.id);
+  pintaSelect("e-madre",m.madre_id,m.id);
+  pintaSelect("e-pareja",m.pareja_id,m.id);
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
 }
 function cancelarEditar(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
@@ -604,14 +673,20 @@ async function guardarEdicion(){
   limpiar("edit-msg");
   const nombre=document.getElementById("e-nombre").value.trim();
   if(!nombre){ msg("edit-msg","El nombre no puede estar vacío."); return; }
+  const pareja=document.getElementById("e-pareja").value||null;
   const cambios={ nombre,
     relacion:document.getElementById("e-rel").value.trim(),
     clase:document.getElementById("e-clase").value,
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
+    apellidos:document.getElementById("e-apellidos").value.trim()||null,
+    padre_id:document.getElementById("e-padre").value||null,
+    madre_id:document.getElementById("e-madre").value||null,
+    pareja_id:pareja,
     historia:document.getElementById("e-historia").value.trim()||null };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
+  if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id}).eq("id",pareja);
   const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
 }
 async function borrarMiembro(){
@@ -622,6 +697,63 @@ async function borrarMiembro(){
   miembroActual=null; await cargarMiembros(); fondo("bgL"); ver("v-arbol");
 }
 function volverArbol(){ miembroActual=null; fondo("bgL"); ver("v-arbol"); }
+
+/* ===== Parentesco + árbol genealógico ===== */
+function pintaSelect(id, current, excludeId){
+  const s=document.getElementById(id); if(!s) return;
+  const arr=Object.values(window._miembros||{}).filter(m=>m.id!==excludeId);
+  s.innerHTML='<option value="">— nadie —</option>'+arr.map(m=>'<option value="'+m.id+'">'+escapar(m.nombre)+'</option>').join("");
+  s.value=current||"";
+}
+function _caraTree(m){
+  if(m._url) return '<img src="'+m._url+'">';
+  return m.clase==="mascota" ? "🐾" : inicial(m.nombre);
+}
+function _persTree(m){
+  return '<div class="pnode" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
+    +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
+    +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+escapar(m.relacion||m.clase||"")+'</div></div>';
+}
+function esquemaHTML(rootId){
+  const M=window._miembros||{}; const arr=Object.values(M); const hecho=new Set();
+  function hijosDe(ids){
+    const seen=new Set(), out=[];
+    arr.forEach(x=>{ if((ids.includes(x.padre_id)||ids.includes(x.madre_id)) && !seen.has(x.id)){ seen.add(x.id); out.push(x); } });
+    return out;
+  }
+  function nodo(m){
+    if(hecho.has(m.id)) return "";
+    hecho.add(m.id);
+    const par = (m.pareja_id && M[m.pareja_id]) ? M[m.pareja_id] : null;
+    if(par) hecho.add(par.id);
+    const ids=[m.id]; if(par) ids.push(par.id);
+    const cab = par
+      ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">♥</span>'+_persTree(par)+'</div>'
+      : '<div class="node">'+_persTree(m)+'</div>';
+    const hijos=hijosDe(ids);
+    const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h)+'</li>').join("")+'</ul>' : "";
+    return cab+sub;
+  }
+  let roots;
+  if(rootId && M[rootId]) roots=[M[rootId]];
+  else roots=arr.filter(m=>!m.padre_id && !m.madre_id);
+  const lis=[];
+  roots.forEach(r=>{ if(hecho.has(r.id)) return; const h=nodo(r); if(h) lis.push('<li>'+h+'</li>'); });
+  return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
+}
+function abrirEsquema(rootId){
+  const M=window._miembros||{};
+  let titulo;
+  if(rootId && M[rootId]){ const m=M[rootId]; titulo="Familia "+((m.apellidos||"").trim()||m.nombre); }
+  else titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico";
+  document.getElementById("esq-titulo").textContent=titulo;
+  const html=esquemaHTML(rootId);
+  document.getElementById("esq-tree").innerHTML = html ||
+    '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Al añadir o editar a una persona, di de quién es hijo/a y su pareja.</div>';
+  const ov=document.getElementById("v-esquema"); ov.classList.add("show"); ov.scrollTop=0;
+}
+function cerrarEsquema(){ document.getElementById("v-esquema").classList.remove("show"); }
+function abrirDesdeEsquema(id){ cerrarEsquema(); abrirFicha(id); }
 
 function elegir(tipo){
   tipoElegido=tipo;
