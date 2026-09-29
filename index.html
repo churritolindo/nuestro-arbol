@@ -111,6 +111,36 @@
   .chip-esp{display:inline-block;margin:3px;padding:6px 13px;border:none;border-radius:20px;background:rgba(255,253,247,.85);
     color:var(--verde);font-weight:600;font-size:13px;font-family:Georgia,serif;cursor:pointer;
     box-shadow:0 0 0 1.5px var(--oroC),0 3px 8px rgba(20,30,25,.2)}
+  /* selector de arbol (imagenes reales) */
+  .arbsel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px}
+  .arbcard{background:rgba(255,253,247,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:14px;
+    padding:8px 8px 10px;text-align:center;cursor:pointer;transition:transform .18s;
+    box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 0 0 4.5px var(--oroO),0 5px 13px rgba(20,30,25,.25)}
+  .arbcard.sel{transform:translateY(-2px);box-shadow:0 0 0 2px var(--oroO),0 0 0 4.5px var(--oroC),0 0 0 6.5px var(--oroO),0 9px 18px rgba(20,30,25,.32)}
+  .arbmarco{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1/1;background:#dfe7d8}
+  .arbmarco img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 100%;animation:mecer 6s ease-in-out infinite}
+  .arbcard:nth-child(2) .arbmarco img{animation-duration:6.6s}
+  .arbcard:nth-child(3) .arbmarco img{animation-duration:5.4s}
+  .arbcard:nth-child(4) .arbmarco img{animation-duration:6.9s}
+  .arbcard:nth-child(5) .arbmarco img{animation-duration:5.8s}
+  .arbcard:nth-child(6) .arbmarco img{animation-duration:6.3s}
+  @keyframes mecer{0%,100%{transform:rotate(-.6deg) scale(1.015)}50%{transform:rotate(.6deg) scale(1.015)}}
+  .arbnom{font-size:15px;color:var(--verde);font-weight:bold;margin:7px 0 1px;font-family:Georgia,serif}
+  .arbsig{font-size:11.5px;color:#6a5a2a;font-style:italic;line-height:1.3;padding:0 2px}
+  .arbtick{position:absolute;top:6px;right:6px;width:23px;height:23px;border-radius:50%;background:var(--oroC);color:#fff;
+    display:none;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .arbcard.sel .arbtick{display:flex}
+  .arbpet:not(.on) .arbmarco{filter:grayscale(.45) opacity(.82)}
+  .arbpaw{position:absolute;right:8px;bottom:8px;display:flex;gap:2px;align-items:flex-end;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+  .arbpaw svg{display:block}.arbpaw .p1{width:26px;height:26px}.arbpaw .p2{width:19px;height:19px;margin-bottom:6px}
+  /* banner del arbol elegido en la pantalla del arbol */
+  .banner-arb{position:relative;width:100%;max-width:330px;margin:0 auto 4px;border-radius:16px;overflow:hidden;
+    box-shadow:0 0 0 2px var(--oroO),0 0 0 4px var(--oroC),0 6px 16px rgba(20,30,25,.32)}
+  .banner-arb img.main{width:100%;display:block;transform-origin:50% 100%;animation:mecer 6.5s ease-in-out infinite}
+  .banner-pet{position:absolute;right:6px;bottom:6px;width:31%;border-radius:9px;overflow:hidden;
+    box-shadow:0 0 0 1.5px var(--oroC),0 3px 9px rgba(0,0,0,.45)}
+  .banner-pet img{width:100%;display:block;transform-origin:50% 100%;animation:mecer 5.4s ease-in-out infinite}
+  .banner-pet .arbpaw{right:4px;bottom:4px}.banner-pet .arbpaw .p1{width:17px;height:17px}.banner-pet .arbpaw .p2{width:12px;height:12px;margin-bottom:4px}
   /* galeria */
   .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .rec{background:rgba(255,253,247,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;
@@ -178,24 +208,19 @@
           <option value="familia">Familia</option>
           <option value="amigos">Amigos</option>
         </select>
-        <label>Tipo de árbol</label>
-        <select id="t-especie">
-          <option value="roble">Roble</option>
-          <option value="olivo">Olivo</option>
-          <option value="sauce">Sauce llorón</option>
-          <option value="cerezo">Cerezo</option>
-          <option value="pino">Pino</option>
-        </select>
-        <button class="btn" onclick="guardarArbol()">Crear árbol</button>
+        <label>Elige el árbol de tu familia</label>
+        <p class="sub" style="margin:-2px 0 6px">Cada árbol representa algo · toca el que sientas más tuyo</p>
+        <div id="sel-arbol" class="arbsel"></div>
+        <button class="btn" onclick="guardarArbol()" style="margin-top:12px">Crear árbol</button>
         <div id="crear-msg" class="msg"></div>
       </div>
     </div>
 
     <!-- ÁRBOL -->
     <div id="v-arbol" class="hide">
-      <div id="arbol-visual" onclick="toggleEspecies()" style="cursor:pointer;display:none"></div>
-      <div id="especies-cap" style="display:none"></div>
-      <div id="especies-panel" class="hide" style="text-align:center;margin-bottom:8px"></div>
+      <div id="arbol-visual" onclick="toggleEspecies()" style="cursor:pointer"></div>
+      <div id="especies-cap" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
+      <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
       <div id="lista"></div>
       <div class="vidrio" style="margin-top:16px">
@@ -328,6 +353,7 @@ const BUCKET = "media";
 const LIMITE_MB = 45;
 
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
+let especieElegida = "olivo", mascotaOn = false;
 
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
@@ -381,14 +407,17 @@ async function entrarAlArbol(){
   ver("v-carga");
   const { data,error }=await sb.from("arboles").select("*").order("creado").limit(1);
   if(error){ ver("v-auth"); msg("auth-msg","Error al leer tus datos: "+error.message); return; }
-  if(data&&data.length){ arbolActual=data[0]; mostrarArbol(); } else ver("v-crear");
+  if(data&&data.length){ arbolActual=data[0]; mostrarArbol(); } else { montarCrear(); ver("v-crear"); }
+}
+function montarCrear(){
+  especieElegida="olivo"; mascotaOn=false;
+  const c=document.getElementById("sel-arbol"); if(c) c.innerHTML=tarjetasArbol("crear");
 }
 async function guardarArbol(){
   limpiar("crear-msg");
   const nombre=document.getElementById("t-nombre").value.trim(), tipo=document.getElementById("t-tipo").value;
   if(!nombre){ msg("crear-msg","Ponle un nombre al árbol."); return; }
-  const especie=document.getElementById("t-especie").value;
-  const { data,error }=await sb.from("arboles").insert({dueno:usuario.id,nombre,tipo,especie}).select().single();
+  const { data,error }=await sb.from("arboles").insert({dueno:usuario.id,nombre,tipo,especie:especieElegida,mascota:mascotaOn}).select().single();
   if(error){ msg("crear-msg","No se pudo crear: "+error.message); return; }
   arbolActual=data; mostrarArbol();
 }
@@ -440,62 +469,65 @@ async function anadirMiembro(){
   await cargarMiembros();
 }
 
-/* ====== ÁRBOL VISUAL ====== */
-const ESPECIES=[{k:"roble",n:"Roble"},{k:"olivo",n:"Olivo"},{k:"sauce",n:"Sauce llorón"},{k:"cerezo",n:"Cerezo"},{k:"pino",n:"Pino"}];
-function arbolSVG(esp){
-  const trunk='<path d="M95 152 Q92 120 97 98 L103 98 Q108 120 105 152 Z" fill="#7a5236"/>';
-  if(esp==="pino"){
-    return '<svg class="arbolito" viewBox="0 0 200 160">'+trunk+
-      '<g class="copa"><polygon points="100,22 72,74 128,74" fill="#3f6b52"/>'+
-      '<polygon points="100,48 66,104 134,104" fill="#4f7d61"/>'+
-      '<polygon points="100,76 60,132 140,132" fill="#37604a"/></g></svg>';
-  }
-  if(esp==="sauce"){
-    let fr="",N=17;
-    for(let i=0;i<N;i++){
-      const x=58+i*(84/(N-1)), spread=(x-100)*0.55, len=64+Math.abs(Math.sin(i*1.1))*30;
-      fr+='<path d="M'+x.toFixed(1)+' 62 q '+(spread*0.35).toFixed(1)+' '+(len*0.55).toFixed(1)+' '+spread.toFixed(1)+' '+len.toFixed(1)+'" stroke="'+(i%2?"#7aa583":"#6a9a77")+'" stroke-width="1.7" fill="none" stroke-linecap="round"/>';
-    }
-    return '<svg class="arbolito" viewBox="0 0 200 170">'+trunk+
-      '<g class="fronda">'+fr+'</g>'+
-      '<g class="copa"><ellipse cx="100" cy="50" rx="50" ry="26" fill="#5c8a6d"/>'+
-      '<ellipse cx="74" cy="50" rx="26" ry="17" fill="#6aa17d"/><ellipse cx="126" cy="50" rx="26" ry="17" fill="#4f7d61"/>'+
-      '<ellipse cx="100" cy="40" rx="32" ry="18" fill="#6aa17d"/></g></svg>';
-  }
-  let c1="#4f7d61",c2="#3f6b52",c3="#5c8a6d";
-  if(esp==="olivo"){ c1="#9db38f"; c2="#86a079"; c3="#aec2a1"; }
-  if(esp==="cerezo"){ c1="#6aa17d"; c2="#5b8f6e"; c3="#7fb190"; }
-  let extra="";
-  if(esp==="cerezo"){
-    const pts=[[70,55],[95,42],[120,52],[82,72],[110,70],[100,50],[128,64],[64,70],[90,86]];
-    extra=pts.map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4.5" fill="#f6bcd3"/>').join("");
-  }
-  return '<svg class="arbolito" viewBox="0 0 200 160">'+trunk+
-    '<g class="copa">'+
-    '<circle cx="72" cy="74" r="33" fill="'+c2+'"/>'+
-    '<circle cx="128" cy="74" r="33" fill="'+c1+'"/>'+
-    '<circle cx="100" cy="52" r="37" fill="'+c3+'"/>'+
-    '<circle cx="100" cy="84" r="39" fill="'+c2+'"/>'+
-    '<circle cx="82" cy="62" r="24" fill="'+c1+'"/>'+
-    '<circle cx="120" cy="60" r="22" fill="'+c3+'"/>'+
-    extra+'</g></svg>';
+/* ====== ÁRBOL VISUAL (imágenes reales) ====== */
+const ARB=[
+  {k:"olivo", n:"Olivo",  s:"La paz y las raíces que perduran",         img:"diseno/arboles/olivo.png"},
+  {k:"roble", n:"Roble",  s:"La fuerza y la protección",                img:"diseno/arboles/roble_sol.png"},
+  {k:"cerezo",n:"Cerezo", s:"La belleza de la vida y volver a florecer",img:"diseno/arboles/cerezo.png"},
+  {k:"sauce", n:"Sauce",  s:"El consuelo y la serenidad",               img:"diseno/arboles/sauce.png"},
+  {k:"pino",  n:"Pino",   s:"Lo que siempre permanece, la eternidad",   img:"diseno/arboles/pino.png"}
+];
+function arbInfo(k){ return ARB.find(a=>a.k===k)||ARB[0]; }
+function pawHTML(sfx){
+  const paw='<ellipse cx="28" cy="30" rx="10" ry="13"/><ellipse cx="50" cy="22" rx="10" ry="14"/><ellipse cx="72" cy="30" rx="10" ry="13"/><ellipse cx="86" cy="52" rx="9" ry="11"/><path d="M50 44c16 0 27 14 27 27 0 12-11 16-27 16S23 83 23 71c0-13 11-27 27-27z"/>';
+  const grad='<defs><linearGradient id="oa'+sfx+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".5" stop-color="#ffcc1f"/><stop offset="1" stop-color="#d19a0c"/></linearGradient></defs>';
+  const g='<g fill="url(#oa'+sfx+')" stroke="#7a5a12" stroke-width="4">'+paw+'</g>';
+  return '<div class="arbpaw"><svg class="p2" viewBox="0 0 100 100">'+grad+g+'</svg>'+
+         '<svg class="p1" viewBox="0 0 100 100">'+g+'</svg></div>';
+}
+function tarjetasArbol(modo){
+  const fn = modo==="crear" ? "elegirEspecie" : "cambiarEspecie";
+  let h="";
+  ARB.forEach(a=>{
+    h+='<div class="arbcard'+(a.k===especieElegida?" sel":"")+'" onclick="'+fn+'(\''+a.k+'\')">'
+      +'<div class="arbmarco"><img src="'+a.img+'"><div class="arbtick">✓</div></div>'
+      +'<div class="arbnom">'+a.n+'</div><div class="arbsig">'+a.s+'</div></div>';
+  });
+  const petimg=arbInfo(especieElegida).img;
+  h+='<div class="arbcard arbpet'+(mascotaOn?" on":"")+'" onclick="toggleMascota()">'
+    +'<div class="arbmarco"><img src="'+petimg+'">'+pawHTML(modo)+'</div>'
+    +'<div class="arbnom">Nuestras mascotas</div>'
+    +'<div class="arbsig">'+(mascotaOn?"Añadido ✓ · toca para quitar":"Toca para añadir su arbolito")+'</div></div>';
+  return h;
+}
+function elegirEspecie(k){
+  especieElegida=k;
+  const c=document.getElementById("sel-arbol"); if(c) c.innerHTML=tarjetasArbol("crear");
+}
+async function toggleMascota(){
+  mascotaOn=!mascotaOn;
+  if(arbolActual){ await sb.from("arboles").update({mascota:mascotaOn}).eq("id",arbolActual.id); arbolActual.mascota=mascotaOn; pintarArbol(); }
+  const c=document.getElementById("sel-arbol"); if(c) c.innerHTML=tarjetasArbol("crear");
+  const p=document.getElementById("especies-panel"); if(p&&!p.classList.contains("hide")) p.innerHTML='<div class="arbsel">'+tarjetasArbol("cambiar")+'</div>';
 }
 function pintarArbol(){
-  const esp=(arbolActual&&arbolActual.especie)||"roble";
-  document.getElementById("arbol-visual").innerHTML=arbolSVG(esp);
-  const nom=(ESPECIES.find(e=>e.k===esp)||{}).n||"Árbol";
-  document.getElementById("especies-cap").textContent="🌳 "+nom+" · toca para cambiar";
+  const esp=(arbolActual&&arbolActual.especie)||"olivo";
+  especieElegida=esp; mascotaOn=!!(arbolActual&&arbolActual.mascota);
+  const a=arbInfo(esp);
+  const pet=mascotaOn?'<div class="banner-pet"><img src="'+a.img+'">'+pawHTML("b")+'</div>':'';
+  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+pet+'</div>';
+  document.getElementById("especies-cap").innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>";
 }
 function toggleEspecies(){
   const p=document.getElementById("especies-panel");
-  if(p.classList.contains("hide")){
-    p.innerHTML=ESPECIES.map(e=>'<button class="chip-esp" onclick="cambiarEspecie(\''+e.k+'\')">'+e.n+'</button>').join("");
-    p.classList.remove("hide");
-  } else p.classList.add("hide");
+  if(p.classList.contains("hide")){ p.innerHTML='<div class="arbsel">'+tarjetasArbol("cambiar")+'</div>'; p.classList.remove("hide"); }
+  else p.classList.add("hide");
 }
 async function cambiarEspecie(k){
+  especieElegida=k;
   if(arbolActual){ await sb.from("arboles").update({especie:k}).eq("id",arbolActual.id); arbolActual.especie=k; }
-  pintarArbol(); document.getElementById("especies-panel").classList.add("hide");
+  pintarArbol();
+  const p=document.getElementById("especies-panel"); if(p&&!p.classList.contains("hide")) p.innerHTML='<div class="arbsel">'+tarjetasArbol("cambiar")+'</div>';
 }
 
 /* ====== FICHA ====== */
