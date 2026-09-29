@@ -26,6 +26,10 @@ h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:4px}
  background:var(--oroC);color:#fff;display:none;align-items:center;justify-content:center;font-size:15px;
  box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .card.sel .tick{display:flex}
+.card.pet{background:linear-gradient(160deg,#fdf6e3,#f3ead0)}
+.card.pet .marco{filter:saturate(.85)}
+.paw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:46px;
+ background:rgba(20,30,15,.28);border-radius:12px}
 .mascota{max-width:760px;margin:22px auto 0;background:var(--crema);border-radius:16px;padding:14px 16px;
  box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3.5px var(--oroC),0 0 0 5px var(--oroO);display:flex;align-items:center;gap:14px}
 .mascota .mini{width:64px;height:64px;border-radius:10px;overflow:hidden;flex:0 0 auto;box-shadow:0 0 0 1.5px var(--oroC)}
@@ -41,7 +45,7 @@ h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:4px}
 <div class="grid">
   <div class="card sel"><div class="marco"><img src="arboles/olivo.png"><div class="tick">✓</div></div>
     <div class="nom">Olivo</div><div class="sig">La paz y las raíces que perduran</div></div>
-  <div class="card"><div class="marco"><img src="arboles/roble.png"><div class="tick">✓</div></div>
+  <div class="card"><div class="marco"><img src="arboles/roble_sol.png"><div class="tick">✓</div></div>
     <div class="nom">Roble</div><div class="sig">La fuerza y la protección</div></div>
   <div class="card"><div class="marco"><img src="arboles/cerezo.png"><div class="tick">✓</div></div>
     <div class="nom">Cerezo</div><div class="sig">La belleza de la vida y volver a florecer</div></div>
@@ -49,12 +53,7 @@ h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:4px}
     <div class="nom">Sauce</div><div class="sig">El consuelo y la serenidad</div></div>
   <div class="card"><div class="marco"><img src="arboles/pino.png"><div class="tick">✓</div></div>
     <div class="nom">Pino</div><div class="sig">Lo que siempre permanece, la eternidad</div></div>
-  <div class="card"><div class="marco"><img src="arboles/roble_sol.png"><div class="tick">✓</div></div>
-    <div class="nom">Roble dorado</div><div class="sig">El calor del hogar al atardecer</div></div>
-</div>
-<div class="mascota">
-  <div class="mini"><img src="arboles/olivo.png"></div>
-  <div class="txt"><b>Añadir árbol de las mascotas</b><p>El mismo árbol, pequeñito, a la derecha — para nuestros animales queridos</p></div>
-  <div class="sw"></div>
+  <div class="card pet"><div class="marco"><img src="arboles/olivo.png"><div class="paw">🐾</div></div>
+    <div class="nom">Nuestras mascotas</div><div class="sig">Toca para añadir su arbolito al lado</div></div>
 </div>
 </body></html>
