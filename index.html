@@ -543,7 +543,8 @@ function pintarPlacas(){
   if(!arr||!arr.length) return;
   const lvl=nivelMiembros();
   const byL={}; arr.forEach(m=>{ (byL[lvl[m.id]]=byL[lvl[m.id]]||[]).push(m); });
-  const niveles=Object.keys(byL).map(Number).sort((a,b)=>a-b), nL=niveles.length;
+  const todos=Object.keys(byL).map(Number).sort((a,b)=>a-b);
+  const niveles=todos.slice(0,3), nL=niveles.length;   // arbol principal = 3 generaciones (abuelos/hijos/nietos)
   const maxN=Math.max.apply(null,niveles.map(L=>byL[L].length));
   let sz=52; if(maxN>4) sz=Math.max(26, Math.round(52-(maxN-4)*4.5));
   const foto=Math.round(sz*0.57);
@@ -892,7 +893,9 @@ async function borrar(id,ruta){
 
 document.getElementById("pass").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
 arranque();
-if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+/* Quitar cualquier service worker viejo y limpiar cachés para que no se quede pegada una versión antigua */
+if("serviceWorker" in navigator){ navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{}); }
+if(window.caches){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{}); }
 </script>
 </body>
 </html>
