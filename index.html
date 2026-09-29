@@ -272,7 +272,15 @@
         <label>Nombre</label>
         <input id="m-nombre" placeholder="Ej. Abuela Rosa">
         <div class="fila">
-          <div><label>Relación</label><input id="m-rel" placeholder="abuela, tío…"></div>
+          <div><label>Hijo/a de… (padre)</label><select id="m-padre"></select></div>
+          <div><label>…y de (madre)</label><select id="m-madre"></select></div>
+        </div>
+        <div class="fila">
+          <div><label>Pareja de… (opcional)</label><select id="m-pareja"></select></div>
+          <div><label>¿Pareja o expareja?</label><select id="m-tipopareja"><option value="pareja">Pareja</option><option value="ex">Expareja</option></select></div>
+        </div>
+        <div class="fila">
+          <div><label>Apellidos (opcional)</label><input id="m-apellidos" placeholder="Rodríguez Barbero"></div>
           <div><label>Tipo</label>
             <select id="m-clase">
               <option value="persona">Persona</option>
@@ -280,14 +288,6 @@
               <option value="amigo">Amigo</option>
             </select>
           </div>
-        </div>
-        <div class="fila">
-          <div><label>Hijo/a de… (padre)</label><select id="m-padre"></select></div>
-          <div><label>…y de (madre)</label><select id="m-madre"></select></div>
-        </div>
-        <div class="fila">
-          <div><label>Pareja de… (opcional)</label><select id="m-pareja"></select></div>
-          <div><label>Apellidos (opcional)</label><input id="m-apellidos" placeholder="Rodríguez Barbero"></div>
         </div>
         <div class="fila">
           <div><label>Nacimiento (opcional)</label><input id="m-nac" placeholder="1938"></div>
@@ -352,18 +352,18 @@
         <label>Nombre</label>
         <input id="e-nombre">
         <div class="fila">
-          <div><label>Relación</label><input id="e-rel"></div>
-          <div><label>Tipo</label>
-            <select id="e-clase"><option value="persona">Persona</option><option value="mascota">Mascota</option><option value="amigo">Amigo</option></select>
-          </div>
-        </div>
-        <div class="fila">
           <div><label>Hijo/a de… (padre)</label><select id="e-padre"></select></div>
           <div><label>…y de (madre)</label><select id="e-madre"></select></div>
         </div>
         <div class="fila">
           <div><label>Pareja de… (opcional)</label><select id="e-pareja"></select></div>
+          <div><label>¿Pareja o expareja?</label><select id="e-tipopareja"><option value="pareja">Pareja</option><option value="ex">Expareja</option></select></div>
+        </div>
+        <div class="fila">
           <div><label>Apellidos (opcional)</label><input id="e-apellidos" placeholder="Rodríguez Barbero"></div>
+          <div><label>Tipo</label>
+            <select id="e-clase"><option value="persona">Persona</option><option value="mascota">Mascota</option><option value="amigo">Amigo</option></select>
+          </div>
         </div>
         <div class="fila">
           <div><label>Nacimiento</label><input id="e-nac" placeholder="1938"></div>
@@ -528,9 +528,11 @@ function nivelMiembros(){
     if(seen.has(m.id)) return 0;
     seen.add(m.id);
     const p=m.padre_id&&M[m.padre_id], q=m.madre_id&&M[m.madre_id];
-    if(!p&&!q){ lvl[m.id]=0; return 0; }
-    let L=0; if(p) L=Math.max(L,lof(p,seen)+1); if(q) L=Math.max(L,lof(q,seen)+1);
-    lvl[m.id]=L; return L;
+    if(p||q){ let L=0; if(p) L=Math.max(L,lof(p,new Set(seen))+1); if(q) L=Math.max(L,lof(q,new Set(seen))+1); lvl[m.id]=L; return L; }
+    // sin padres: si su pareja tiene padres, se coloca en la misma generación que la pareja
+    const par=m.pareja_id&&M[m.pareja_id];
+    if(par && (par.padre_id||par.madre_id)){ const L=lof(par,new Set(seen)); lvl[m.id]=L; return L; }
+    lvl[m.id]=0; return 0;
   }
   arr.forEach(m=>lof(m,new Set()));
   return lvl;
@@ -550,9 +552,15 @@ function pintarPlacas(){
   const foto=Math.round(sz*0.57);
   const ov=document.createElement("div"); ov.className="placas";
   const yTop=25, yBot=63;
+  const M=window._miembros||{};
   const idealGap=(sz+8)/3.9;
   niveles.forEach((L,li)=>{
-    const row=byL[L], n=row.length;
+    // ordenar la fila para que cada pareja quede junta
+    const orig=byL[L], usado=new Set(), row=[];
+    orig.forEach(m=>{ if(usado.has(m.id)) return; row.push(m); usado.add(m.id);
+      const par=m.pareja_id&&M[m.pareja_id];
+      if(par && lvl[par.id]===L && !usado.has(par.id)){ row.push(par); usado.add(par.id); } });
+    const n=row.length;
     const y = nL<=1 ? 33 : yTop+(yBot-yTop)*li/(nL-1);
     const gap = n>1 ? Math.min(idealGap, 84/(n-1)) : 0;
     const rowW=(n-1)*gap, x0=50-rowW/2;
@@ -572,7 +580,6 @@ function pintarPlacas(){
 async function anadirMiembro(){
   limpiar("add-msg");
   const nombre=document.getElementById("m-nombre").value.trim(),
-        rel=document.getElementById("m-rel").value.trim(),
         clase=document.getElementById("m-clase").value,
         nac=document.getElementById("m-nac").value.trim(),
         fall=document.getElementById("m-fall").value.trim();
@@ -580,13 +587,15 @@ async function anadirMiembro(){
   const padre=document.getElementById("m-padre").value||null,
         madre=document.getElementById("m-madre").value||null,
         pareja=document.getElementById("m-pareja").value||null,
+        ex=document.getElementById("m-tipopareja").value==="ex",
         apellidos=document.getElementById("m-apellidos").value.trim()||null;
-  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,relacion:rel,clase,
-        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,apellidos}).select().single();
+  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase,
+        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:ex,apellidos}).select().single();
   if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
-  if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id}).eq("id",pareja);
-  ["m-nombre","m-rel","m-nac","m-fall","m-apellidos"].forEach(id=>document.getElementById(id).value="");
+  if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:ex}).eq("id",pareja);
+  ["m-nombre","m-nac","m-fall","m-apellidos"].forEach(id=>document.getElementById(id).value="");
   ["m-padre","m-madre","m-pareja"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("m-tipopareja").value="pareja";
   msg("add-msg","Guardado ✔","ok"); setTimeout(()=>limpiar("add-msg"),1500);
   await cargarMiembros();
 }
@@ -663,7 +672,7 @@ function abrirFicha(id){
   const m=miembroActual;
   pintarFotoFicha(m);
   document.getElementById("f-nom").textContent = m.nombre;
-  document.getElementById("f-rel").textContent = m.relacion||m.clase;
+  document.getElementById("f-rel").textContent = (m.clase&&m.clase!=="persona") ? (m.clase==="mascota"?"🐾 Mascota":"Amigo/a") : (m.apellidos||"");
   const hEl=document.getElementById("f-historia");
   const h=(m.historia||"").trim();
   hEl.textContent = h || "Aún no has escrito su historia. Toca «Editar su historia» y cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…";
@@ -707,12 +716,12 @@ async function fotoPerfilElegida(){
 function abrirEditar(){
   if(!miembroActual) return; const m=miembroActual;
   document.getElementById("e-nombre").value=m.nombre||"";
-  document.getElementById("e-rel").value=m.relacion||"";
   document.getElementById("e-clase").value=m.clase||"persona";
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
   document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-historia").value=m.historia||"";
+  document.getElementById("e-tipopareja").value=m.expareja?"ex":"pareja";
   pintaSelect("e-padre",m.padre_id,m.id);
   pintaSelect("e-madre",m.madre_id,m.id);
   pintaSelect("e-pareja",m.pareja_id,m.id);
@@ -724,19 +733,19 @@ async function guardarEdicion(){
   const nombre=document.getElementById("e-nombre").value.trim();
   if(!nombre){ msg("edit-msg","El nombre no puede estar vacío."); return; }
   const pareja=document.getElementById("e-pareja").value||null;
+  const ex=document.getElementById("e-tipopareja").value==="ex";
   const cambios={ nombre,
-    relacion:document.getElementById("e-rel").value.trim(),
     clase:document.getElementById("e-clase").value,
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
     apellidos:document.getElementById("e-apellidos").value.trim()||null,
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
-    pareja_id:pareja,
+    pareja_id:pareja, expareja:ex,
     historia:document.getElementById("e-historia").value.trim()||null };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
-  if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id}).eq("id",pareja);
+  if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:ex}).eq("id",pareja);
   const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
 }
 async function borrarMiembro(){
@@ -760,9 +769,10 @@ function _caraTree(m){
   return m.clase==="mascota" ? "🐾" : inicial(m.nombre);
 }
 function _persTree(m){
+  const sub=(m.clase&&m.clase!=="persona")?(m.clase==="mascota"?"mascota":"amigo/a"):"";
   return '<div class="pnode" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
     +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
-    +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+escapar(m.relacion||m.clase||"")+'</div></div>';
+    +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
 function esquemaHTML(rootId){
   const M=window._miembros||{}; const arr=Object.values(M); const hecho=new Set();
@@ -777,8 +787,9 @@ function esquemaHTML(rootId){
     const par = (m.pareja_id && M[m.pareja_id]) ? M[m.pareja_id] : null;
     if(par) hecho.add(par.id);
     const ids=[m.id]; if(par) ids.push(par.id);
+    const sim = (m.expareja||par&&par.expareja) ? '💔' : '♥';
     const cab = par
-      ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">♥</span>'+_persTree(par)+'</div>'
+      ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+sim+'</span>'+_persTree(par)+'</div>'
       : '<div class="node">'+_persTree(m)+'</div>';
     const hijos=hijosDe(ids);
     const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h)+'</li>').join("")+'</ul>' : "";
