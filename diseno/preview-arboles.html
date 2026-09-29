@@ -1,0 +1,60 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--oroC:#b8860b;--oroO:#e8c874;--verde:#2f5233;--crema:#fbf7ec}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,'Times New Roman',serif;background:linear-gradient(160deg,#eef3e8,#e5efe0);color:#2b3a2b;padding:22px 16px 40px}
+h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:4px}
+.sub{text-align:center;font-size:13px;color:#5a6b57;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:760px;margin:0 auto}
+.card{background:var(--crema);border-radius:16px;padding:12px 12px 14px;text-align:center;
+ box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3.5px var(--oroC),0 0 0 5px var(--oroO),0 8px 22px rgba(0,0,0,.15);
+ cursor:pointer;transition:transform .2s}
+.card.sel{transform:translateY(-3px);box-shadow:0 0 0 2px var(--oroO),0 0 0 5px var(--oroC),0 0 0 7px var(--oroO),0 12px 26px rgba(0,0,0,.22)}
+.marco{border-radius:12px;overflow:hidden;position:relative;background:#dfe7d8;aspect-ratio:1/1}
+.marco img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 100%;
+ animation:mecer 5.5s ease-in-out infinite}
+.card:nth-child(2) img{animation-duration:6.2s}
+.card:nth-child(3) img{animation-duration:5s}
+.card:nth-child(4) img{animation-duration:6.6s}
+.card:nth-child(5) img{animation-duration:5.8s}
+.card:nth-child(6) img{animation-duration:6.9s}
+@keyframes mecer{0%,100%{transform:rotate(-0.6deg) scale(1.015)}50%{transform:rotate(0.6deg) scale(1.015)}}
+.nom{font-size:17px;color:var(--verde);font-weight:bold;margin:9px 0 2px}
+.sig{font-size:12.5px;color:#6a5a2a;font-style:italic;line-height:1.35;padding:0 4px}
+.tick{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;
+ background:var(--oroC);color:#fff;display:none;align-items:center;justify-content:center;font-size:15px;
+ box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.card.sel .tick{display:flex}
+.mascota{max-width:760px;margin:22px auto 0;background:var(--crema);border-radius:16px;padding:14px 16px;
+ box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3.5px var(--oroC),0 0 0 5px var(--oroO);display:flex;align-items:center;gap:14px}
+.mascota .mini{width:64px;height:64px;border-radius:10px;overflow:hidden;flex:0 0 auto;box-shadow:0 0 0 1.5px var(--oroC)}
+.mascota .mini img{width:100%;height:100%;object-fit:cover}
+.mascota .txt{flex:1;text-align:left}
+.mascota .txt b{color:var(--verde);font-size:15px}
+.mascota .txt p{font-size:12.5px;color:#5a6b57;margin-top:3px}
+.sw{width:52px;height:30px;border-radius:20px;background:var(--oroC);position:relative;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:#fff}
+</style></head><body>
+<h1>Elige el árbol de tu familia</h1>
+<div class="sub">Cada árbol representa algo · toca el que sientas más tuyo</div>
+<div class="grid">
+  <div class="card sel"><div class="marco"><img src="arboles/olivo.png"><div class="tick">✓</div></div>
+    <div class="nom">Olivo</div><div class="sig">La paz y las raíces que perduran</div></div>
+  <div class="card"><div class="marco"><img src="arboles/roble.png"><div class="tick">✓</div></div>
+    <div class="nom">Roble</div><div class="sig">La fuerza y la protección</div></div>
+  <div class="card"><div class="marco"><img src="arboles/cerezo.png"><div class="tick">✓</div></div>
+    <div class="nom">Cerezo</div><div class="sig">La belleza de la vida y volver a florecer</div></div>
+  <div class="card"><div class="marco"><img src="arboles/sauce.png"><div class="tick">✓</div></div>
+    <div class="nom">Sauce</div><div class="sig">El consuelo y la serenidad</div></div>
+  <div class="card"><div class="marco"><img src="arboles/pino.png"><div class="tick">✓</div></div>
+    <div class="nom">Pino</div><div class="sig">Lo que siempre permanece, la eternidad</div></div>
+  <div class="card"><div class="marco"><img src="arboles/roble_sol.png"><div class="tick">✓</div></div>
+    <div class="nom">Roble dorado</div><div class="sig">El calor del hogar al atardecer</div></div>
+</div>
+<div class="mascota">
+  <div class="mini"><img src="arboles/olivo.png"></div>
+  <div class="txt"><b>Añadir árbol de las mascotas</b><p>El mismo árbol, pequeñito, a la derecha — para nuestros animales queridos</p></div>
+  <div class="sw"></div>
+</div>
+</body></html>
