@@ -28,10 +28,11 @@ h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:4px}
 .card.sel .tick{display:flex}
 .card.pet{background:linear-gradient(160deg,#fdf6e3,#f3ead0)}
 .paw{position:absolute;right:10px;bottom:10px;display:flex;gap:2px;align-items:flex-end;
- filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+ filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
 .paw svg{display:block}
-.paw .p1{width:26px;height:26px}
-.paw .p2{width:19px;height:19px;margin-bottom:6px}
+.paw .p1{width:30px;height:30px}
+.paw .p2{width:22px;height:22px;margin-bottom:7px}
+.paw svg path,.paw svg ellipse{stroke:#7a5a12;stroke-width:4}
 .mascota{max-width:760px;margin:22px auto 0;background:var(--crema);border-radius:16px;padding:14px 16px;
  box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3.5px var(--oroC),0 0 0 5px var(--oroO);display:flex;align-items:center;gap:14px}
 .mascota .mini{width:64px;height:64px;border-radius:10px;overflow:hidden;flex:0 0 auto;box-shadow:0 0 0 1.5px var(--oroC)}
@@ -56,8 +57,8 @@ h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:4px}
   <div class="card"><div class="marco"><img src="arboles/pino.png"><div class="tick">✓</div></div>
     <div class="nom">Pino</div><div class="sig">Lo que siempre permanece, la eternidad</div></div>
   <div class="card pet"><div class="marco"><img src="arboles/olivo.png"><div class="paw">
-    <svg class="p2" viewBox="0 0 100 100" fill="#e8c874"><ellipse cx="28" cy="30" rx="10" ry="13"/><ellipse cx="50" cy="22" rx="10" ry="14"/><ellipse cx="72" cy="30" rx="10" ry="13"/><ellipse cx="86" cy="52" rx="9" ry="11"/><path d="M50 44c16 0 27 14 27 27 0 12-11 16-27 16S23 83 23 71c0-13 11-27 27-27z"/></svg>
-    <svg class="p1" viewBox="0 0 100 100" fill="#f0d488"><ellipse cx="28" cy="30" rx="10" ry="13"/><ellipse cx="50" cy="22" rx="10" ry="14"/><ellipse cx="72" cy="30" rx="10" ry="13"/><ellipse cx="86" cy="52" rx="9" ry="11"/><path d="M50 44c16 0 27 14 27 27 0 12-11 16-27 16S23 83 23 71c0-13 11-27 27-27z"/></svg>
+    <svg class="p2" viewBox="0 0 100 100"><defs><linearGradient id="oro2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe98a"/><stop offset=".5" stop-color="#f5c518"/><stop offset="1" stop-color="#c8920a"/></linearGradient></defs><g fill="url(#oro2)"><ellipse cx="28" cy="30" rx="10" ry="13"/><ellipse cx="50" cy="22" rx="10" ry="14"/><ellipse cx="72" cy="30" rx="10" ry="13"/><ellipse cx="86" cy="52" rx="9" ry="11"/><path d="M50 44c16 0 27 14 27 27 0 12-11 16-27 16S23 83 23 71c0-13 11-27 27-27z"/></g></svg>
+    <svg class="p1" viewBox="0 0 100 100"><defs><linearGradient id="oro1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".5" stop-color="#ffcc1f"/><stop offset="1" stop-color="#d19a0c"/></linearGradient></defs><g fill="url(#oro1)"><ellipse cx="28" cy="30" rx="10" ry="13"/><ellipse cx="50" cy="22" rx="10" ry="14"/><ellipse cx="72" cy="30" rx="10" ry="13"/><ellipse cx="86" cy="52" rx="9" ry="11"/><path d="M50 44c16 0 27 14 27 27 0 12-11 16-27 16S23 83 23 71c0-13 11-27 27-27z"/></g></svg>
   </div></div>
     <div class="nom">Nuestras mascotas</div><div class="sig">Toca para añadir su arbolito al lado</div></div>
 </div>
