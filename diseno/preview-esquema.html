@@ -1,66 +1,72 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root{--oroC:#b8860b;--oroO:#e8c874;--verde:#2f5340;--tinta:#4a3b22}
+:root{--oroC:#b8860b;--oroO:#e8c874;--verde:#2f5340;--tinta:#4a3b22;--linea:#6b4f2a}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:Georgia,'Times New Roman',serif;color:var(--tinta);background:#c9b389}
-.scroll{min-height:100vh;
- border-style:solid;border-width:58px 15px 58px 15px;
- border-image:url('papiro.png') 100 26 100 26 fill stretch;
- padding:8px 16px 14px}
-.top{text-align:center;margin:2px 0 12px}
-.top .rama{font-size:12px;letter-spacing:2px;color:#8a6d2a;text-transform:uppercase}
-.top h1{font-size:19px;color:var(--verde);margin-top:2px}
-.card{display:inline-flex;align-items:center;gap:8px;background:rgba(251,244,223,.80);border-radius:12px;padding:6px 12px 6px 6px;
- box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 3px 8px rgba(60,40,10,.22)}
-.av{width:36px;height:36px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
- color:#fff;font-weight:bold;font-size:15px;box-shadow:0 0 0 2px var(--oroC)}
-.nm{font-size:14px;color:var(--tinta);font-weight:bold;line-height:1.1}
-.rel{font-size:11px;color:#8a7340;font-style:italic}
-.expand{margin-left:4px;font-size:14px;color:var(--oroC);font-weight:bold}
-.badge{margin-left:2px;background:var(--verde);color:#fff;border-radius:10px;font-size:11px;padding:1px 7px}
-.pareja{display:flex;justify-content:center;gap:10px;align-items:center}
-.mas{font-size:20px;color:#a15a6a}
-.linea-v{width:3px;height:18px;background:var(--oroC);margin:0 auto;border-radius:2px}
-.hijos{display:flex;flex-direction:column;gap:10px;margin-top:4px;
- border-left:3px solid var(--oroC);margin-left:22px;padding-left:16px;position:relative}
-.hijo-row{position:relative}
-.hijo-row::before{content:"";position:absolute;left:-16px;top:23px;width:16px;height:3px;background:var(--oroC)}
-.nietos{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px;
- border-left:2px dashed #c9a94e;margin-left:20px;padding-left:14px}
-.nietos .card{padding:4px 10px 4px 5px}
-.nietos .av{width:29px;height:29px;font-size:12px}
-.nietos .nm{font-size:12.5px}
-.hint{text-align:center;font-size:11px;color:#8a7340;margin-top:14px;font-style:italic}
+.scroll{min-height:100vh;border-style:solid;border-width:56px 14px 56px 14px;
+ border-image:url('papiro.png') 100 26 100 26 fill stretch;padding:6px 6px 12px}
+.top{text-align:center;margin:2px 0 6px}
+.top .rama{font-size:11px;letter-spacing:2px;color:#8a6d2a;text-transform:uppercase}
+.top h1{font-size:20px;color:var(--verde);margin-top:2px}
+/* corona + avatar (igual que la app) */
+.lauro{position:relative;flex-shrink:0;width:58px;height:62px;display:inline-block}
+.lauro .lau{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%}
+.lauro .foto{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:33px;height:33px;border-radius:50%;overflow:hidden;
+ display:flex;align-items:center;justify-content:center;color:#fff;font-family:Georgia,serif;font-weight:700;font-size:14px;box-shadow:0 0 0 1.5px var(--oroO)}
+.pn{font-size:12.5px;font-weight:700;color:var(--tinta);margin-top:1px;line-height:1.05}
+.pr{font-size:10.5px;color:#8a7340;font-style:italic}
+/* arbol de arriba-abajo */
+.tree{overflow-x:auto;padding:8px 2px 10px;text-align:center}
+.tree ul{display:flex;justify-content:center;padding-top:18px;position:relative}
+.tree li{list-style:none;position:relative;padding:18px 6px 0;text-align:center}
+.tree li::before,.tree li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:18px;border-top:2px solid var(--linea)}
+.tree li::after{right:auto;left:50%;border-left:2px solid var(--linea)}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:first-child::before,.tree li:last-child::after{border:0}
+.tree li:last-child::before{border-right:2px solid var(--linea);border-radius:0 7px 0 0}
+.tree li:first-child::after{border-radius:7px 0 0 0}
+.tree ul ul::before{content:"";position:absolute;top:0;left:50%;width:2px;height:18px;background:var(--linea)}
+.node{display:inline-block;vertical-align:top}
+.pareja{display:inline-flex;gap:2px;align-items:flex-start;position:relative}
+.pareja .corazon{align-self:center;color:#a15a6a;font-size:14px;margin-top:-14px}
+.uno{display:inline-block}
+.hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style></head><body>
 <div class="scroll">
+  <div class="top"><div class="rama">Rama de la familia</div><h1>Familia Rodríguez Barbero</h1></div>
 
-  <div class="top"><div class="rama">Rama de la familia</div><h1>Abuelos Pío y Pía</h1></div>
-
-  <div class="pareja">
-    <div class="card"><div class="av" style="background:#5c8a6d">P</div><div><div class="nm">Pío</div><div class="rel">abuelo</div></div></div>
-    <span class="mas">♥</span>
-    <div class="card"><div class="av" style="background:#b06a8a">P</div><div><div class="nm">Pía</div><div class="rel">abuela</div></div></div>
+  <div class="tree">
+    <ul>
+      <li>
+        <div class="node pareja">
+          <div class="uno"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#5c8a6d">D</div></div><div class="pn">Daniel</div><div class="pr">abuelo</div></div>
+          <span class="corazon">♥</span>
+          <div class="uno"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#b06a8a">L</div></div><div class="pn">Lorna</div><div class="pr">abuela</div></div>
+        </div>
+        <ul>
+          <li>
+            <div class="node"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#3f6b52">S</div></div><div class="pn">Sebastián</div><div class="pr">hijo</div></div>
+            <ul>
+              <li><div class="node"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#c98a3a">S</div></div><div class="pn">Sofía</div><div class="pr">nieta</div></div></li>
+              <li><div class="node"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#6a86b0">A</div></div><div class="pn">Alfredo</div><div class="pr">nieto</div></div></li>
+            </ul>
+          </li>
+          <li>
+            <div class="node"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#8a6db0">K</div></div><div class="pn">Korina</div><div class="pr">hija</div></div>
+            <ul>
+              <li><div class="node"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#4f7d61">A</div></div><div class="pn">Aarón</div><div class="pr">nieto</div></div></li>
+            </ul>
+          </li>
+          <li>
+            <div class="node"><div class="lauro"><img class="lau" src="../corona.png"><div class="foto" style="background:#b0763a">M</div></div><div class="pn">Miguel</div><div class="pr">hijo</div></div>
+          </li>
+        </ul>
+      </li>
+    </ul>
   </div>
-  <div class="linea-v"></div>
 
-  <div class="hijos">
-    <div class="hijo-row">
-      <div class="card"><div class="av" style="background:#3f6b52">P</div><div><div class="nm">Pepe</div><div class="rel">hijo</div></div><span class="expand">▾</span></div>
-      <div class="nietos">
-        <div class="card"><div class="av" style="background:#c98a3a">L</div><div><div class="nm">Lucía</div><div class="rel">nieta</div></div></div>
-        <div class="card"><div class="av" style="background:#6a86b0">M</div><div><div class="nm">Mateo</div><div class="rel">nieto</div></div></div>
-        <div class="card"><div class="av" style="background:#8a6db0">S</div><div><div class="nm">Sara</div><div class="rel">nieta</div></div></div>
-      </div>
-    </div>
-    <div class="hijo-row"><div class="card"><div class="av" style="background:#5c8a6d">J</div><div><div class="nm">Juan</div><div class="rel">hijo</div></div><span class="badge">4</span><span class="expand">▸</span></div></div>
-    <div class="hijo-row"><div class="card"><div class="av" style="background:#b06a8a">M</div><div><div class="nm">María</div><div class="rel">hija</div></div><span class="badge">5</span><span class="expand">▸</span></div></div>
-    <div class="hijo-row"><div class="card"><div class="av" style="background:#3f6b52">A</div><div><div class="nm">Antonio</div><div class="rel">hijo</div></div><span class="badge">3</span><span class="expand">▸</span></div></div>
-    <div class="hijo-row"><div class="card" style="opacity:.92"><div class="av" style="background:#9a8a6a">+6</div><div><div class="nm">y 6 hijos más</div><div class="rel">toca para ver</div></div><span class="expand">▸</span></div></div>
-  </div>
-
-  <div class="hint">Toca ▸ en cada hijo para desplegar sus nietos · toca una persona para abrir su ficha</div>
-
+  <div class="hint">Desliza para ver toda la rama · toca una persona para abrir su ficha</div>
 </div>
 </body></html>
