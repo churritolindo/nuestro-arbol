@@ -316,7 +316,8 @@
       <div class="vidrio">
         <h2>Su historia</h2>
         <p id="f-historia" class="historia-txt">—</p>
-        <button class="btn sec" onclick="abrirEditar()">✍️ Editar su historia</button>
+        <div id="f-nicho" class="fechas" style="display:none;margin-top:6px"></div>
+        <button class="btn sec" onclick="abrirHistoria()">✍️ Editar su historia</button>
       </div>
 
       <div class="vidrio">
@@ -369,12 +370,26 @@
           <div><label>Nacimiento</label><input type="date" id="e-nac"></div>
           <div><label>Fallecimiento</label><input type="date" id="e-fall"></div>
         </div>
-        <label>Su historia (biografía)</label>
-        <textarea id="e-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…"></textarea>
         <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
         <div id="edit-msg" class="msg"></div>
       </div>
       <button class="link" style="color:#ffd7c2" onclick="borrarMiembro()">🗑️ Borrar este familiar</button>
+    </div>
+
+    <!-- SU HISTORIA (biografía + lugar + nicho) -->
+    <div id="v-historia" class="hide">
+      <button class="btn sec" style="margin-top:4px" onclick="cerrarHistoria()">‹ Volver</button>
+      <div class="vidrio" style="margin-top:12px">
+        <h2 id="hist-titulo">Su historia</h2>
+        <label>¿Dónde nació? (ciudad, pueblo…)</label>
+        <input id="h-lugar" placeholder="Ej. Jaén">
+        <label>Su historia (biografía)</label>
+        <textarea id="h-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, hermanos, anécdotas…"></textarea>
+        <label id="h-nicho-lbl">¿Dónde descansa? (nicho / lugar) — si ha fallecido</label>
+        <input id="h-nicho" placeholder="Ej. Cementerio de San José, nicho 124">
+        <button class="btn" onclick="guardarHistoria()">Guardar su historia</button>
+        <div id="hist-msg" class="msg"></div>
+      </div>
     </div>
 
     <!-- ÁRBOL GENEALÓGICO (esquema, papiro a pantalla completa) -->
@@ -429,7 +444,7 @@ let especieElegida = "olivo", mascotaOn = false;
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-ayuda"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-ayuda"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
@@ -726,9 +741,12 @@ function abrirFicha(id){
   document.getElementById("f-nom").textContent = m.nombre;
   document.getElementById("f-rel").textContent = (m.clase&&m.clase!=="persona") ? (m.clase==="mascota"?"🐾 Mascota":"Amigo/a") : (m.apellidos||"");
   const hEl=document.getElementById("f-historia");
-  const h=(m.historia||"").trim();
-  hEl.textContent = h || "Aún no has escrito su historia. Toca «Editar su historia» y cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…";
-  hEl.style.opacity = h?"1":".6";
+  const h=(m.historia||"").trim(), lug=(m.lugar_nac||"").trim();
+  const cuerpo=(lug?("📍 Nació en "+lug+"\n\n"):"")+h;
+  hEl.textContent = cuerpo.trim() || "Aún no has escrito su historia. Toca «Editar su historia» y cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…";
+  hEl.style.opacity = (h||lug)?"1":".6";
+  const nichoEl=document.getElementById("f-nicho"), nic=(m.nicho||"").trim();
+  if(nic){ nichoEl.textContent="⚰️ Descansa en: "+nic; nichoEl.style.display="inline-flex"; } else nichoEl.style.display="none";
   // fechas + fondo según vivo/fallecido
   const fEl=document.getElementById("f-fechas");
   const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim();
@@ -772,7 +790,6 @@ function abrirEditar(){
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
   document.getElementById("e-apellidos").value=m.apellidos||"";
-  document.getElementById("e-historia").value=m.historia||"";
   document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
   pintaSelect("e-padre",m.padre_id,m.id);
   pintaSelect("e-madre",m.madre_id,m.id);
@@ -780,6 +797,27 @@ function abrirEditar(){
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
 }
 function cancelarEditar(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
+function abrirHistoria(){
+  if(!miembroActual) return; const m=miembroActual;
+  document.getElementById("hist-titulo").textContent="La historia de "+(m.nombre||"");
+  document.getElementById("h-lugar").value=m.lugar_nac||"";
+  document.getElementById("h-historia").value=m.historia||"";
+  document.getElementById("h-nicho").value=m.nicho||"";
+  limpiar("hist-msg"); ver("v-historia"); window.scrollTo(0,0);
+}
+function cerrarHistoria(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
+async function guardarHistoria(){
+  if(!miembroActual) return;
+  const cambios={
+    lugar_nac:document.getElementById("h-lugar").value.trim()||null,
+    historia:document.getElementById("h-historia").value.trim()||null,
+    nicho:document.getElementById("h-nicho").value.trim()||null };
+  const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
+  if(error){ msg("hist-msg","No se pudo guardar: "+error.message); return; }
+  Object.assign(miembroActual,cambios);
+  if(window._miembros[miembroActual.id]) Object.assign(window._miembros[miembroActual.id],cambios);
+  msg("hist-msg","Guardado ✔","ok"); setTimeout(()=>abrirFicha(miembroActual.id),700);
+}
 async function guardarEdicion(){
   limpiar("edit-msg");
   const nombre=document.getElementById("e-nombre").value.trim();
@@ -793,8 +831,7 @@ async function guardarEdicion(){
     apellidos:document.getElementById("e-apellidos").value.trim()||null,
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
-    pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP,
-    historia:document.getElementById("e-historia").value.trim()||null };
+    pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
   if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
