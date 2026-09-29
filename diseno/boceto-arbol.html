@@ -1,0 +1,60 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--oroC:#b8860b;--oroO:#e8c874;--tinta:#4a3b22}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#c9b389;padding:10px}
+.banner-arb{position:relative;width:100%;max-width:430px;margin:0 auto;border-radius:16px;overflow:hidden;
+ box-shadow:0 0 0 2px var(--oroO),0 0 0 4px var(--oroC),0 6px 16px rgba(20,30,25,.32)}
+.banner-arb img.main{width:100%;display:block}
+.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.nodo{position:absolute;transform:translate(-50%,-50%);text-align:center}
+.nodo .lauro{position:relative;width:34px;height:36px;margin:0 auto;filter:drop-shadow(0 2px 3px rgba(40,25,5,.5))}
+.nodo .lauro img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%}
+.nodo .foto{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:19px;height:19px;border-radius:50%;
+ display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e6d09a,#c9a24b);
+ color:#7a5410;font-family:Georgia,serif;font-weight:700;font-size:9px;box-shadow:0 0 0 1px var(--oroO)}
+.nodo .nm{font-size:8.5px;font-weight:700;color:#3a2c12;font-family:Georgia,serif;margin-top:0;
+ text-shadow:0 1px 2px rgba(255,250,235,.9),0 0 3px rgba(255,250,235,.8);line-height:1;white-space:nowrap}
+.cor{position:absolute;transform:translate(-50%,-50%);font-size:11px}
+</style></head><body>
+<div class="banner-arb">
+  <img class="main" src="arboles/olivo.png">
+  <svg class="lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <g stroke="#6b4f2a" stroke-width="0.5" fill="none" opacity="0.85">
+      <!-- abuelos a bus hermanos -->
+      <path d="M50 20 V31 M16 31 H84"/>
+      <path d="M16 31 V37 M84 31 V37 M39 31 V40 M66 31 V40"/>
+      <!-- hijos de Pili+Ivan -->
+      <path d="M39 46 V54 M33 54 H45 M33 54 V60 M45 54 V60"/>
+      <!-- hijos de Fernando+Ana -->
+      <path d="M66 46 V54 M60 54 H72 M60 54 V60 M72 54 V60"/>
+    </g>
+  </svg>
+
+  <!-- abuelos -->
+  <span class="cor" style="left:50%;top:18%">❤</span>
+  <div class="nodo" style="left:43%;top:18%"><div class="lauro"><img src="../corona.png"><div class="foto">E</div></div><div class="nm">Estrella</div></div>
+  <div class="nodo" style="left:57%;top:18%"><div class="lauro"><img src="../corona.png"><div class="foto">P</div></div><div class="nm">Pepe</div></div>
+
+  <!-- hijos solteros -->
+  <div class="nodo" style="left:16%;top:37%"><div class="lauro"><img src="../corona.png"><div class="foto">J</div></div><div class="nm">José</div></div>
+  <div class="nodo" style="left:84%;top:37%"><div class="lauro"><img src="../corona.png"><div class="foto">L</div></div><div class="nm">Luis</div></div>
+
+  <!-- Pili + Ivan (expareja) -->
+  <span class="cor" style="left:39%;top:42%">💔</span>
+  <div class="nodo" style="left:33%;top:42%"><div class="lauro"><img src="../corona.png"><div class="foto">P</div></div><div class="nm">Pili</div></div>
+  <div class="nodo" style="left:45%;top:42%"><div class="lauro"><img src="../corona.png"><div class="foto">I</div></div><div class="nm">Iván</div></div>
+
+  <!-- Fernando + Ana (pareja) -->
+  <span class="cor" style="left:66%;top:42%">❤</span>
+  <div class="nodo" style="left:60%;top:42%"><div class="lauro"><img src="../corona.png"><div class="foto">F</div></div><div class="nm">Fernando</div></div>
+  <div class="nodo" style="left:72%;top:42%"><div class="lauro"><img src="../corona.png"><div class="foto">A</div></div><div class="nm">Ana</div></div>
+
+  <!-- nietos -->
+  <div class="nodo" style="left:33%;top:61%"><div class="lauro"><img src="../corona.png"><div class="foto">L</div></div><div class="nm">León</div></div>
+  <div class="nodo" style="left:45%;top:61%"><div class="lauro"><img src="../corona.png"><div class="foto">A</div></div><div class="nm">Abril</div></div>
+  <div class="nodo" style="left:60%;top:61%"><div class="lauro"><img src="../corona.png"><div class="foto">A</div></div><div class="nm">Anita</div></div>
+  <div class="nodo" style="left:72%;top:61%"><div class="lauro"><img src="../corona.png"><div class="foto">S</div></div><div class="nm">Sandra</div></div>
+</div>
+</body></html>
