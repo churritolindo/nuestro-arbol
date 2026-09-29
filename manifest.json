@@ -1,0 +1,16 @@
+{
+  "name": "Nuestro Árbol",
+  "short_name": "Nuestro Árbol",
+  "description": "El árbol de tu familia: fotos, vídeos, audios y recuerdos, para siempre.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4efdf",
+  "theme_color": "#2f5340",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

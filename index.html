@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Nuestro Árbol</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f5340">
+<link rel="apple-touch-icon" href="icons/apple-touch.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nuestro Árbol">
 <style>
   :root{--tinta:#2c4034;--verde:#3f6b52;--verde2:#2f5340;--suave:#6f6249;--texto:#33291f;
     --oro:#c9a24b;--oroC:#e6c86e;--oroO:#a9822f;--error:#b23b3b;--ok:#2f6b46;--linea:#e7dcc6}
@@ -705,6 +711,7 @@ async function borrar(id,ruta){
 
 document.getElementById("pass").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
 arranque();
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
 </html>
