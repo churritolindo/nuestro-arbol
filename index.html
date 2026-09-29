@@ -519,9 +519,21 @@ async function cargarMiembros(){
   window._arr=data;
   ["m-padre","m-madre","m-pareja"].forEach(id=>pintaSelect(id,"",null));
   pintarPlacas();
-  lista.innerHTML = data.length>7
-    ? '<div style="text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);font-size:12.5px">y '+(data.length-7)+' familiares más · míralos en 📜 Árbol genealógico</div>'
-    : '';
+  lista.innerHTML="";
+}
+function nivelMiembros(){
+  const M=window._miembros||{}, arr=window._arr||[], lvl={};
+  function lof(m,seen){
+    if(lvl[m.id]!=null) return lvl[m.id];
+    if(seen.has(m.id)) return 0;
+    seen.add(m.id);
+    const p=m.padre_id&&M[m.padre_id], q=m.madre_id&&M[m.madre_id];
+    if(!p&&!q){ lvl[m.id]=0; return 0; }
+    let L=0; if(p) L=Math.max(L,lof(p,seen)+1); if(q) L=Math.max(L,lof(q,seen)+1);
+    lvl[m.id]=L; return L;
+  }
+  arr.forEach(m=>lof(m,new Set()));
+  return lvl;
 }
 function pintarPlacas(){
   const arr=window._arr;
@@ -529,19 +541,31 @@ function pintarPlacas(){
   if(!banner) return;
   const vieja=banner.querySelector(".placas"); if(vieja) vieja.remove();
   if(!arr||!arr.length) return;
-  const POS=[[18,29],[40,29],[61,29],[83,29],[32,45],[70,45],[51,65]];
+  const lvl=nivelMiembros();
+  const byL={}; arr.forEach(m=>{ (byL[lvl[m.id]]=byL[lvl[m.id]]||[]).push(m); });
+  const niveles=Object.keys(byL).map(Number).sort((a,b)=>a-b), nL=niveles.length;
+  const maxN=Math.max.apply(null,niveles.map(L=>byL[L].length));
+  let sz=52; if(maxN>4) sz=Math.max(26, Math.round(52-(maxN-4)*4.5));
+  const foto=Math.round(sz*0.57);
   const ov=document.createElement("div"); ov.className="placas";
-  const n=Math.min(arr.length,7);
-  for(let i=0;i<n;i++){
-    const m=arr[i];
-    const b=document.createElement("button");
-    b.className="placa"; b.style.left=POS[i][0]+"%"; b.style.top=POS[i][1]+"%";
-    b.title=m.nombre;
-    const cara = m._url ? '<img src="'+m._url+'">' : inicial(m.nombre);
-    b.innerHTML='<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+cara+'</div></div>';
-    b.onclick=(e)=>{ e.stopPropagation(); abrirFicha(m.id); };
-    ov.appendChild(b);
-  }
+  const yTop=25, yBot=63;
+  const idealGap=(sz+8)/3.9;
+  niveles.forEach((L,li)=>{
+    const row=byL[L], n=row.length;
+    const y = nL<=1 ? 33 : yTop+(yBot-yTop)*li/(nL-1);
+    const gap = n>1 ? Math.min(idealGap, 84/(n-1)) : 0;
+    const rowW=(n-1)*gap, x0=50-rowW/2;
+    row.forEach((m,i)=>{
+      const x = n<=1 ? 50 : x0+i*gap;
+      const b=document.createElement("button");
+      b.className="placa"; b.style.left=x+"%"; b.style.top=y+"%"; b.title=m.nombre;
+      const cara = m._url ? '<img src="'+m._url+'">' : inicial(m.nombre);
+      b.innerHTML='<div class="lauro" style="width:'+sz+'px;height:'+Math.round(sz*1.06)+'px">'
+        +'<img class="lau" src="corona.png"><div class="foto" style="width:'+foto+'px;height:'+foto+'px">'+cara+'</div></div>';
+      b.onclick=(e)=>{ e.stopPropagation(); abrirFicha(m.id); };
+      ov.appendChild(b);
+    });
+  });
   banner.appendChild(ov);
 }
 async function anadirMiembro(){
