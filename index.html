@@ -83,6 +83,8 @@
   .perfil .rel{font-size:13.5px;color:var(--suave);font-style:italic;margin:3px 0 10px}
   .fechas{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#6b5c40;background:rgba(243,234,210,.9);
     padding:6px 15px;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--oro)}
+  .edit-badge{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.55);border:1px solid var(--oroC);
+    border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;z-index:4;box-shadow:0 1px 5px rgba(0,0,0,.25)}
   .cam-badge{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:linear-gradient(135deg,#4a7a5e,#2f5340);
     color:#fff;border:2px solid #fff;border-radius:20px;font-size:13px;padding:2px 12px;cursor:pointer;line-height:1.5;
     box-shadow:0 0 0 1px var(--oroO),0 2px 6px rgba(0,0,0,.3);z-index:3}
@@ -203,6 +205,7 @@
     <!-- FICHA -->
     <div id="v-ficha" class="hide">
       <div class="vidrio perfil">
+        <button class="edit-badge" onclick="abrirEditar()">✏️</button>
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
         <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
@@ -235,6 +238,29 @@
       <div class="setiq">Recuerdos</div>
       <div id="galeria" class="galeria"></div>
       <div id="galeria-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay recuerdos.<br>Añade el primero arriba. 👆</div>
+    </div>
+
+    <!-- EDITAR -->
+    <div id="v-editar" class="hide">
+      <button class="btn sec" style="margin-top:4px" onclick="cancelarEditar()">‹ Volver</button>
+      <div class="vidrio" style="margin-top:12px">
+        <h2>Editar familiar</h2>
+        <label>Nombre</label>
+        <input id="e-nombre">
+        <div class="fila">
+          <div><label>Relación</label><input id="e-rel"></div>
+          <div><label>Tipo</label>
+            <select id="e-clase"><option value="persona">Persona</option><option value="mascota">Mascota</option><option value="amigo">Amigo</option></select>
+          </div>
+        </div>
+        <div class="fila">
+          <div><label>Nacimiento</label><input id="e-nac" placeholder="1938"></div>
+          <div><label>Fallecimiento</label><input id="e-fall" placeholder="—"></div>
+        </div>
+        <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
+        <div id="edit-msg" class="msg"></div>
+      </div>
+      <button class="link" style="color:#ffd7c2" onclick="borrarMiembro()">🗑️ Borrar este familiar</button>
     </div>
 
     <!-- AYUDA -->
@@ -278,7 +304,7 @@ let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-ayuda"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-ayuda"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
@@ -426,6 +452,36 @@ async function fotoPerfilElegida(){
   miembroActual.foto=ruta; if(window._miembros[miembroActual.id]) window._miembros[miembroActual.id].foto=ruta;
   await pintarFotoFicha(miembroActual);
   msg("rec-msg","¡Foto de perfil guardada! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
+}
+function abrirEditar(){
+  if(!miembroActual) return; const m=miembroActual;
+  document.getElementById("e-nombre").value=m.nombre||"";
+  document.getElementById("e-rel").value=m.relacion||"";
+  document.getElementById("e-clase").value=m.clase||"persona";
+  document.getElementById("e-nac").value=m.nacimiento||"";
+  document.getElementById("e-fall").value=m.fallecimiento||"";
+  limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
+}
+function cancelarEditar(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
+async function guardarEdicion(){
+  limpiar("edit-msg");
+  const nombre=document.getElementById("e-nombre").value.trim();
+  if(!nombre){ msg("edit-msg","El nombre no puede estar vacío."); return; }
+  const cambios={ nombre,
+    relacion:document.getElementById("e-rel").value.trim(),
+    clase:document.getElementById("e-clase").value,
+    nacimiento:document.getElementById("e-nac").value.trim()||null,
+    fallecimiento:document.getElementById("e-fall").value.trim()||null };
+  const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
+  if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
+  const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
+}
+async function borrarMiembro(){
+  if(!miembroActual) return;
+  if(!confirm("¿Borrar a "+miembroActual.nombre+" y todos sus recuerdos? No se puede deshacer.")) return;
+  const { error }=await sb.from("miembros").delete().eq("id",miembroActual.id);
+  if(error){ msg("edit-msg","No se pudo borrar: "+error.message); return; }
+  miembroActual=null; await cargarMiembros(); fondo("bgL"); ver("v-arbol");
 }
 function volverArbol(){ miembroActual=null; fondo("bgL"); ver("v-arbol"); }
 
