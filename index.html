@@ -111,12 +111,22 @@
   .rec.audio audio{width:100%;margin-top:4px}
   .rec .borrar{position:absolute;top:7px;right:7px;background:rgba(30,20,10,.6);color:#fff;border:none;
     width:24px;height:24px;border-radius:50%;font-size:14px;cursor:pointer;line-height:1;z-index:2}
+  .ayuda-btn{position:absolute;right:13px;top:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);
+    border:1px solid var(--oroC);color:#fff;font-size:18px;font-weight:700;cursor:pointer;backdrop-filter:blur(3px);z-index:2}
+  .faq details{border-bottom:1px solid rgba(120,95,45,.18);padding:11px 2px}
+  .faq details:last-child{border-bottom:none}
+  .faq summary{font-weight:700;color:var(--tinta);cursor:pointer;font-size:14.5px;list-style:none;font-family:Georgia,serif}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary:before{content:"＋";color:var(--oro);font-weight:700;margin-right:8px}
+  .faq details[open] summary:before{content:"–"}
+  .faq p{font-size:13.5px;color:var(--texto);line-height:1.55;margin:8px 0 2px;padding-left:20px}
 </style>
 </head>
 <body>
 <div class="app bgV" id="app">
   <header>
     <button class="back hide" id="btn-back" onclick="volverArbol()">‹</button>
+    <button class="ayuda-btn hide" id="btn-ayuda" onclick="abrirAyuda()">?</button>
     <div class="emblema">🌳</div>
     <div class="mini">Nuestro Árbol</div>
     <div class="fam serif" id="arbol-nombre">Nuestro Árbol</div>
@@ -223,6 +233,30 @@
       <div id="galeria-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay recuerdos.<br>Añade el primero arriba. 👆</div>
     </div>
 
+    <!-- AYUDA -->
+    <div id="v-ayuda" class="hide">
+      <button class="btn sec" style="margin-top:4px" onclick="cerrarAyuda()">‹ Volver</button>
+      <div class="setiq">¿Necesitas ayuda?</div>
+      <div class="vidrio faq">
+        <details><summary>¿Cómo subo una foto, vídeo, audio o texto?</summary>
+          <p>Toca a la persona en la lista para abrir su ficha. Pulsa 📷 Foto, 🎬 Vídeo, 🎤 Audio o ✍️ Texto, elige el archivo (o escribe el texto) y se guarda solo en la nube.</p></details>
+        <details><summary>No me aparece el icono en el móvil o veo la versión antigua</summary>
+          <p>Borra el icono viejo de la pantalla de inicio, abre la web en Chrome, recárgala (desliza hacia abajo) y vuelve a "Añadir a pantalla de inicio". Así coge la última versión.</p></details>
+        <details><summary>Subí una foto pero no la veo</summary>
+          <p>Recarga la página. Si sigue sin aparecer, revisa tu conexión a internet y prueba de nuevo en unos segundos.</p></details>
+        <details><summary>¿Cómo entro desde otro móvil u ordenador?</summary>
+          <p>Con el mismo correo y la misma contraseña. Todos tus datos están en la nube y se ven igual en cualquier dispositivo.</p></details>
+        <details><summary>¿Qué es gratis y qué se paga?</summary>
+          <p>Subir y guardar tus fotos, vídeos, audios y textos es gratis. Solo se paga "fabricar" cosas especiales (restaurar o colorear fotos, etc.) y ampliar la memoria si necesitas más espacio.</p></details>
+        <details><summary>¿Cómo marco que alguien ha fallecido?</summary>
+          <p>Al añadir a la persona, rellena la fecha de "Fallecimiento". Su ficha cambiará sola al fondo del atardecer, como homenaje.</p></details>
+        <details><summary>¿Se pueden perder mis datos?</summary>
+          <p>No. Están guardados de forma segura en la nube y son tuyos. Más adelante podrás descargarlos a tu ordenador cuando quieras.</p></details>
+        <details><summary>Tengo otra duda o me da un error</summary>
+          <p>Muy pronto podrás preguntar aquí mismo a nuestro asistente y te ayudará al instante con cualquier duda (funcionamiento, errores o costes). De momento, esta sección irá creciendo.</p></details>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -238,12 +272,16 @@ const LIMITE_MB = 45;
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
 
 /* ====== UTILIDADES ====== */
+let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-ayuda"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
+  document.getElementById("btn-ayuda").classList.toggle("hide", id==="v-ayuda"||id==="v-carga");
 }
+function abrirAyuda(){ const vs=["v-auth","v-crear","v-arbol","v-ficha"]; vistaPrevia=vs.find(v=>!document.getElementById(v).classList.contains("hide"))||"v-arbol"; ver("v-ayuda"); window.scrollTo(0,0); }
+function cerrarAyuda(){ ver(vistaPrevia); window.scrollTo(0,0); }
 function fondo(cls){ const a=document.getElementById("app"); a.classList.remove("bgV","bgA","bgL"); a.classList.add(cls); }
 function msg(id,t,tipo){ const e=document.getElementById(id); e.textContent=t; e.className="msg "+(tipo||"err"); }
 function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
