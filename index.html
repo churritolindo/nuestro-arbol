@@ -15,7 +15,8 @@
   .app{width:100%;max-width:460px;min-height:100vh;position:relative;overflow:hidden;background:#cdd8d4;
     display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,0,.12)}
   .app.bgV{background:url(fondo_vivos.jpg) center/cover no-repeat,#cdd8d4}
-  .app.bgA{background:url(fondo_atardecer.jpg) center/cover no-repeat,#cdd8d4}
+  .app.bgL{background:url(fondo_lista.jpg) center/cover no-repeat,#cdd8d4}
+  .app.bgA{background:url(fondo_fall.jpg) center/cover no-repeat,#cdd8d4}
   .app:before{content:"";position:absolute;inset:0;pointer-events:none;
     background:linear-gradient(180deg,rgba(12,22,18,.34) 0%,rgba(255,255,255,0) 15%,rgba(255,255,255,0) 100%)}
   header{position:relative;text-align:center;padding:20px 20px 12px;z-index:1}
@@ -243,7 +244,7 @@ function ver(id){
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
 }
-function fondo(cls){ const a=document.getElementById("app"); a.classList.remove("bgV","bgA"); a.classList.add(cls); }
+function fondo(cls){ const a=document.getElementById("app"); a.classList.remove("bgV","bgA","bgL"); a.classList.add(cls); }
 function msg(id,t,tipo){ const e=document.getElementById(id); e.textContent=t; e.className="msg "+(tipo||"err"); }
 function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
 function escapar(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -295,7 +296,7 @@ async function guardarArbol(){
   arbolActual=data; mostrarArbol();
 }
 async function mostrarArbol(){
-  fondo("bgV"); ver("v-arbol");
+  fondo("bgL"); ver("v-arbol");
   document.getElementById("arbol-nombre").textContent=arbolActual.nombre;
   document.getElementById("arbol-tipo").textContent=arbolActual.tipo;
   document.getElementById("subhead").textContent =
@@ -354,7 +355,7 @@ function abrirFicha(id){
   window.scrollTo(0,0);
   cargarRecuerdos();
 }
-function volverArbol(){ miembroActual=null; fondo("bgV"); ver("v-arbol"); }
+function volverArbol(){ miembroActual=null; fondo("bgL"); ver("v-arbol"); }
 
 function elegir(tipo){
   tipoElegido=tipo;
