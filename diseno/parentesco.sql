@@ -9,3 +9,4 @@ alter table miembros add column if not exists madre_id  uuid;
 alter table miembros add column if not exists pareja_id uuid;
 alter table miembros add column if not exists apellidos text;
 alter table miembros add column if not exists expareja boolean default false;
+alter table miembros add column if not exists tipo_pareja text default 'pareja';  -- casados / pareja / novios / ex

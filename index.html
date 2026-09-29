@@ -277,7 +277,7 @@
         </div>
         <div class="fila">
           <div><label>Pareja de… (opcional)</label><select id="m-pareja"></select></div>
-          <div><label>¿Pareja o expareja?</label><select id="m-tipopareja"><option value="pareja">Pareja</option><option value="ex">Expareja</option></select></div>
+          <div><label>¿Qué relación?</label><select id="m-tipopareja"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select></div>
         </div>
         <div class="fila">
           <div><label>Apellidos (opcional)</label><input id="m-apellidos" placeholder="Rodríguez Barbero"></div>
@@ -357,7 +357,7 @@
         </div>
         <div class="fila">
           <div><label>Pareja de… (opcional)</label><select id="e-pareja"></select></div>
-          <div><label>¿Pareja o expareja?</label><select id="e-tipopareja"><option value="pareja">Pareja</option><option value="ex">Expareja</option></select></div>
+          <div><label>¿Qué relación?</label><select id="e-tipopareja"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select></div>
         </div>
         <div class="fila">
           <div><label>Apellidos (opcional)</label><input id="e-apellidos" placeholder="Rodríguez Barbero"></div>
@@ -537,44 +537,95 @@ function nivelMiembros(){
   arr.forEach(m=>lof(m,new Set()));
   return lvl;
 }
+function _parejasDe(m){ const arr=window._arr||[]; return arr.filter(p=>p.id!==m.id && (p.pareja_id===m.id||m.pareja_id===p.id)); }
+function _simboloRel(tipo){
+  if(tipo==='novios') return '❤️<span style="color:#ff5fa2">💗</span>';
+  if(tipo==='ex') return '💔';
+  if(tipo==='casados') return '❤️';
+  return '<span style="color:#ff5fa2">💗</span>';
+}
 function pintarPlacas(){
-  const arr=window._arr;
+  const arr=window._arr, M=window._miembros||{};
   const banner=document.querySelector("#arbol-visual .banner-arb");
   if(!banner) return;
   const vieja=banner.querySelector(".placas"); if(vieja) vieja.remove();
   if(!arr||!arr.length) return;
-  const lvl=nivelMiembros();
-  const byL={}; arr.forEach(m=>{ (byL[lvl[m.id]]=byL[lvl[m.id]]||[]).push(m); });
-  const todos=Object.keys(byL).map(Number).sort((a,b)=>a-b);
-  const niveles=todos.slice(0,3), nL=niveles.length;   // arbol principal = 3 generaciones (abuelos/hijos/nietos)
-  const maxN=Math.max.apply(null,niveles.map(L=>byL[L].length));
-  let sz=52; if(maxN>4) sz=Math.max(26, Math.round(52-(maxN-4)*4.5));
-  const foto=Math.round(sz*0.57);
+  const hijosDe=ids=>{ const s=new Set(),o=[]; arr.forEach(c=>{ if((ids.includes(c.padre_id)||ids.includes(c.madre_id))&&!s.has(c.id)){s.add(c.id);o.push(c);} }); return o; };
+  let leaf=0; const pos={}, unidades=[], vis=new Set();
+  function layout(m, depth){
+    if(vis.has(m.id)) return null;
+    vis.add(m.id);
+    const parejas=_parejasDe(m).filter(p=>!vis.has(p.id));
+    parejas.forEach(p=>vis.add(p.id));
+    const ids=[m.id,...parejas.map(p=>p.id)];
+    const kids = depth>=2 ? [] : hijosDe(ids).filter(c=>!vis.has(c.id));
+    const childXs=[];
+    kids.forEach(c=>{ const r=layout(c,depth+1); if(r!=null) childXs.push(r); });
+    const grupo=[ ...parejas.filter(p=>p.tipo_pareja==='ex'), {__a:m}, ...parejas.filter(p=>p.tipo_pareja!=='ex') ];
+    let cx;
+    if(childXs.length){ cx=(Math.min.apply(null,childXs)+Math.max.apply(null,childXs))/2; }
+    else { cx=leaf+(grupo.length-1)/2; leaf+=grupo.length; }
+    const start=cx-(grupo.length-1)/2, drop=(parejas.length>0||kids.length>0);
+    grupo.forEach((g,i)=>{ const per=g.__a||g; pos[per.id]={sx:start+i, depth, drop}; });
+    unidades.push({cx, depth, kids});
+    return cx;
+  }
+  const esRaiz=m=>{ if(m.padre_id||m.madre_id) return false; return !_parejasDe(m).some(p=>p.padre_id||p.madre_id); };
+  arr.filter(esRaiz).forEach(r=>{ if(!vis.has(r.id)) layout(r,0); });
+  arr.forEach(m=>{ if(!vis.has(m.id)) layout(m,0); });
+
+  const ids=Object.keys(pos); if(!ids.length) return;
+  const sxs=ids.map(id=>pos[id].sx), minSx=Math.min.apply(null,sxs), maxSx=Math.max.apply(null,sxs), span=maxSx-minSx;
+  const maxDepth=Math.max.apply(null,ids.map(id=>pos[id].depth));
+  const X=sx=> span>0 ? 13+(sx-minSx)/span*74 : 50;
+  const yStep = maxDepth>0 ? 44/maxDepth : 0;
+  const Y=(d,drop)=> 15 + d*yStep + (drop?4:0);
+  let sz=50; if(span>4) sz=Math.max(24, Math.round(50-(span-4)*3));
+  const foto=Math.round(sz*0.57), rC=(sz/380*100)*0.55;
+
   const ov=document.createElement("div"); ov.className="placas";
-  const yTop=25, yBot=63;
-  const M=window._miembros||{};
-  const idealGap=(sz+8)/3.9;
-  niveles.forEach((L,li)=>{
-    // ordenar la fila para que cada pareja quede junta
-    const orig=byL[L], usado=new Set(), row=[];
-    orig.forEach(m=>{ if(usado.has(m.id)) return; row.push(m); usado.add(m.id);
-      const par=m.pareja_id&&M[m.pareja_id];
-      if(par && lvl[par.id]===L && !usado.has(par.id)){ row.push(par); usado.add(par.id); } });
-    const n=row.length;
-    const y = nL<=1 ? 33 : yTop+(yBot-yTop)*li/(nL-1);
-    const gap = n>1 ? Math.min(idealGap, 84/(n-1)) : 0;
-    const rowW=(n-1)*gap, x0=50-rowW/2;
-    row.forEach((m,i)=>{
-      const x = n<=1 ? 50 : x0+i*gap;
-      const b=document.createElement("button");
-      b.className="placa"; b.style.left=x+"%"; b.style.top=y+"%"; b.title=m.nombre;
-      const cara = m._url ? '<img src="'+m._url+'">' : inicial(m.nombre);
-      b.innerHTML='<div class="lauro" style="width:'+sz+'px;height:'+Math.round(sz*1.06)+'px">'
-        +'<img class="lau" src="corona.png"><div class="foto" style="width:'+foto+'px;height:'+foto+'px">'+cara+'</div></div>';
-      b.onclick=(e)=>{ e.stopPropagation(); abrirFicha(m.id); };
-      ov.appendChild(b);
+
+  // líneas de parentesco
+  let paths="";
+  unidades.forEach(u=>{
+    if(!u.kids.length) return;
+    const px=X(u.cx), py=Y(u.depth,true)+rC;
+    const cxs=u.kids.map(k=>X(pos[k.id].sx));
+    const cyTop=Y(u.depth+1, pos[u.kids[0].id].drop)-rC;
+    const busY=(py+cyTop)/2;
+    paths+='<path d="M'+px.toFixed(1)+' '+py.toFixed(1)+' V'+busY.toFixed(1)+'"/>';
+    paths+='<path d="M'+Math.min.apply(null,cxs).toFixed(1)+' '+busY.toFixed(1)+' H'+Math.max.apply(null,cxs).toFixed(1)+'"/>';
+    u.kids.forEach(k=>{ const kx=X(pos[k.id].sx), ky=Y(u.depth+1,pos[k.id].drop)-rC; paths+='<path d="M'+kx.toFixed(1)+' '+busY.toFixed(1)+' V'+ky.toFixed(1)+'"/>'; });
+  });
+  ov.innerHTML='<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><g stroke="#5a4326" stroke-width="0.5" fill="none" opacity="0.8">'+paths+'</g></svg>';
+
+  // coronas
+  ids.forEach(id=>{
+    const m=M[id]; if(!m) return; const p=pos[id];
+    const b=document.createElement("button");
+    b.className="placa"; b.style.left=X(p.sx)+"%"; b.style.top=Y(p.depth,p.drop)+"%"; b.title=m.nombre;
+    const cara=m._url?'<img src="'+m._url+'">':inicial(m.nombre);
+    b.innerHTML='<div class="lauro" style="width:'+sz+'px;height:'+Math.round(sz*1.06)+'px"><img class="lau" src="corona.png"><div class="foto" style="width:'+foto+'px;height:'+foto+'px">'+cara+'</div></div>';
+    b.onclick=(e)=>{ e.stopPropagation(); abrirFicha(m.id); };
+    ov.appendChild(b);
+  });
+
+  // símbolos de relación entre parejas adyacentes
+  const done=new Set();
+  arr.forEach(m=>{
+    if(!pos[m.id]) return;
+    _parejasDe(m).forEach(par=>{
+      if(!pos[par.id] || pos[m.id].depth!==pos[par.id].depth) return;
+      const key=[m.id,par.id].sort().join('-'); if(done.has(key)) return; done.add(key);
+      const tipo=par.tipo_pareja||m.tipo_pareja||'pareja';
+      const midx=(X(pos[m.id].sx)+X(pos[par.id].sx))/2, y=Y(pos[m.id].depth,pos[m.id].drop);
+      const s=document.createElement("div");
+      s.style.cssText='position:absolute;left:'+midx+'%;top:'+y+'%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;z-index:3;font-size:'+(tipo==='novios'?Math.round(sz*0.3):Math.round(sz*0.36))+'px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))';
+      s.innerHTML=_simboloRel(tipo);
+      ov.appendChild(s);
     });
   });
+
   banner.appendChild(ov);
 }
 async function anadirMiembro(){
@@ -587,12 +638,12 @@ async function anadirMiembro(){
   const padre=document.getElementById("m-padre").value||null,
         madre=document.getElementById("m-madre").value||null,
         pareja=document.getElementById("m-pareja").value||null,
-        ex=document.getElementById("m-tipopareja").value==="ex",
+        tipoP=document.getElementById("m-tipopareja").value,
         apellidos=document.getElementById("m-apellidos").value.trim()||null;
   const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase,
-        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:ex,apellidos}).select().single();
+        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,apellidos}).select().single();
   if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
-  if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:ex}).eq("id",pareja);
+  if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   ["m-nombre","m-nac","m-fall","m-apellidos"].forEach(id=>document.getElementById(id).value="");
   ["m-padre","m-madre","m-pareja"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("m-tipopareja").value="pareja";
@@ -721,7 +772,7 @@ function abrirEditar(){
   document.getElementById("e-fall").value=m.fallecimiento||"";
   document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-historia").value=m.historia||"";
-  document.getElementById("e-tipopareja").value=m.expareja?"ex":"pareja";
+  document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
   pintaSelect("e-padre",m.padre_id,m.id);
   pintaSelect("e-madre",m.madre_id,m.id);
   pintaSelect("e-pareja",m.pareja_id,m.id);
@@ -733,7 +784,7 @@ async function guardarEdicion(){
   const nombre=document.getElementById("e-nombre").value.trim();
   if(!nombre){ msg("edit-msg","El nombre no puede estar vacío."); return; }
   const pareja=document.getElementById("e-pareja").value||null;
-  const ex=document.getElementById("e-tipopareja").value==="ex";
+  const tipoP=document.getElementById("e-tipopareja").value;
   const cambios={ nombre,
     clase:document.getElementById("e-clase").value,
     nacimiento:document.getElementById("e-nac").value.trim()||null,
@@ -741,11 +792,11 @@ async function guardarEdicion(){
     apellidos:document.getElementById("e-apellidos").value.trim()||null,
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
-    pareja_id:pareja, expareja:ex,
+    pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP,
     historia:document.getElementById("e-historia").value.trim()||null };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
-  if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:ex}).eq("id",pareja);
+  if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
 }
 async function borrarMiembro(){
@@ -787,9 +838,9 @@ function esquemaHTML(rootId){
     const par = (m.pareja_id && M[m.pareja_id]) ? M[m.pareja_id] : null;
     if(par) hecho.add(par.id);
     const ids=[m.id]; if(par) ids.push(par.id);
-    const sim = (m.expareja||par&&par.expareja) ? '💔' : '♥';
+    const tipoP=(par&&par.tipo_pareja)||m.tipo_pareja||'pareja';
     const cab = par
-      ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+sim+'</span>'+_persTree(par)+'</div>'
+      ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+_simboloRel(tipoP)+'</span>'+_persTree(par)+'</div>'
       : '<div class="node">'+_persTree(m)+'</div>';
     const hijos=hijosDe(ids);
     const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h)+'</li>').join("")+'</ul>' : "";
