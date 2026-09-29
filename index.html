@@ -5,102 +5,130 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Nuestro Árbol</title>
 <style>
-  :root{
-    --verde:#3f6b52; --verde2:#2f5340; --crema:#faf5ea; --tarjeta:#fffdf8;
-    --texto:#33291f; --suave:#8a7a63; --linea:#e7dcc6; --oro:#c9a24b;
-    --error:#b23b3b; --ok:#3f6b52;
-  }
-  *{box-sizing:border-box}
+  :root{--tinta:#2c4034;--verde:#3f6b52;--verde2:#2f5340;--suave:#6f6249;--texto:#33291f;
+    --oro:#c9a24b;--oroC:#e6c86e;--oroO:#a9822f;--error:#b23b3b;--ok:#2f6b46;--linea:#e7dcc6}
+  *{box-sizing:border-box;margin:0;padding:0}
   html,body{margin:0;padding:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:linear-gradient(160deg,#eef3ec,#f6efe0);
-    color:var(--texto); min-height:100vh; display:flex; justify-content:center;
-    -webkit-font-smoothing:antialiased;
-  }
-  .app{width:100%; max-width:460px; min-height:100vh; background:var(--crema);
-       display:flex; flex-direction:column; box-shadow:0 0 40px rgba(0,0,0,.06)}
-  header{background:linear-gradient(135deg,var(--verde),var(--verde2)); color:#fff;
-         padding:20px 18px 16px; text-align:center; position:relative}
-  header h1{margin:0; font-size:21px; letter-spacing:.3px}
-  header p{margin:5px 0 0; font-size:12.5px; opacity:.85}
-  .cont{flex:1; padding:18px 16px 40px}
-  .tarjeta{background:var(--tarjeta); border:1px solid var(--linea); border-radius:16px;
-           padding:18px; margin-bottom:16px; box-shadow:0 4px 14px rgba(90,70,30,.05)}
-  label{display:block; font-size:13px; color:var(--suave); margin:12px 0 5px; font-weight:600}
-  input,select,textarea{width:100%; padding:12px 13px; border:1px solid var(--linea);
-    border-radius:11px; font-size:15px; background:#fff; color:var(--texto); font-family:inherit}
-  textarea{min-height:90px; resize:vertical}
-  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--verde)}
-  .btn{display:block; width:100%; padding:13px; border:none; border-radius:12px;
-    background:var(--verde); color:#fff; font-size:15px; font-weight:600; cursor:pointer;
-    margin-top:14px; transition:.15s}
-  .btn:active{transform:scale(.99)}
-  .btn:disabled{opacity:.55}
-  .btn.sec{background:#fff; color:var(--verde); border:1.5px solid var(--verde)}
-  h2{font-size:17px; margin:0 0 4px}
-  .sub{font-size:13px; color:var(--suave); margin:0 0 10px}
-  .msg{border-radius:10px; padding:10px 12px; font-size:13px; margin-top:12px; display:none; line-height:1.4}
-  .msg.err{background:#fbeaea; color:var(--error); border:1px solid #eecaca; display:block}
-  .msg.ok{background:#e9f2ea; color:var(--ok); border:1px solid #cfe4d1; display:block}
-  .miembro{display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--linea); cursor:pointer}
-  .miembro:last-child{border-bottom:none}
-  .miembro:active{background:#f4eede}
-  .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dfc98a,#c9a24b);
-    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;
-    box-shadow:0 0 0 2px #fff,0 0 0 3px var(--oro)}
-  .miembro .nom{font-weight:600;font-size:15px}
-  .miembro .rel{font-size:12px;color:var(--suave)}
-  .chev{margin-left:auto;color:#cdbf9f;font-size:20px}
-  .vacio{text-align:center; color:var(--suave); font-size:14px; padding:22px 10px}
-  .fila{display:flex; gap:10px}
-  .fila>*{flex:1}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
-  .chip{font-size:11px;background:#efe8d8;color:var(--suave);padding:4px 10px;border-radius:20px}
-  .cargando{text-align:center;color:var(--suave);padding:40px 0;font-size:14px}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--texto);
+    background:#c4cfca;min-height:100vh;display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+  .app{width:100%;max-width:460px;min-height:100vh;position:relative;overflow:hidden;background:#cdd8d4;
+    display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,0,.12)}
+  .app.bgV{background:url(fondo_vivos.jpg) center/cover no-repeat,#cdd8d4}
+  .app.bgA{background:url(fondo_atardecer.jpg) center/cover no-repeat,#cdd8d4}
+  .app:before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(12,22,18,.34) 0%,rgba(255,255,255,0) 15%,rgba(255,255,255,0) 100%)}
+  header{position:relative;text-align:center;padding:20px 20px 12px;z-index:1}
+  .emblema{font-size:24px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));display:inline-block;
+    transform-origin:50% 90%;animation:sway 7s ease-in-out infinite}
+  .mini{font-size:11.5px;letter-spacing:3px;color:#fff;text-transform:uppercase;margin:4px 0 2px;
+    text-shadow:0 1px 5px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;gap:9px}
+  .mini:before,.mini:after{content:"";width:24px;height:1px;background:rgba(255,255,255,.75)}
+  .fam{font-size:25px;color:#fff;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.55);letter-spacing:.3px}
+  .lema{font-size:12.5px;color:#fff;opacity:.92;font-style:italic;text-shadow:0 1px 6px rgba(0,0,0,.55);margin-top:2px}
+  .back{position:absolute;left:13px;top:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);
+    border:1px solid var(--oroC);color:#fff;font-size:18px;cursor:pointer;backdrop-filter:blur(3px);z-index:2}
+  .cont{flex:1;position:relative;z-index:1;padding:6px 15px 40px}
+  /* tarjeta cristal */
+  .vidrio{background:rgba(255,253,247,.66);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border-radius:16px;
+    box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3.5px var(--oroC),0 0 0 5px var(--oroO),0 8px 20px rgba(20,30,25,.3);
+    border:1px solid rgba(255,255,255,.35);padding:18px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 4px;color:var(--tinta)}
+  .sub{font-size:13px;color:var(--suave);margin:0 0 10px}
+  label{display:block;font-size:12.5px;color:var(--suave);margin:11px 0 5px;font-weight:600}
+  input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--linea);border-radius:11px;font-size:15px;
+    background:rgba(255,255,255,.92);color:var(--texto);font-family:inherit}
+  textarea{min-height:90px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde)}
+  .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:14px;border:none;border-radius:14px;
+    background:linear-gradient(135deg,#4a7a5e,#2f5340);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px;
+    font-family:Georgia,serif;box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 6px 16px rgba(20,40,28,.42)}
+  .btn:active{transform:scale(.99)}.btn:disabled{opacity:.55}
+  .btn.sec{background:rgba(255,253,247,.85);color:var(--verde);box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 5px 14px rgba(20,30,25,.24)}
+  .link{background:none;border:none;color:#fff;font-size:13px;cursor:pointer;text-decoration:underline;padding:8px;width:100%;margin-top:6px;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+  .fila{display:flex;gap:10px}.fila>*{flex:1}
+  .msg{border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none;line-height:1.4}
+  .msg.err{background:#fbeaea;color:var(--error);border:1px solid #eecaca;display:block}
+  .msg.ok{background:#e9f2ea;color:var(--ok);border:1px solid #cfe4d1;display:block}
+  .cargando{text-align:center;color:var(--suave);padding:30px 0;font-size:14px}
+  .vacio{text-align:center;color:var(--suave);font-size:14px;padding:22px 10px}
   .hide{display:none}
-  .link{background:none;border:none;color:var(--verde);font-size:13px;cursor:pointer;text-decoration:underline;padding:6px;width:100%;margin-top:6px}
-  /* Botón atrás */
-  .back{position:absolute;left:14px;top:20px;background:rgba(255,255,255,.18);border:none;color:#fff;
-    width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1}
-  /* Ficha */
-  .ficha-cab{display:flex;align-items:center;gap:14px;margin-bottom:6px}
-  .av-grande{width:64px;height:64px;font-size:26px}
-  .ficha-cab .nom{font-size:20px;font-weight:700}
-  .ficha-cab .rel{font-size:13px;color:var(--suave)}
-  .subir-fila{display:flex;gap:8px;margin-top:6px}
-  .subir-fila button{flex:1;padding:11px 4px;border:1px solid var(--linea);background:#fff;border-radius:12px;
-    font-size:12px;font-weight:600;color:var(--verde);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
-  .subir-fila button:active{background:#f4eede}
+  /* etiqueta seccion */
+  .setiq{text-align:center;font-size:11.5px;letter-spacing:2px;color:#fff;text-transform:uppercase;font-weight:700;
+    margin:8px 0 12px;display:flex;align-items:center;justify-content:center;gap:11px;text-shadow:0 1px 5px rgba(0,0,0,.5)}
+  .setiq:before,.setiq:after{content:"";height:1px;width:40px;background:linear-gradient(90deg,transparent,var(--oroC),transparent)}
+  /* corona + avatar */
+  .lauro{position:relative;flex-shrink:0}
+  .lauro .lau{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%}
+  .lauro .foto{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;
+    background:linear-gradient(135deg,#e6d09a,#c9a24b);display:flex;align-items:center;justify-content:center;
+    color:#7a5410;font-family:Georgia,serif;font-weight:700;box-shadow:0 0 0 1.5px var(--oroO)}
+  .lauro .foto img{width:100%;height:100%;object-fit:cover}
+  /* miembro */
+  .mcard{display:flex;align-items:center;gap:12px;padding:9px 12px 9px 9px;cursor:pointer}
+  .mcard .lauro{width:64px;height:68px}
+  .mcard .foto{width:37px;height:37px;font-size:16px}
+  .mcard .info{flex:1}
+  .mcard .nom{font-size:17px;font-weight:700;color:var(--tinta)}
+  .mcard .rel{font-size:12.5px;color:var(--suave);font-style:italic;margin-top:1px}
+  .mcard .pill{display:inline-block;margin-top:5px;font-size:10.5px;background:rgba(243,234,210,.9);color:#9a7b3e;
+    padding:2px 9px;border-radius:20px;font-weight:600;box-shadow:inset 0 0 0 1.5px var(--oro)}
+  .mcard .chev{color:var(--oro);font-size:23px;font-family:Georgia,serif}
+  /* perfil ficha */
+  .perfil{text-align:center;position:relative;overflow:hidden;padding:20px 18px 18px}
+  .perfil .lauro{width:150px;height:160px;margin:2px auto 4px}
+  .perfil .foto{width:82px;height:82px;font-size:30px;top:46%;box-shadow:0 0 0 2px var(--oroO)}
+  .perfil .nom{font-size:23px;font-weight:700;color:var(--tinta)}
+  .perfil .rel{font-size:13.5px;color:var(--suave);font-style:italic;margin:3px 0 10px}
+  .fechas{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#6b5c40;background:rgba(243,234,210,.9);
+    padding:6px 15px;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--oro)}
+  .olivo{position:absolute;width:56px;bottom:8px;pointer-events:none}
+  .olivo.izq{left:4px;transform:scaleX(-1)}.olivo.der{right:4px}
+  .olivo img{width:100%;display:block;transform-origin:50% 92%;animation:sway 5s ease-in-out infinite}
+  .olivo.der img{animation-delay:-2.5s}
+  @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+  /* subir recuerdo */
+  .subir-fila{display:flex;gap:8px;margin-top:4px}
+  .subir-fila button{flex:1;background:rgba(255,253,247,.7);border:none;border-radius:13px;padding:11px 3px;
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;
+    box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 4px 11px rgba(20,30,25,.22)}
+  .subir-fila button:active{transform:scale(.98)}
   .subir-fila .ic{font-size:20px}
-  .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-  .rec{border:1px solid var(--linea);border-radius:12px;overflow:hidden;background:#fff;position:relative}
-  .rec img,.rec video{width:100%;height:120px;object-fit:cover;display:block;background:#eee}
-  .rec .tit{font-size:11px;color:var(--suave);padding:6px 8px}
-  .rec.texto{grid-column:span 2;padding:12px}
-  .rec.texto .cuerpo{font-size:14px;color:var(--texto);white-space:pre-wrap;line-height:1.45}
-  .rec.audio{grid-column:span 2;padding:10px}
-  .rec.audio audio{width:100%}
-  .rec .borrar{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;border:none;
-    width:24px;height:24px;border-radius:50%;font-size:13px;cursor:pointer;line-height:1}
-  .seccion-tit{font-size:13px;font-weight:700;color:var(--suave);margin:16px 2px 2px;text-transform:uppercase;letter-spacing:.5px}
-  .prog{font-size:12px;color:var(--verde);margin-top:8px;display:none}
+  .subir-fila b{font-size:11px;color:var(--verde);font-weight:700;font-family:Georgia,serif}
+  .prog{font-size:12.5px;color:var(--verde);margin-top:10px;display:none;text-align:center;font-weight:600}
+  /* galeria */
+  .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .rec{background:rgba(255,253,247,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:12px;
+    overflow:hidden;position:relative;box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 5px 13px rgba(20,30,25,.28)}
+  .rec img,.rec video{width:100%;height:118px;object-fit:cover;display:block;background:#eae2cf;margin:4px 0 0;
+    border-radius:8px}
+  .rec .marco-f{padding:4px 4px 0}
+  .rec .tit{font-size:11.5px;color:var(--suave);padding:5px 9px;font-style:italic}
+  .rec.texto{grid-column:span 2;padding:14px 16px}
+  .rec.texto .cuerpo{font-size:14.5px;color:var(--texto);white-space:pre-wrap;line-height:1.5;font-family:Georgia,serif;text-align:center}
+  .rec.audio{grid-column:span 2;padding:12px 14px}
+  .rec.audio audio{width:100%;margin-top:4px}
+  .rec .borrar{position:absolute;top:7px;right:7px;background:rgba(30,20,10,.6);color:#fff;border:none;
+    width:24px;height:24px;border-radius:50%;font-size:14px;cursor:pointer;line-height:1;z-index:2}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app bgV" id="app">
   <header>
     <button class="back hide" id="btn-back" onclick="volverArbol()">‹</button>
-    <h1>🌳 Nuestro Árbol</h1>
-    <p id="subhead">Donde la familia no se pierde</p>
+    <div class="emblema">🌳</div>
+    <div class="mini">Nuestro Árbol</div>
+    <div class="fam serif" id="arbol-nombre">Nuestro Árbol</div>
+    <div class="lema" id="subhead">Donde la familia no se pierde</div>
+    <span id="arbol-tipo" class="hide"></span>
   </header>
   <div class="cont">
 
-    <div id="v-carga" class="cargando">Cargando…</div>
+    <div id="v-carga" class="cargando" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>
 
     <!-- LOGIN -->
     <div id="v-auth" class="hide">
-      <div class="tarjeta">
+      <div class="vidrio">
         <h2>Entrar</h2>
         <p class="sub">Usa el mismo correo en todos tus móviles para ver lo mismo.</p>
         <label>Correo</label>
@@ -115,7 +143,7 @@
 
     <!-- CREAR ÁRBOL -->
     <div id="v-crear" class="hide">
-      <div class="tarjeta">
+      <div class="vidrio">
         <h2>Crea tu árbol</h2>
         <p class="sub">Ponle nombre y elige de qué es.</p>
         <label>Nombre del árbol</label>
@@ -132,15 +160,9 @@
 
     <!-- ÁRBOL -->
     <div id="v-arbol" class="hide">
-      <div class="tarjeta">
-        <div class="topbar">
-          <h2 id="arbol-nombre">Mi árbol</h2>
-          <span class="chip" id="arbol-tipo">familia</span>
-        </div>
-        <p class="sub" id="arbol-cuenta">0 fichas</p>
-        <div id="lista"></div>
-      </div>
-      <div class="tarjeta">
+      <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
+      <div id="lista"></div>
+      <div class="vidrio" style="margin-top:16px">
         <h2>Añadir familiar</h2>
         <label>Nombre</label>
         <input id="m-nombre" placeholder="Ej. Abuela Rosa">
@@ -154,6 +176,10 @@
             </select>
           </div>
         </div>
+        <div class="fila">
+          <div><label>Nacimiento (opcional)</label><input id="m-nac" placeholder="1938"></div>
+          <div><label>Fallecimiento (opcional)</label><input id="m-fall" placeholder="—"></div>
+        </div>
         <button class="btn" onclick="anadirMiembro()">Añadir al árbol</button>
         <div id="add-msg" class="msg"></div>
       </div>
@@ -162,24 +188,23 @@
 
     <!-- FICHA -->
     <div id="v-ficha" class="hide">
-      <div class="tarjeta">
-        <div class="ficha-cab">
-          <div class="av av-grande" id="f-av">?</div>
-          <div>
-            <div class="nom" id="f-nom">Nombre</div>
-            <div class="rel" id="f-rel">relación</div>
-          </div>
-        </div>
+      <div class="vidrio perfil">
+        <div class="olivo izq"><img src="olivo.png"></div>
+        <div class="olivo der"><img src="olivo.png"></div>
+        <div class="lauro"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div></div>
+        <div class="nom serif" id="f-nom">Nombre</div>
+        <div class="rel" id="f-rel">relación</div>
+        <div class="fechas" id="f-fechas" style="display:none"></div>
       </div>
 
-      <div class="tarjeta">
+      <div class="vidrio">
         <h2>Añadir un recuerdo</h2>
         <p class="sub">Foto, vídeo, audio o un texto. Se guarda en la nube.</p>
         <div class="subir-fila">
-          <button onclick="elegir('foto')"><span class="ic">📷</span>Foto</button>
-          <button onclick="elegir('video')"><span class="ic">🎬</span>Vídeo</button>
-          <button onclick="elegir('audio')"><span class="ic">🎤</span>Audio</button>
-          <button onclick="abrirTexto()"><span class="ic">✍️</span>Texto</button>
+          <button onclick="elegir('foto')"><span class="ic">📷</span><b>Foto</b></button>
+          <button onclick="elegir('video')"><span class="ic">🎬</span><b>Vídeo</b></button>
+          <button onclick="elegir('audio')"><span class="ic">🎤</span><b>Audio</b></button>
+          <button onclick="abrirTexto()"><span class="ic">✍️</span><b>Texto</b></button>
         </div>
         <input type="file" id="file-input" class="hide" onchange="archivoElegido()">
         <div id="texto-box" class="hide">
@@ -192,9 +217,9 @@
         <div id="rec-msg" class="msg"></div>
       </div>
 
-      <div class="seccion-tit">Recuerdos</div>
+      <div class="setiq">Recuerdos</div>
       <div id="galeria" class="galeria"></div>
-      <div id="galeria-vacio" class="vacio hide">Aún no hay recuerdos.<br>Añade el primero arriba. 👆</div>
+      <div id="galeria-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay recuerdos.<br>Añade el primero arriba. 👆</div>
     </div>
 
   </div>
@@ -207,7 +232,7 @@ const SUPABASE_URL  = "https://pegxsuoujyvtvoqenunz.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ3hzdW91anl2dHZvcWVudW56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NDg0NTcsImV4cCI6MjEwNjAyNDQ1N30.f78D-1Z45n-yRFb70A_XBPqrg6aYdkUVuqJvspE3BVQ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const BUCKET = "media";
-const LIMITE_MB = 45; // aviso si el archivo es mayor (límite del plan gratis ~50MB)
+const LIMITE_MB = 45;
 
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
 
@@ -218,6 +243,7 @@ function ver(id){
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
 }
+function fondo(cls){ const a=document.getElementById("app"); a.classList.remove("bgV","bgA"); a.classList.add(cls); }
 function msg(id,t,tipo){ const e=document.getElementById(id); e.textContent=t; e.className="msg "+(tipo||"err"); }
 function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
 function escapar(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -225,7 +251,7 @@ function inicial(n){ return (n||"?").trim().charAt(0).toUpperCase(); }
 
 /* ====== ARRANQUE ====== */
 async function arranque(){
-  ver("v-carga");
+  ver("v-carga"); fondo("bgV");
   const { data:{ session } } = await sb.auth.getSession();
   if(session){ usuario=session.user; await entrarAlArbol(); }
   else ver("v-auth");
@@ -250,7 +276,8 @@ async function entrar(){
   usuario=data.session.user; await entrarAlArbol();
 }
 async function salir(){ await sb.auth.signOut(); arbolActual=null; miembroActual=null; usuario=null;
-  document.getElementById("pass").value=""; ver("v-auth"); }
+  document.getElementById("pass").value=""; document.getElementById("arbol-nombre").textContent="Nuestro Árbol";
+  document.getElementById("subhead").textContent="Donde la familia no se pierde"; fondo("bgV"); ver("v-auth"); }
 
 /* ====== ÁRBOL ====== */
 async function entrarAlArbol(){
@@ -268,7 +295,7 @@ async function guardarArbol(){
   arbolActual=data; mostrarArbol();
 }
 async function mostrarArbol(){
-  ver("v-arbol");
+  fondo("bgV"); ver("v-arbol");
   document.getElementById("arbol-nombre").textContent=arbolActual.nombre;
   document.getElementById("arbol-tipo").textContent=arbolActual.tipo;
   document.getElementById("subhead").textContent =
@@ -277,17 +304,17 @@ async function mostrarArbol(){
 }
 async function cargarMiembros(){
   const lista=document.getElementById("lista");
-  lista.innerHTML='<div class="cargando" style="padding:14px 0">Cargando…</div>';
+  lista.innerHTML='<div class="cargando" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
   const { data,error }=await sb.from("miembros").select("*").eq("arbol_id",arbolActual.id).order("creado");
   if(error){ lista.innerHTML=""; msg("add-msg","Error al leer: "+error.message); return; }
   document.getElementById("arbol-cuenta").textContent=(data.length===1?"1 ficha":data.length+" fichas");
-  if(!data.length){ lista.innerHTML='<div class="vacio">Aún no hay nadie.<br>Añade a la primera persona abajo. 👇</div>'; return; }
+  if(!data.length){ lista.innerHTML='<div class="vacio" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay nadie.<br>Añade a la primera persona abajo. 👇</div>'; return; }
   window._miembros={};
   lista.innerHTML=data.map(m=>{ window._miembros[m.id]=m;
     const av=m.clase==="mascota"?"🐾":inicial(m.nombre);
-    return `<div class="miembro" onclick="abrirFicha('${m.id}')">
-      <div class="av">${av}</div>
-      <div><div class="nom">${escapar(m.nombre)}</div><div class="rel">${escapar(m.relacion||m.clase)}</div></div>
+    return `<div class="vidrio mcard" onclick="abrirFicha('${m.id}')">
+      <div class="lauro"><img class="lau" src="corona.png"><div class="foto">${av}</div></div>
+      <div class="info"><div class="nom serif">${escapar(m.nombre)}</div><div class="rel">${escapar(m.relacion||m.clase)}</div></div>
       <div class="chev">›</div></div>`;
   }).join("");
 }
@@ -295,11 +322,15 @@ async function anadirMiembro(){
   limpiar("add-msg");
   const nombre=document.getElementById("m-nombre").value.trim(),
         rel=document.getElementById("m-rel").value.trim(),
-        clase=document.getElementById("m-clase").value;
+        clase=document.getElementById("m-clase").value,
+        nac=document.getElementById("m-nac").value.trim(),
+        fall=document.getElementById("m-fall").value.trim();
   if(!nombre){ msg("add-msg","Escribe un nombre."); return; }
-  const { error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,relacion:rel,clase});
+  const { error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,relacion:rel,clase,
+        nacimiento:nac||null,fallecimiento:fall||null});
   if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
   document.getElementById("m-nombre").value=""; document.getElementById("m-rel").value="";
+  document.getElementById("m-nac").value=""; document.getElementById("m-fall").value="";
   msg("add-msg","Guardado ✔","ok"); setTimeout(()=>limpiar("add-msg"),1500);
   await cargarMiembros();
 }
@@ -307,16 +338,23 @@ async function anadirMiembro(){
 /* ====== FICHA ====== */
 function abrirFicha(id){
   miembroActual=window._miembros[id];
-  document.getElementById("f-av").textContent = miembroActual.clase==="mascota"?"🐾":inicial(miembroActual.nombre);
-  document.getElementById("f-nom").textContent = miembroActual.nombre;
-  document.getElementById("f-rel").textContent = miembroActual.relacion||miembroActual.clase;
+  const m=miembroActual;
+  document.getElementById("f-av").textContent = m.clase==="mascota"?"🐾":inicial(m.nombre);
+  document.getElementById("f-nom").textContent = m.nombre;
+  document.getElementById("f-rel").textContent = m.relacion||m.clase;
+  // fechas + fondo según vivo/fallecido
+  const fEl=document.getElementById("f-fechas");
+  const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim();
+  if(fall){ fEl.textContent="🕊️ "+(nac?nac+" – ":"")+fall; fEl.style.display="inline-flex"; fondo("bgA"); }
+  else if(nac){ fEl.textContent="🌿 n. "+nac; fEl.style.display="inline-flex"; fondo("bgV"); }
+  else { fEl.style.display="none"; fondo("bgV"); }
   document.getElementById("texto-box").classList.add("hide");
   limpiar("rec-msg");
   ver("v-ficha");
   window.scrollTo(0,0);
   cargarRecuerdos();
 }
-function volverArbol(){ miembroActual=null; ver("v-arbol"); }
+function volverArbol(){ miembroActual=null; fondo("bgV"); ver("v-arbol"); }
 
 function elegir(tipo){
   tipoElegido=tipo;
@@ -371,16 +409,15 @@ async function guardarTexto(){
 
 async function cargarRecuerdos(){
   const g=document.getElementById("galeria"), vac=document.getElementById("galeria-vacio");
-  g.innerHTML='<div class="cargando" style="grid-column:span 2;padding:14px 0">Cargando…</div>';
+  g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
   vac.classList.add("hide");
   const { data,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).order("creado",{ascending:false});
   if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
-  // URLs firmadas para los archivos
   const piezas=await Promise.all(data.map(async r=>{
     if(r.tipo==="texto"){
       return `<div class="rec texto"><button class="borrar" onclick="borrar('${r.id}',null)">×</button>
-        ${r.titulo?`<div class="tit" style="font-weight:700;color:var(--texto);padding:0 0 6px">${escapar(r.titulo)}</div>`:""}
+        ${r.titulo?`<div class="tit" style="font-weight:700;color:var(--texto);text-align:center;padding:0 0 6px">${escapar(r.titulo)}</div>`:""}
         <div class="cuerpo">${escapar(r.texto)}</div></div>`;
     }
     let url="";
@@ -389,8 +426,8 @@ async function cargarRecuerdos(){
       url=sig?sig.signedUrl:"";
     }
     const del=`<button class="borrar" onclick="borrar('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
-    if(r.tipo==="foto") return `<div class="rec">${del}<img src="${url}" loading="lazy"><div class="tit">${escapar(r.titulo||"Foto")}</div></div>`;
-    if(r.tipo==="video") return `<div class="rec">${del}<video src="${url}" controls></video><div class="tit">${escapar(r.titulo||"Vídeo")}</div></div>`;
+    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy"></div><div class="tit">${escapar(r.titulo||"Foto")}</div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" controls></video></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div></div>`;
     if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio></div>`;
     return "";
   }));
