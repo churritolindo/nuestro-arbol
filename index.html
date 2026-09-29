@@ -102,6 +102,7 @@
   .subir-fila .ic{font-size:20px}
   .subir-fila b{font-size:11px;color:var(--verde);font-weight:700;font-family:Georgia,serif}
   .prog{font-size:12.5px;color:var(--verde);margin-top:10px;display:none;text-align:center;font-weight:600}
+  .historia-txt{font-size:14.5px;line-height:1.6;color:var(--texto);white-space:pre-wrap;font-family:Georgia,serif;margin:2px 0 4px}
   /* galeria */
   .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .rec{background:rgba(255,253,247,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;
@@ -216,6 +217,12 @@
       </div>
 
       <div class="vidrio">
+        <h2>Su historia</h2>
+        <p id="f-historia" class="historia-txt">—</p>
+        <button class="btn sec" onclick="abrirEditar()">✍️ Editar su historia</button>
+      </div>
+
+      <div class="vidrio">
         <h2>Añadir un recuerdo</h2>
         <p class="sub">Foto, vídeo, audio o un texto. Se guarda en la nube.</p>
         <div class="subir-fila">
@@ -257,6 +264,8 @@
           <div><label>Nacimiento</label><input id="e-nac" placeholder="1938"></div>
           <div><label>Fallecimiento</label><input id="e-fall" placeholder="—"></div>
         </div>
+        <label>Su historia (biografía)</label>
+        <textarea id="e-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…"></textarea>
         <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
         <div id="edit-msg" class="msg"></div>
       </div>
@@ -417,6 +426,10 @@ function abrirFicha(id){
   pintarFotoFicha(m);
   document.getElementById("f-nom").textContent = m.nombre;
   document.getElementById("f-rel").textContent = m.relacion||m.clase;
+  const hEl=document.getElementById("f-historia");
+  const h=(m.historia||"").trim();
+  hEl.textContent = h || "Aún no has escrito su historia. Toca «Editar su historia» y cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…";
+  hEl.style.opacity = h?"1":".6";
   // fechas + fondo según vivo/fallecido
   const fEl=document.getElementById("f-fechas");
   const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim();
@@ -460,6 +473,7 @@ function abrirEditar(){
   document.getElementById("e-clase").value=m.clase||"persona";
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
+  document.getElementById("e-historia").value=m.historia||"";
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
 }
 function cancelarEditar(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
@@ -471,7 +485,8 @@ async function guardarEdicion(){
     relacion:document.getElementById("e-rel").value.trim(),
     clase:document.getElementById("e-clase").value,
     nacimiento:document.getElementById("e-nac").value.trim()||null,
-    fallecimiento:document.getElementById("e-fall").value.trim()||null };
+    fallecimiento:document.getElementById("e-fall").value.trim()||null,
+    historia:document.getElementById("e-historia").value.trim()||null };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
   const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
