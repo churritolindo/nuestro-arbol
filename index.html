@@ -290,8 +290,8 @@
           </div>
         </div>
         <div class="fila">
-          <div><label>Nacimiento (opcional)</label><input id="m-nac" placeholder="1938"></div>
-          <div><label>Fallecimiento (opcional)</label><input id="m-fall" placeholder="—"></div>
+          <div><label>Nacimiento (opcional)</label><input type="date" id="m-nac"></div>
+          <div><label>Fallecimiento (opcional)</label><input type="date" id="m-fall"></div>
         </div>
         <button class="btn" onclick="anadirMiembro()">Añadir al árbol</button>
         <div id="add-msg" class="msg"></div>
@@ -366,8 +366,8 @@
           </div>
         </div>
         <div class="fila">
-          <div><label>Nacimiento</label><input id="e-nac" placeholder="1938"></div>
-          <div><label>Fallecimiento</label><input id="e-fall" placeholder="—"></div>
+          <div><label>Nacimiento</label><input type="date" id="e-nac"></div>
+          <div><label>Fallecimiento</label><input type="date" id="e-fall"></div>
         </div>
         <label>Su historia (biografía)</label>
         <textarea id="e-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, anécdotas…"></textarea>
@@ -441,6 +441,7 @@ function fondo(cls){ const a=document.getElementById("app"); a.classList.remove(
 function msg(id,t,tipo){ const e=document.getElementById(id); e.textContent=t; e.className="msg "+(tipo||"err"); }
 function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
 function escapar(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtFecha(s){ s=(s||"").trim(); const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?(m[3]+"/"+m[2]+"/"+m[1]):s; }
 function inicial(n){ return (n||"?").trim().charAt(0).toUpperCase(); }
 
 /* ====== ARRANQUE ====== */
@@ -731,8 +732,8 @@ function abrirFicha(id){
   // fechas + fondo según vivo/fallecido
   const fEl=document.getElementById("f-fechas");
   const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim();
-  if(fall){ fEl.textContent="🕊️ "+(nac?nac+" – ":"")+fall; fEl.style.display="inline-flex"; fondo("bgA"); }
-  else if(nac){ fEl.textContent="🌿 n. "+nac; fEl.style.display="inline-flex"; fondo("bgV"); }
+  if(fall){ fEl.textContent="🕊️ "+(nac?fmtFecha(nac)+" – ":"")+fmtFecha(fall); fEl.style.display="inline-flex"; fondo("bgA"); }
+  else if(nac){ fEl.textContent="🌿 n. "+fmtFecha(nac); fEl.style.display="inline-flex"; fondo("bgV"); }
   else { fEl.style.display="none"; fondo("bgV"); }
   document.getElementById("texto-box").classList.add("hide");
   limpiar("rec-msg");
