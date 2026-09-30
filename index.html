@@ -152,6 +152,10 @@
     margin:0 0 10px;font-size:14px;text-align:center;cursor:pointer;box-shadow:0 4px 12px rgba(150,40,20,.4);
     animation:latidoBar 1.6s ease-in-out infinite}
   .avisos-bar b{text-decoration:underline}
+  .priv-personas{display:flex;flex-direction:column;gap:6px;margin:2px 0 4px}
+  .priv-chk{display:flex;align-items:center;gap:9px;background:rgba(255,253,247,.55);border-radius:12px;
+    padding:9px 12px;font-size:14.5px;color:var(--verde,#4e6b3a);cursor:pointer;box-shadow:0 0 0 1px var(--oroO,#d9b96a)}
+  .priv-chk input{width:19px;height:19px;accent-color:#4e6b3a;flex:none}
   .mote{font-size:15px;color:var(--oroO,#b78b3a);font-style:italic;margin:-2px 0 2px;text-align:center;font-weight:600}
   .prog{font-size:12.5px;color:var(--verde);margin-top:10px;display:none;text-align:center;font-weight:600}
   .historia-txt{font-size:14.5px;line-height:1.6;color:var(--texto);white-space:pre-wrap;font-family:Georgia,serif;margin:2px 0 4px}
@@ -599,8 +603,8 @@
             <option value="todos">Todos</option>
           </select>
           <div id="priv-persona-box">
-            <label>¿Quién?</label>
-            <select id="priv-persona"></select>
+            <label>¿Quién? (marca una o varias)</label>
+            <div id="priv-personas" class="priv-personas"></div>
           </div>
           <label>¿Cuándo podrá verlo?</label>
           <select id="priv-cuando" onchange="privCuandoCambia()">
@@ -1757,20 +1761,21 @@ function _privCampos(){
   if(!_privActivo) return {};
   const cuando=document.getElementById("priv-cuando").value;
   const destino=document.getElementById("priv-destino").value;
-  let para_quien="Todos", para_id=null;
+  let para_quien="Todos", para_id=null, para_ids=null;
   if(destino==="familia") para_quien="Solo la familia";
   else if(destino==="amigos") para_quien="Solo los amigos";
   else if(destino==="persona"){
-    const sel=document.getElementById("priv-persona");
-    para_id=sel.value||null;
-    para_quien=(sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text) || "—";
+    const chk=[...document.querySelectorAll(".priv-pers-chk:checked")];
+    para_ids=chk.map(c=>c.value).join(",")||null;
+    para_id=chk.length?chk[0].value:null;
+    para_quien=chk.map(c=>c.dataset.nom).join(", ")||"—";
   }
-  return { privado:true, destino, para_id, para_quien,
+  return { privado:true, destino, para_id, para_ids, para_quien,
     cuando:cuando, fecha_ver: cuando==="fecha" ? (document.getElementById("priv-fecha").value||null) : null };
 }
 function _privValida(){
-  if(document.getElementById("priv-destino").value==="persona" && !document.getElementById("priv-persona").value){
-    msg("priv-msg","Elige a la persona que podrá verlo."); return false; }
+  if(document.getElementById("priv-destino").value==="persona" && !document.querySelectorAll(".priv-pers-chk:checked").length){
+    msg("priv-msg","Marca al menos una persona que podrá verlo."); return false; }
   if(document.getElementById("priv-cuando").value==="fecha" && !document.getElementById("priv-fecha").value){
     msg("priv-msg","Elige la fecha en la que se podrá ver."); return false; }
   return true;
@@ -1989,10 +1994,11 @@ function _mostrarZona(){
   document.getElementById("priv-resp").value=miembroActual.responsable||"";
   document.getElementById("priv-texto-box").classList.add("hide");
   document.getElementById("priv-fecha-box").style.display="none";
-  const sel=document.getElementById("priv-persona");
+  const cont=document.getElementById("priv-personas");
   const otros=(window._arr||[]).filter(m=>m.id!==miembroActual.id);
-  sel.innerHTML = otros.length ? otros.map(m=>`<option value="${m.id}">${escapar(m.nombre||"")}</option>`).join("")
-                              : '<option value="">(añade personas al árbol primero)</option>';
+  cont.innerHTML = otros.length
+    ? otros.map(m=>`<label class="priv-chk"><input type="checkbox" class="priv-pers-chk" value="${m.id}" data-nom="${escapar(m.nombre||"")}"> ${escapar(m.nombre||"")}</label>`).join("")
+    : '<div class="sub">Añade personas al árbol primero.</div>';
   document.getElementById("priv-destino").value="persona"; privDestinoCambia();
   limpiar("priv-msg"); limpiar("priv-resp-msg");
   cargarPrivado(); window.scrollTo(0,0);

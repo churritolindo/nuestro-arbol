@@ -32,7 +32,8 @@ alter table contenido add column if not exists relacion text;      -- familiar /
 alter table contenido add column if not exists cuando text;        -- 'fallecimiento' | 'fecha' | 'siempre'
 alter table contenido add column if not exists fecha_ver date;     -- si cuando='fecha', día en que se puede ver
 alter table contenido add column if not exists destino text;       -- 'todos' | 'familia' | 'amigos' | 'persona'
-alter table contenido add column if not exists para_id uuid;       -- si destino='persona', a quién (id del miembro)
+alter table contenido add column if not exists para_id uuid;       -- (compat) si destino='persona', un solo id
+alter table contenido add column if not exists para_ids text;      -- si destino='persona', ids separados por coma (varias personas)
 
 -- Especie (imagen) elegida para el arbolito de amigos y el de mascotas
 alter table arboles add column if not exists especie_amigos   text default 'cerezo';
