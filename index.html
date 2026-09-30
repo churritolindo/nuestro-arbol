@@ -155,8 +155,8 @@
             mask:radial-gradient(120% 108% at 50% 46%,#000 48%,rgba(0,0,0,0) 80%)}
   .banner-pet .arbpaw{right:2%;bottom:8%}.banner-pet .arbpaw .p1{width:17px;height:17px}.banner-pet .arbpaw .p2{width:12px;height:12px;margin-bottom:4px}
   /* arbolitos laterales (amigos / mascotas) */
-  .inset-arb{position:absolute;bottom:-1%;width:26%;cursor:pointer;z-index:2;text-align:center;transition:transform .15s}
-  .inset-arb.izq{left:0}.inset-arb.der{right:0}
+  .inset-arb{position:absolute;bottom:-2%;width:33%;cursor:pointer;z-index:2;text-align:center;transition:transform .15s}
+  .inset-arb.izq{left:-2%}.inset-arb.der{right:-2%}
   .inset-arb:active{transform:scale(.94)}
   .inset-arb img{width:100%;display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
   .inset-arb .inset-ico{position:absolute;right:10%;top:4%;font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
@@ -164,6 +164,11 @@
     letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 5px rgba(0,0,0,.7)}
   .banner-arb.sub{max-width:340px}
   .banner-arb.sub img.main{animation:mecer 6s ease-in-out infinite}
+  .grupos{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 2px}
+  .grupo-chip{border:1.5px solid var(--oroC);background:rgba(255,253,247,.28);color:#fff;font-family:Georgia,serif;
+    font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:20px;cursor:pointer;backdrop-filter:blur(3px);
+    text-shadow:0 1px 3px rgba(0,0,0,.6);transition:all .15s}
+  .grupo-chip.on{background:var(--oroC);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
   /* galeria */
   .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .rec{background:rgba(255,253,247,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;
@@ -431,13 +436,16 @@
     <!-- MINI-ÁRBOL DE MASCOTAS / AMIGOS -->
     <div id="v-sub" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cerrarSub()">‹ Volver al árbol familiar</button>
-      <div id="sub-visual" style="margin-top:10px"></div>
-      <div id="sub-cap" style="text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 10px"></div>
+      <div id="sub-cap" style="text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:8px 0 6px"></div>
+      <div id="sub-grupos" class="grupos"></div>
+      <div id="sub-visual" style="margin-top:8px"></div>
       <div id="sub-vacio" class="hide" style="text-align:center;color:#fff;font-style:italic;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin:6px 0 12px"></div>
       <div class="vidrio">
         <label id="sub-addlbl">Añadir</label>
+        <input id="sub-nombre" placeholder="Nombre">
+        <label id="sub-grupolbl" style="margin-top:8px">¿De quién es este grupo? <span style="font-weight:400;color:var(--suave,#8a7340)">(escribe un nombre, o "Familia" para que lo vea todos)</span></label>
         <div class="fila" style="align-items:flex-end;gap:8px">
-          <div style="flex:1"><input id="sub-nombre" placeholder="Nombre"></div>
+          <div style="flex:1"><input id="sub-grupo" placeholder="Ej. Luis · José · Familia"></div>
           <button class="btn" style="width:auto;padding:12px 18px;margin:0" onclick="anadirSub()">＋ Añadir</button>
         </div>
         <div id="sub-msg" class="msg"></div>
@@ -787,29 +795,49 @@ async function cambiarEspecie(k){
 }
 
 /* ====== MINI-ÁRBOL: MASCOTAS / AMIGOS ====== */
-let subClase=null;
+let subClase=null, subGrupo=null;
+const _normG=g=>(g&&String(g).trim())?String(g).trim():'Familia';
 function abrirSub(clase){
-  subClase=clase;
+  subClase=clase; subGrupo=null;
   const esAmigo=clase==='amigo';
   document.getElementById("sub-cap").innerHTML=esAmigo
-    ?"🧑‍🤝‍🧑 <b>Nuestros amigos</b> · privados, solo tú los ves"
-    :"🐾 <b>Nuestras mascotas</b> · siempre en la familia";
+    ?"🧑‍🤝‍🧑 <b>Nuestros amigos</b>"
+    :"🐾 <b>Nuestras mascotas</b>";
   document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
-  document.getElementById("sub-nombre").value=""; limpiar("sub-msg");
+  document.getElementById("sub-grupolbl").innerHTML=(esAmigo?"¿De quién son estos amigos?":"¿De quién son estas mascotas?")
+    +' <span style="font-weight:400;color:var(--suave,#8a7340)">(un nombre, o "Familia" para que lo vea todos)</span>';
+  document.getElementById("sub-nombre").value="";
+  document.getElementById("sub-grupo").value="";
+  limpiar("sub-msg");
   fondo("bgL"); ver("v-sub"); window.scrollTo(0,0);
   pintarSub();
 }
 function cerrarSub(){ pintarArbol(); fondo("bgL"); ver("v-arbol"); }
+function seleccionarGrupo(g){ subGrupo=g; pintarSub(); }
 function pintarSub(){
   const arr=window._arr||[]; const esAmigo=subClase==='amigo';
   let ms=arr.filter(m=>m.clase===subClase);
   if(esAmigo) ms=ms.filter(m=>!m.creado_por||!usuario||m.creado_por===usuario.id);
+  // grupos disponibles
+  const grupos=[]; ms.forEach(m=>{ const g=_normG(m.grupo); if(!grupos.some(x=>x.toLowerCase()===g.toLowerCase())) grupos.push(g); });
+  if(!grupos.length) grupos.push('Familia');
+  if(!subGrupo || !grupos.some(g=>g.toLowerCase()===subGrupo.toLowerCase()))
+    subGrupo = grupos.find(g=>g.toLowerCase()==='familia') || grupos[0];
+  // pestañas de grupo
+  const cont=document.getElementById("sub-grupos");
+  const mostrarChips = grupos.length>1 || grupos[0].toLowerCase()!=='familia';
+  cont.innerHTML = mostrarChips ? grupos.map(g=>
+      '<button class="grupo-chip'+(g.toLowerCase()===subGrupo.toLowerCase()?' on':'')
+      +'" onclick="seleccionarGrupo(\''+g.replace(/\\/g,"\\\\").replace(/'/g,"\\'")+'\')">'
+      +(esAmigo?'🧑‍🤝‍🧑 ':'🐾 ')+escapar(g)+'</button>').join('') : '';
+  // miembros del grupo elegido
+  const vis=ms.filter(m=>_normG(m.grupo).toLowerCase()===subGrupo.toLowerCase());
   const mini=esAmigo?"diseno/arboles/mini/cerezo.png":"diseno/arboles/mini/olivo.png";
-  const n=ms.length, vac=document.getElementById("sub-vacio");
-  if(!n){ vac.textContent=esAmigo?"Aún no hay amigos. Añade al primero abajo. 👇":"Aún no hay mascotas. Añade a la primera abajo. 👇"; vac.classList.remove("hide"); }
+  const n=vis.length, vac=document.getElementById("sub-vacio");
+  if(!n){ vac.textContent=esAmigo?"Aún no hay amigos en este grupo. Añade abajo. 👇":"Aún no hay mascotas en este grupo. Añade abajo. 👇"; vac.classList.remove("hide"); }
   else vac.classList.add("hide");
   let ov='<div class="placas">';
-  ms.forEach((m,i)=>{
+  vis.forEach((m,i)=>{
     const perRow=4, row=Math.floor(i/perRow), inRow=Math.min(perRow, n-row*perRow), col=i%perRow;
     const x=inRow===1?50:(17+(col/(inRow-1))*66);
     const y=44+row*24;
@@ -826,10 +854,11 @@ async function anadirSub(){
   if(!arbolActual) return; limpiar("sub-msg");
   const nombre=document.getElementById("sub-nombre").value.trim();
   if(!nombre){ msg("sub-msg","Escribe un nombre."); return; }
-  const ins={arbol_id:arbolActual.id,nombre,clase:subClase};
-  const { error }=await sb.from("miembros").insert(ins);
+  const grupo=_normG(document.getElementById("sub-grupo").value);
+  const { error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:subClase,grupo});
   if(error){ msg("sub-msg","No se pudo guardar: "+error.message); return; }
   document.getElementById("sub-nombre").value="";
+  subGrupo=grupo;
   msg("sub-msg","Añadido ✔","ok"); setTimeout(()=>limpiar("sub-msg"),1200);
   await cargarMiembros(); ver("v-sub"); pintarSub();
 }

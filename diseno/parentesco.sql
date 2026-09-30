@@ -16,3 +16,6 @@ alter table miembros add column if not exists trabajo text;     -- dónde/en qu�
 
 -- Muro de anécdotas firmadas (reutiliza la tabla contenido con tipo='anecdota')
 alter table contenido add column if not exists autor text;      -- quién firma la anécdota (ej. "su nieto Luis")
+
+-- Grupos de amigos/mascotas ("Amigos de Luis", "Amigos de la familia"…)
+alter table miembros add column if not exists grupo text default 'Familia';
