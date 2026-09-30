@@ -168,6 +168,14 @@
   .rec.audio audio{width:100%;margin-top:4px}
   .rec .borrar{position:absolute;top:7px;right:7px;background:rgba(30,20,10,.6);color:#fff;border:none;
     width:24px;height:24px;border-radius:50%;font-size:14px;cursor:pointer;line-height:1;z-index:2}
+  .anec{position:relative;background:rgba(255,253,247,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(184,134,11,.28);border-left:4px solid var(--oroC);border-radius:12px;padding:12px 14px;margin-bottom:11px;
+    box-shadow:0 3px 10px rgba(40,30,10,.10)}
+  .anec .anec-tit{font-family:Georgia,serif;font-weight:700;color:var(--tinta);font-size:15px;margin-bottom:4px;padding-right:22px}
+  .anec .anec-txt{color:var(--texto,#4a3b22);font-size:14px;line-height:1.55;white-space:normal}
+  .anec .anec-firma{margin-top:8px;text-align:right;font-style:italic;font-size:12.5px;color:var(--oroC)}
+  .anec .borrar{position:absolute;top:8px;right:8px;background:rgba(30,20,10,.5);color:#fff;border:none;
+    width:22px;height:22px;border-radius:50%;font-size:13px;cursor:pointer;line-height:1;z-index:2}
   .ayuda-btn{position:absolute;right:13px;top:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);
     border:1px solid var(--oroC);color:#fff;font-size:18px;font-weight:700;cursor:pointer;backdrop-filter:blur(3px);z-index:2}
   .faq details{border-bottom:1px solid rgba(120,95,45,.18);padding:11px 2px}
@@ -383,12 +391,30 @@
         <h2 id="hist-titulo">Su historia</h2>
         <label>¿Dónde nació? (ciudad, pueblo…)</label>
         <input id="h-lugar" placeholder="Ej. Jaén">
+        <label>¿Dónde trabajó? (oficio, empresa…)</label>
+        <input id="h-trabajo" placeholder="Ej. Maestro en la escuela del pueblo">
         <label>Su historia (biografía)</label>
         <textarea id="h-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, hermanos, anécdotas…"></textarea>
         <label id="h-nicho-lbl">¿Dónde descansa? (nicho / lugar) — si ha fallecido</label>
         <input id="h-nicho" placeholder="Ej. Cementerio de San José, nicho 124">
         <button class="btn" onclick="guardarHistoria()">Guardar su historia</button>
         <div id="hist-msg" class="msg"></div>
+      </div>
+
+      <!-- MURO DE ANÉCDOTAS FIRMADAS -->
+      <div class="vidrio" style="margin-top:12px">
+        <h2 id="anec-titulo">📖 Anécdotas de la familia</h2>
+        <p style="font-size:13px;color:var(--suave,#6b5b3a);margin:2px 0 10px;line-height:1.5">
+          Cada miembro de la familia puede dejar su recuerdo <b>firmado</b>. Cuenta algo que viviste con él o ella.</p>
+        <label>Título</label>
+        <input id="a-titulo" placeholder="Ej. Las tardes de pesca">
+        <label>La anécdota</label>
+        <textarea id="a-texto" placeholder="Cuéntala con tus palabras…"></textarea>
+        <label>¿Quién eres? (para que quede firmado)</label>
+        <input id="a-autor" placeholder="Ej. su nieto Luis">
+        <button class="btn" onclick="anadirAnecdota()">＋ Añadir mi anécdota</button>
+        <div id="anec-msg" class="msg"></div>
+        <div id="anec-lista" style="margin-top:14px"></div>
       </div>
     </div>
 
@@ -801,15 +827,20 @@ function abrirHistoria(){
   if(!miembroActual) return; const m=miembroActual;
   document.getElementById("hist-titulo").textContent="La historia de "+(m.nombre||"");
   document.getElementById("h-lugar").value=m.lugar_nac||"";
+  document.getElementById("h-trabajo").value=m.trabajo||"";
   document.getElementById("h-historia").value=m.historia||"";
   document.getElementById("h-nicho").value=m.nicho||"";
-  limpiar("hist-msg"); ver("v-historia"); window.scrollTo(0,0);
+  document.getElementById("anec-titulo").textContent="📖 Anécdotas de "+(m.nombre||"");
+  if(document.getElementById("a-autor")) document.getElementById("a-autor").value=_ultimoAutor||"";
+  limpiar("hist-msg"); limpiar("anec-msg"); ver("v-historia"); window.scrollTo(0,0);
+  cargarAnecdotas();
 }
 function cerrarHistoria(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
 async function guardarHistoria(){
   if(!miembroActual) return;
   const cambios={
     lugar_nac:document.getElementById("h-lugar").value.trim()||null,
+    trabajo:document.getElementById("h-trabajo").value.trim()||null,
     historia:document.getElementById("h-historia").value.trim()||null,
     nicho:document.getElementById("h-nicho").value.trim()||null };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
@@ -817,6 +848,44 @@ async function guardarHistoria(){
   Object.assign(miembroActual,cambios);
   if(window._miembros[miembroActual.id]) Object.assign(window._miembros[miembroActual.id],cambios);
   msg("hist-msg","Guardado ✔","ok"); setTimeout(()=>abrirFicha(miembroActual.id),700);
+}
+
+/* ===== Muro de anécdotas firmadas (tabla contenido, tipo='anecdota') ===== */
+let _ultimoAutor="";
+async function cargarAnecdotas(){
+  const cont=document.getElementById("anec-lista"); if(!cont) return;
+  cont.innerHTML='<div class="cargando" style="color:var(--suave,#8a7340)">Cargando anécdotas…</div>';
+  const { data,error }=await sb.from("contenido").select("*")
+    .eq("miembro_id",miembroActual.id).eq("tipo","anecdota").order("creado",{ascending:true});
+  if(error){ cont.innerHTML=""; msg("anec-msg","No se pudieron leer las anécdotas: "+error.message); return; }
+  if(!data.length){ cont.innerHTML='<div style="text-align:center;color:var(--suave,#8a7340);font-style:italic;font-size:13px;padding:6px 0">Aún no hay anécdotas. Sé el primero en dejar un recuerdo.</div>'; return; }
+  cont.innerHTML=data.map(a=>`
+    <div class="anec">
+      <button class="borrar" onclick="borrarAnecdota('${a.id}')">×</button>
+      ${a.titulo?`<div class="anec-tit">${escapar(a.titulo)}</div>`:""}
+      <div class="anec-txt">${escapar(a.texto||"").replace(/\n/g,"<br>")}</div>
+      <div class="anec-firma">— ${escapar(a.autor||"Anónimo")}${a.creado?` · ${fmtFecha((a.creado||"").slice(0,10))}`:""}</div>
+    </div>`).join("");
+}
+async function anadirAnecdota(){
+  if(!miembroActual) return; limpiar("anec-msg");
+  const titulo=document.getElementById("a-titulo").value.trim();
+  const texto=document.getElementById("a-texto").value.trim();
+  const autor=document.getElementById("a-autor").value.trim();
+  if(!texto){ msg("anec-msg","Escribe la anécdota antes de añadirla."); return; }
+  if(!autor){ msg("anec-msg","Pon quién eres para que quede firmada (ej. su hijo Luis)."); return; }
+  const { error }=await sb.from("contenido").insert({
+    miembro_id:miembroActual.id, tipo:"anecdota", titulo:titulo||null, texto, autor });
+  if(error){ msg("anec-msg","No se pudo guardar: "+error.message); return; }
+  _ultimoAutor=autor;
+  document.getElementById("a-titulo").value=""; document.getElementById("a-texto").value="";
+  msg("anec-msg","Anécdota añadida ✔","ok"); cargarAnecdotas();
+}
+async function borrarAnecdota(id){
+  if(!confirm("¿Borrar esta anécdota? No se puede deshacer.")) return;
+  const { error }=await sb.from("contenido").delete().eq("id",id);
+  if(error){ msg("anec-msg","No se pudo borrar: "+error.message); return; }
+  cargarAnecdotas();
 }
 async function guardarEdicion(){
   limpiar("edit-msg");
@@ -960,7 +1029,7 @@ async function cargarRecuerdos(){
   const g=document.getElementById("galeria"), vac=document.getElementById("galeria-vacio");
   g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
   vac.classList.add("hide");
-  const { data,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).order("creado",{ascending:false});
+  const { data,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).neq("tipo","anecdota").order("creado",{ascending:false});
   if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const piezas=await Promise.all(data.map(async r=>{

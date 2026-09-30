@@ -12,3 +12,7 @@ alter table miembros add column if not exists expareja boolean default false;
 alter table miembros add column if not exists tipo_pareja text default 'pareja';  -- casados / pareja / novios / ex
 alter table miembros add column if not exists lugar_nac text;   -- dónde nació (ciudad)
 alter table miembros add column if not exists nicho text;       -- dónde descansa (si ha fallecido)
+alter table miembros add column if not exists trabajo text;     -- dónde/en qué trabajó
+
+-- Muro de anécdotas firmadas (reutiliza la tabla contenido con tipo='anecdota')
+alter table contenido add column if not exists autor text;      -- quién firma la anécdota (ej. "su nieto Luis")
