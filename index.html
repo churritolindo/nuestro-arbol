@@ -154,6 +154,16 @@
   .banner-pet.feather img{-webkit-mask:radial-gradient(120% 108% at 50% 46%,#000 48%,rgba(0,0,0,0) 80%);
             mask:radial-gradient(120% 108% at 50% 46%,#000 48%,rgba(0,0,0,0) 80%)}
   .banner-pet .arbpaw{right:2%;bottom:8%}.banner-pet .arbpaw .p1{width:17px;height:17px}.banner-pet .arbpaw .p2{width:12px;height:12px;margin-bottom:4px}
+  /* arbolitos laterales (amigos / mascotas) */
+  .inset-arb{position:absolute;bottom:-1%;width:26%;cursor:pointer;z-index:2;text-align:center;transition:transform .15s}
+  .inset-arb.izq{left:0}.inset-arb.der{right:0}
+  .inset-arb:active{transform:scale(.94)}
+  .inset-arb img{width:100%;display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+  .inset-arb .inset-ico{position:absolute;right:10%;top:4%;font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+  .inset-arb .inset-cap{position:absolute;left:0;right:0;bottom:6%;font-size:10.5px;font-weight:700;color:#fff;
+    letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 5px rgba(0,0,0,.7)}
+  .banner-arb.sub{max-width:340px}
+  .banner-arb.sub img.main{animation:mecer 6s ease-in-out infinite}
   /* galeria */
   .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .rec{background:rgba(255,253,247,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;
@@ -418,6 +428,23 @@
       </div>
     </div>
 
+    <!-- MINI-ÁRBOL DE MASCOTAS / AMIGOS -->
+    <div id="v-sub" class="hide">
+      <button class="btn sec" style="margin-top:4px" onclick="cerrarSub()">‹ Volver al árbol familiar</button>
+      <div id="sub-visual" style="margin-top:10px"></div>
+      <div id="sub-cap" style="text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 10px"></div>
+      <div id="sub-vacio" class="hide" style="text-align:center;color:#fff;font-style:italic;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin:6px 0 12px"></div>
+      <div class="vidrio">
+        <label id="sub-addlbl">Añadir</label>
+        <div class="fila" style="align-items:flex-end;gap:8px">
+          <div style="flex:1"><input id="sub-nombre" placeholder="Nombre"></div>
+          <button class="btn" style="width:auto;padding:12px 18px;margin:0" onclick="anadirSub()">＋ Añadir</button>
+        </div>
+        <div id="sub-msg" class="msg"></div>
+        <p style="font-size:12.5px;color:var(--suave,#6b5b3a);margin:8px 0 0;line-height:1.5">Toca cualquier corona para abrir su ficha y colgarle fotos, vídeos, audios y su historia.</p>
+      </div>
+    </div>
+
     <!-- ÁRBOL GENEALÓGICO (esquema, papiro a pantalla completa) -->
     <div id="v-esquema" class="esq">
       <button class="esq-back" onclick="cerrarEsquema()">‹ Volver</button>
@@ -470,7 +497,7 @@ let especieElegida = "olivo", mascotaOn = false;
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-ayuda"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-sub","v-ayuda"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
@@ -587,7 +614,8 @@ function _simboloRel(tipo){
   return '<span style="color:#ff5fa2">💗</span>';
 }
 function pintarPlacas(){
-  const arr=window._arr, M=window._miembros||{};
+  const M=window._miembros||{};
+  const arr=(window._arr||[]).filter(m=>m.clase!=='mascota'&&m.clase!=='amigo');
   const banner=document.querySelector("#arbol-visual .banner-arb");
   if(!banner) return;
   const vieja=banner.querySelector(".placas"); if(vieja) vieja.remove();
@@ -717,11 +745,6 @@ function tarjetasArbol(modo){
       +'<div class="arbmarco"><img src="'+a.img+'"><div class="arbtick">✓</div></div>'
       +'<div class="arbnom">'+a.n+'</div><div class="arbsig">'+a.s+'</div></div>';
   });
-  const petimg=arbInfo(especieElegida).img;
-  h+='<div class="arbcard arbpet'+(mascotaOn?" on":"")+'" onclick="toggleMascota()">'
-    +'<div class="arbmarco"><img src="'+petimg+'">'+pawHTML(modo)+'</div>'
-    +'<div class="arbnom">Nuestras mascotas</div>'
-    +'<div class="arbsig">'+(mascotaOn?"Añadido ✓ · toca para quitar":"Toca para añadir su arbolito")+'</div></div>';
   return h;
 }
 function elegirEspecie(k){
@@ -736,14 +759,18 @@ async function toggleMascota(){
 }
 function pintarArbol(){
   const esp=(arbolActual&&arbolActual.especie)||"olivo";
-  especieElegida=esp; mascotaOn=!!(arbolActual&&arbolActual.mascota);
+  especieElegida=esp;
   const a=arbInfo(esp);
-  let pet="";
-  if(mascotaOn){
-    const pt=a.t||a.img, cls=a.t?"banner-pet trans":"banner-pet feather";
-    pet='<div class="'+cls+'"><img src="'+pt+'">'+pawHTML("b")+'</div>';
-  }
-  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+pet+'</div>';
+  const arr=window._arr||[];
+  const nMasc=arr.filter(m=>m.clase==='mascota').length;
+  const nAmig=arr.filter(m=>m.clase==='amigo'&&(!m.creado_por||!usuario||m.creado_por===usuario.id)).length;
+  const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
+    +'<img src="diseno/arboles/mini/cerezo.png"><div class="inset-ico">🧑‍🤝‍🧑</div>'
+    +'<div class="inset-cap">Amigos'+(nAmig?' · '+nAmig:'')+'</div></div>';
+  const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
+    +'<img src="diseno/arboles/mini/olivo.png"><div class="inset-ico">🐾</div>'
+    +'<div class="inset-cap">Mascotas'+(nMasc?' · '+nMasc:'')+'</div></div>';
+  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+'</div>';
   document.getElementById("especies-cap").innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>";
   pintarPlacas();
 }
@@ -757,6 +784,54 @@ async function cambiarEspecie(k){
   if(arbolActual){ await sb.from("arboles").update({especie:k}).eq("id",arbolActual.id); arbolActual.especie=k; }
   pintarArbol();
   const p=document.getElementById("especies-panel"); if(p&&!p.classList.contains("hide")) p.innerHTML='<div class="arbsel">'+tarjetasArbol("cambiar")+'</div>';
+}
+
+/* ====== MINI-ÁRBOL: MASCOTAS / AMIGOS ====== */
+let subClase=null;
+function abrirSub(clase){
+  subClase=clase;
+  const esAmigo=clase==='amigo';
+  document.getElementById("sub-cap").innerHTML=esAmigo
+    ?"🧑‍🤝‍🧑 <b>Nuestros amigos</b> · privados, solo tú los ves"
+    :"🐾 <b>Nuestras mascotas</b> · siempre en la familia";
+  document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
+  document.getElementById("sub-nombre").value=""; limpiar("sub-msg");
+  fondo("bgL"); ver("v-sub"); window.scrollTo(0,0);
+  pintarSub();
+}
+function cerrarSub(){ pintarArbol(); fondo("bgL"); ver("v-arbol"); }
+function pintarSub(){
+  const arr=window._arr||[]; const esAmigo=subClase==='amigo';
+  let ms=arr.filter(m=>m.clase===subClase);
+  if(esAmigo) ms=ms.filter(m=>!m.creado_por||!usuario||m.creado_por===usuario.id);
+  const mini=esAmigo?"diseno/arboles/mini/cerezo.png":"diseno/arboles/mini/olivo.png";
+  const n=ms.length, vac=document.getElementById("sub-vacio");
+  if(!n){ vac.textContent=esAmigo?"Aún no hay amigos. Añade al primero abajo. 👇":"Aún no hay mascotas. Añade a la primera abajo. 👇"; vac.classList.remove("hide"); }
+  else vac.classList.add("hide");
+  let ov='<div class="placas">';
+  ms.forEach((m,i)=>{
+    const perRow=4, row=Math.floor(i/perRow), inRow=Math.min(perRow, n-row*perRow), col=i%perRow;
+    const x=inRow===1?50:(17+(col/(inRow-1))*66);
+    const y=44+row*24;
+    const cara=m._url?'<img src="'+m._url+'">':(m.clase==='mascota'?'🐾':inicial(m.nombre));
+    ov+='<button class="placa" style="left:'+x+'%;top:'+y+'%" onclick="abrirFicha(\''+m.id+'\')" title="'+escapar(m.nombre||"")+'">'
+      +'<div class="lauro" style="width:42px;height:44px"><img class="lau" src="corona.png">'
+      +'<div class="foto" style="width:24px;height:24px;font-size:11px">'+cara+'</div></div>'
+      +'<div style="font-size:9.5px;font-weight:700;color:#3a2c12;margin-top:-2px;line-height:1;white-space:nowrap;text-shadow:0 1px 2px rgba(255,250,235,.9)">'+escapar((m.nombre||"").split(" ")[0])+'</div></button>';
+  });
+  ov+='</div>';
+  document.getElementById("sub-visual").innerHTML='<div class="banner-arb sub"><img class="main" src="'+mini+'">'+ov+'</div>';
+}
+async function anadirSub(){
+  if(!arbolActual) return; limpiar("sub-msg");
+  const nombre=document.getElementById("sub-nombre").value.trim();
+  if(!nombre){ msg("sub-msg","Escribe un nombre."); return; }
+  const ins={arbol_id:arbolActual.id,nombre,clase:subClase};
+  const { error }=await sb.from("miembros").insert(ins);
+  if(error){ msg("sub-msg","No se pudo guardar: "+error.message); return; }
+  document.getElementById("sub-nombre").value="";
+  msg("sub-msg","Añadido ✔","ok"); setTimeout(()=>limpiar("sub-msg"),1200);
+  await cargarMiembros(); ver("v-sub"); pintarSub();
 }
 
 /* ====== FICHA ====== */
@@ -913,7 +988,12 @@ async function borrarMiembro(){
   if(error){ msg("edit-msg","No se pudo borrar: "+error.message); return; }
   miembroActual=null; await cargarMiembros(); fondo("bgL"); ver("v-arbol");
 }
-function volverArbol(){ miembroActual=null; fondo("bgL"); ver("v-arbol"); }
+function volverArbol(){
+  const cl=miembroActual&&miembroActual.clase;
+  miembroActual=null; fondo("bgL");
+  if(cl==='mascota'||cl==='amigo'){ subClase=cl; ver("v-sub"); pintarSub(); }
+  else ver("v-arbol");
+}
 
 /* ===== Parentesco + árbol genealógico ===== */
 function pintaSelect(id, current, excludeId){
