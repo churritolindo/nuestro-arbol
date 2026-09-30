@@ -399,6 +399,7 @@
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
+      <button class="btn sec" style="margin:0 0 10px" onclick="abrirRecibidos()">📁 Mensajes guardados</button>
       <div id="lista"></div>
       <div class="vidrio" style="margin-top:16px">
         <h2>Añadir familiar</h2>
@@ -646,10 +647,22 @@
       <button class="btn sec" style="margin-top:4px" onclick="cerrarBuzon()">‹ Volver</button>
       <div class="vidrio" style="margin-top:12px">
         <h2>💌 Mensajes para ti</h2>
-        <p class="sub">Mensajes que alguien te dejó y que ya se pueden abrir.</p>
+        <p class="sub">Mensajes que alguien te dejó y que ya se pueden abrir. Al leerlos dejan de avisar y se guardan en 📁 Mensajes guardados.</p>
       </div>
       <div id="buzon-lista" class="galeria" style="margin-top:12px"></div>
-      <div id="buzon-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">No hay mensajes para ti ahora mismo.</div>
+      <div id="buzon-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">No hay mensajes nuevos para ti.</div>
+      <button class="btn sec" style="margin-top:14px" onclick="abrirRecibidos()">📁 Ver mis mensajes guardados</button>
+    </div>
+
+    <!-- MENSAJES GUARDADOS (ya leídos) -->
+    <div id="v-recibidos" class="hide">
+      <button class="btn sec" style="margin-top:4px" onclick="cerrarRecibidos()">‹ Volver</button>
+      <div class="vidrio" style="margin-top:12px">
+        <h2>📁 Mensajes guardados</h2>
+        <p class="sub">Mensajes que ya has leído. Aquí los tienes guardados para releerlos cuando quieras.</p>
+      </div>
+      <div id="recib-lista" class="galeria" style="margin-top:12px"></div>
+      <div id="recib-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no has guardado ningún mensaje.</div>
     </div>
 
     <!-- MINI-ÁRBOL DE MASCOTAS / AMIGOS -->
@@ -762,7 +775,7 @@ let especieElegida = "olivo", mascotaOn = false;
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-privada","v-buzon","v-sub","v-ayuda"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-privada","v-buzon","v-recibidos","v-sub","v-ayuda"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
@@ -2089,7 +2102,7 @@ function cerrarPrivada(){ _privActivo=false; if(miembroActual) abrirFicha(miembr
 let _avisos=new Set(), _avisosLista=[];
 function _hoy(){ return new Date().toISOString().slice(0,10); }
 function _msgActivo(r){
-  if(!r.privado) return false;
+  if(!r.privado || r.leido) return false;
   if(r.cuando==="siempre") return true;
   if(r.cuando==="fecha") return !!(r.fecha_ver && r.fecha_ver <= _hoy());
   if(r.cuando==="fallecimiento"){ const a=(window._miembros||{})[r.miembro_id]; return !!(a && (a.fallecimiento||"").trim()); }
@@ -2126,6 +2139,38 @@ async function renderBuzon(){
   if(!_avisosLista.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const M=window._miembros||{};
   const piezas=await Promise.all(_avisosLista.map(async r=>{
+    const autor=M[r.miembro_id]; const nom=autor?escapar(autor.nombre||""):"";
+    const cab=`<div style="font-size:12px;color:#4e6b3a;background:rgba(78,107,58,.12);border-radius:10px;padding:6px 8px;margin-bottom:6px;text-align:center;line-height:1.35">💌 De <b style="color:#3b3320">${nom}</b> · para ${escapar(r.para_quien||"—")}</div>`;
+    if(r.tipo==="texto") return `<div class="rec texto">${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
+    let url=""; if(r.archivo_path){ const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(r.archivo_path,3600); url=sig?sig.signedUrl:""; }
+    if(r.tipo==="foto")  return `<div class="rec">${cab}<div class="marco-f"><img src="${url}" loading="lazy"></div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${cab}<audio src="${url}" controls></audio></div>`;
+    return "";
+  }));
+  g.innerHTML=piezas.join("");
+  // al leerlos: se marcan como leídos → dejan de avisar y pasan a "Mensajes guardados"
+  const ids=_avisosLista.map(r=>r.id);
+  if(ids.length){ try{ await sb.from("contenido").update({leido:true}).in("id",ids); }catch(e){} }
+  _avisos=new Set(); _avisosLista=[]; pintarAvisosBar(); pintarPlacas();
+}
+function abrirRecibidos(){ fondo("bgL"); ver("v-recibidos"); window.scrollTo(0,0); renderRecibidos(); }
+function cerrarRecibidos(){ fondo("bgL"); ver("v-arbol"); }
+async function renderRecibidos(){
+  const g=document.getElementById("recib-lista"), vac=document.getElementById("recib-vacio");
+  g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
+  vac.classList.add("hide");
+  let data=[];
+  try{
+    const ids=(window._arr||[]).map(m=>m.id);
+    if(ids.length){
+      const { data:d }=await sb.from("contenido").select("*").eq("privado",true).eq("leido",true).in("miembro_id",ids).order("creado",{ascending:false});
+      data=d||[];
+    }
+  }catch(e){}
+  if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
+  const M=window._miembros||{};
+  const piezas=await Promise.all(data.map(async r=>{
     const autor=M[r.miembro_id]; const nom=autor?escapar(autor.nombre||""):"";
     const cab=`<div style="font-size:12px;color:#4e6b3a;background:rgba(78,107,58,.12);border-radius:10px;padding:6px 8px;margin-bottom:6px;text-align:center;line-height:1.35">💌 De <b style="color:#3b3320">${nom}</b> · para ${escapar(r.para_quien||"—")}</div>`;
     if(r.tipo==="texto") return `<div class="rec texto">${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;

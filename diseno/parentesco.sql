@@ -34,6 +34,7 @@ alter table contenido add column if not exists fecha_ver date;     -- si cuando=
 alter table contenido add column if not exists destino text;       -- 'todos' | 'familia' | 'amigos' | 'persona'
 alter table contenido add column if not exists para_id uuid;       -- (compat) si destino='persona', un solo id
 alter table contenido add column if not exists para_ids text;      -- si destino='persona', ids separados por coma (varias personas)
+alter table contenido add column if not exists leido boolean default false;  -- true = ya lo leíste; deja de avisar y pasa a "Mensajes guardados"
 
 -- Especie (imagen) elegida para el arbolito de amigos y el de mascotas
 alter table arboles add column if not exists especie_amigos   text default 'cerezo';
