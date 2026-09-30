@@ -280,13 +280,25 @@
   .esq-cols .tree{flex:0 1 auto}
   .esq-mascotas{flex:0 0 auto;align-self:flex-start;max-width:160px}
   .masc-title{font-family:Georgia,serif;font-weight:700;color:var(--verde);font-size:13px;text-align:center;margin-bottom:4px}
-  .masc-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 4px;max-width:200px;margin:0 auto}
-  .masc-grid.mini{max-width:150px}
-  .masc-node{width:52px;text-align:center;cursor:pointer}
+  .masc-col{display:flex;flex-direction:column;align-items:center;gap:0}
+  .masc-col .masc-link{width:2px;height:14px;background:#6b4f2a;opacity:.75}
+  .masc-pair{display:flex;align-items:center;gap:2px}
+  .masc-pair .corazon{color:#a15a6a;font-size:12px;margin-top:-14px}
+  .masc-node{width:62px;text-align:center;cursor:pointer;padding:3px 0}
   .masc-node .lauro{width:44px;height:47px;margin:0 auto}
   .masc-node .foto{width:25px;height:25px;font-size:11px}
   .masc-node .pn{font-size:9.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
   .masc-node .pr{font-size:8px;color:#8a7340;font-style:italic;line-height:1}
+  .masc-col.mini .masc-node{width:56px}
+  /* pedigrí en abanico (ancestros arriba: padre izq, madre der) */
+  .ped{position:relative;margin:0 auto}
+  .ped svg{position:absolute;left:0;top:0;pointer-events:none}
+  .ped-node{position:absolute;transform:translate(-50%,-50%);text-align:center;width:66px;cursor:pointer}
+  .ped-node .lauro{width:48px;height:51px;margin:0 auto}
+  .ped-node .foto{width:27px;height:27px;font-size:12px}
+  .ped-node .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px;
+    text-shadow:0 1px 2px rgba(255,250,235,.9)}
+  .ped-heart{position:absolute;transform:translate(-50%,-50%);font-size:13px;z-index:3}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -1235,20 +1247,97 @@ function _persTree(m){
     +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
     +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
+function _mascNode(m){
+  const cara=m._url?'<img src="'+m._url+'">':'🐾';
+  const g=_normG(m.grupo); const de = g.toLowerCase()==='familia'?'':escapar(g);
+  const anio = m.nacimiento?String(m.nacimiento).slice(0,4):'';
+  const meta=[anio,de].filter(Boolean).join(' · ');
+  return '<div class="masc-node" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
+    +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+cara+'</div></div>'
+    +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
+    +(meta?'<div class="pr">'+meta+'</div>':'')+'</div>';
+}
 function mascotasHTML(mini){
   const arr=(window._arr||[]).filter(m=>m.clase==='mascota').slice();
   if(!arr.length) return "";
   arr.sort((a,b)=>{ const x=a.nacimiento||'9999-99-99', y=b.nacimiento||'9999-99-99'; return x<y?-1:(x>y?1:0); });
-  return '<div class="masc-grid'+(mini?' mini':'')+'">'+arr.map(m=>{
-    const cara=m._url?'<img src="'+m._url+'">':'🐾';
-    const g=_normG(m.grupo); const de = g.toLowerCase()==='familia'?'':escapar(g);
-    const anio = m.nacimiento?String(m.nacimiento).slice(0,4):'';
-    const meta=[anio,de].filter(Boolean).join(' · ');
-    return '<div class="masc-node" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
-      +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+cara+'</div></div>'
-      +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
-      +(meta?'<div class="pr">'+meta+'</div>':'')+'</div>';
-  }).join('')+'</div>';
+  // agrupar parejas (pareja_id) en la misma fila con corazón; el resto, una debajo de otra
+  const done=new Set(), rows=[];
+  arr.forEach(m=>{ if(done.has(m.id)) return; done.add(m.id);
+    const par = m.pareja_id && arr.find(x=>x.id===m.pareja_id && !done.has(x.id));
+    if(par){ done.add(par.id); rows.push([m,par]); } else rows.push([m]);
+  });
+  let h='<div class="masc-col'+(mini?' mini':'')+'">';
+  rows.forEach((row,i)=>{
+    if(i>0) h+='<div class="masc-link"></div>';
+    if(row.length===2){
+      const tipo=row[0].tipo_pareja||row[1].tipo_pareja||'pareja';
+      h+='<div class="masc-pair">'+_mascNode(row[0])+'<span class="corazon">'+_simboloRel(tipo)+'</span>'+_mascNode(row[1])+'</div>';
+    } else h+=_mascNode(row[0]);
+  });
+  return h+'</div>';
+}
+function pedigreeHTML(focalId){
+  const M=window._miembros||{};
+  const arr=Object.values(M).filter(m=>!m.clase||m.clase==='persona');
+  if(!arr.length) return "";
+  let focal = M[focalId] && (!M[focalId].clase||M[focalId].clase==='persona') ? M[focalId] : null;
+  if(!focal){ focal = arr.find(m=>(m.padre_id||m.madre_id) && !arr.some(c=>c.padre_id===m.id||c.madre_id===m.id)) || arr.find(m=>m.padre_id||m.madre_id) || arr[0]; }
+  const GENH=98, KIDGAP=76, HALF=70, SPAN0=102, placed=new Set(), nodes=[], links=[], hearts=[];
+  // ancestros hacia arriba. dir≠0 (pareja central): toda su familia a ese lado. dir=0: padre izq, madre der.
+  function up(id, cx, cy, gen, span, dir){
+    if(!id || placed.has(id)) return; placed.add(id);
+    nodes.push({id, x:cx, y:cy});
+    if(gen>=5) return;
+    const m=M[id]; if(!m) return;
+    const pf=(m.padre_id&&M[m.padre_id])?m.padre_id:null, pm=(m.madre_id&&M[m.madre_id])?m.madre_id:null;
+    const py=cy-GENH;
+    let fxx, mxx;
+    if(dir<0){ fxx=cx-span; mxx=cx-span*0.42; }        // izquierda: padre fuera, madre dentro
+    else if(dir>0){ fxx=cx+span*0.42; mxx=cx+span; }   // derecha: padre dentro, madre fuera
+    else { fxx=cx-span; mxx=cx+span; }                 // normal
+    if(pf){ links.push([cx,cy,fxx,py]); up(pf, fxx, py, gen+1, span*0.6, 0); }
+    if(pm){ links.push([cx,cy,mxx,py]); up(pm, mxx, py, gen+1, span*0.6, 0); }
+  }
+  // pareja central = los padres del focal (si existen); si no, el focal y su pareja
+  let A,B, hijos, hx;
+  const fa=focal.padre_id&&M[focal.padre_id], mo=focal.madre_id&&M[focal.madre_id];
+  if(fa||mo){
+    A = fa||mo; B = (fa&&mo)? mo : null;
+    const pIds=[A.id]; if(B) pIds.push(B.id);
+    hijos = arr.filter(c=> pIds.includes(c.padre_id)||pIds.includes(c.madre_id) );
+  } else {
+    A = focal; B = (focal.pareja_id&&M[focal.pareja_id])?M[focal.pareja_id]:null;
+    const pIds=[A.id]; if(B) pIds.push(B.id);
+    hijos = arr.filter(c=> pIds.includes(c.padre_id)||pIds.includes(c.madre_id) );
+  }
+  const ax = B? -HALF : 0, bx = HALF;
+  up(A.id, ax, 0, 0, SPAN0, B?-1:0);
+  if(B){ up(B.id, bx, 0, 0, SPAN0, 1); hearts.push({x:0,y:0,s:_simboloRel(A.tipo_pareja||B.tipo_pareja||'casados')}); hx=0; }
+  else hx=0;
+  // descendientes abajo
+  if(hijos.length){
+    const totW=(hijos.length-1)*KIDGAP;
+    hijos.forEach((c,i)=>{ if(placed.has(c.id)) return; const kx=hx + i*KIDGAP - totW/2, ky=GENH;
+      nodes.push({id:c.id, x:kx, y:ky}); placed.add(c.id); links.push([hx,0,kx,ky]); });
+  }
+  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
+  const PADX=44, PADY=48;
+  const minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+  const minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  const W=(maxX-minX)+PADX*2, H=(maxY-minY)+PADY*2, ox=PADX-minX, oy=PADY-minY;
+  let svg='';
+  links.forEach(l=>{ svg+='<path d="M'+(l[0]+ox).toFixed(1)+' '+(l[1]+oy).toFixed(1)+' L'+(l[2]+ox).toFixed(1)+' '+(l[3]+oy).toFixed(1)+'"/>'; });
+  let nod='';
+  nodes.forEach(n=>{ const m=M[n.id]; if(!m) return;
+    nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
+      +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
+      +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div></div>';
+  });
+  hearts.forEach(h=>{ nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>'; });
+  return '<div class="ped" style="width:'+W+'px;height:'+H+'px">'
+    +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><g stroke="#6b4f2a" stroke-width="2" fill="none" opacity=".8">'+svg+'</g></svg>'
+    +nod+'</div>';
 }
 function esquemaHTML(rootId, clase){
   const soloM = clase==='mascota';
@@ -1314,7 +1403,7 @@ function abrirEsquema(rootId, clase){
     const mh=mascotasHTML(false);
     document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay mascotas.<br>Usa ➕ Añadir para empezar.</div>';
   } else {
-    const html=esquemaHTML(realRoot, 'persona');
+    const html=pedigreeHTML(esqFocusId);
     document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
   }
   // Mascotas pequeñitas a la derecha (solo en el árbol de la familia), sin recuadro
