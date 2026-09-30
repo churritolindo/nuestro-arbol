@@ -240,6 +240,15 @@
   .esq-back{position:fixed;top:10px;left:10px;z-index:61;background:rgba(251,244,223,.92);border:none;
     border-radius:20px;padding:7px 14px;font-family:Georgia,serif;font-weight:700;color:var(--verde);
     box-shadow:0 0 0 1.5px var(--oroC),0 2px 6px rgba(60,40,10,.3);cursor:pointer}
+  .esq-add{position:fixed;top:10px;right:10px;z-index:61;background:linear-gradient(160deg,#4a7a5e,#2f5340);border:none;
+    border-radius:20px;padding:7px 14px;font-family:Georgia,serif;font-weight:700;color:#fff;
+    box-shadow:0 0 0 1.5px var(--oroC),0 2px 6px rgba(60,40,10,.3);cursor:pointer}
+  .rama-form{max-width:440px;margin:0 auto 20px;background:rgba(251,244,223,.96);border-radius:16px;padding:16px;
+    box-shadow:0 0 0 1.5px var(--oroC),0 6px 16px rgba(60,40,10,.3)}
+  .rama-form h3{font-family:Georgia,serif;color:var(--verde);margin-bottom:8px;text-align:center}
+  .rama-form label{display:block;font-size:13px;font-weight:700;color:var(--tinta);margin:8px 0 3px}
+  .rama-form input,.rama-form select{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(120,95,45,.4);
+    background:#fffdf7;font-size:15px;font-family:Georgia,serif;color:var(--tinta)}
   .tree{overflow-x:auto;padding:8px 2px 10px;text-align:center}
   .tree ul{display:flex;justify-content:center;padding-top:18px;position:relative;list-style:none}
   .tree li{list-style:none;position:relative;padding:18px 6px 0;text-align:center}
@@ -425,6 +434,7 @@
         </div>
         <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
         <div id="edit-msg" class="msg"></div>
+        <button class="btn sec" style="margin-top:8px" onclick="setCabeza()">🏠 Cabeza del árbol principal</button>
       </div>
       <button class="link" style="color:#ffd7c2" onclick="borrarMiembro()">🗑️ Borrar este familiar</button>
     </div>
@@ -488,8 +498,30 @@
     <!-- ÁRBOL GENEALÓGICO (esquema, papiro a pantalla completa) -->
     <div id="v-esquema" class="esq">
       <button class="esq-back" onclick="cerrarEsquema()">‹ Volver</button>
+      <button class="esq-add" onclick="toggleRamaForm()">➕ Añadir familiar</button>
       <div class="esq-scroll">
         <div class="top"><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
+        <div id="rama-form" class="rama-form hide">
+          <h3>Añadir un familiar a la rama</h3>
+          <label>Nombre</label>
+          <input id="rf-nombre" placeholder="Ej. Bisabuelo Antonio">
+          <label>Esta persona es…</label>
+          <select id="rf-rel">
+            <option value="padre">el padre de…</option>
+            <option value="madre">la madre de…</option>
+            <option value="pareja">la pareja de…</option>
+            <option value="hijo">hijo/a de…</option>
+            <option value="hermano">hermano/a de…</option>
+          </select>
+          <label id="rf-baselbl">¿de quién?</label>
+          <select id="rf-base"></select>
+          <div id="rf-tipowrap" class="hide">
+            <label>¿Qué relación de pareja?</label>
+            <select id="rf-tipo"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select>
+          </div>
+          <button class="btn" style="margin-top:12px" onclick="anadirEnRama()">＋ Añadir a la rama</button>
+          <div id="rf-msg" class="msg"></div>
+        </div>
         <div class="tree" id="esq-tree"></div>
         <div class="hint">Desliza para ver toda la rama · toca una persona para abrir su ficha</div>
       </div>
@@ -697,9 +729,15 @@ function pintarPlacas(){
     unidades.push({cx, depth, kids});
     return cx;
   }
-  const esRaiz=m=>{ if(m.padre_id||m.madre_id) return false; return !_parejasDe(m).some(p=>p.padre_id||p.madre_id); };
-  arr.filter(esRaiz).forEach(r=>{ if(!vis.has(r.id)) layout(r,0); });
-  arr.forEach(m=>{ if(!vis.has(m.id)) layout(m,0); });
+  const raizId=arbolActual&&arbolActual.raiz_id;
+  if(raizId && M[raizId] && M[raizId].clase!=='mascota' && M[raizId].clase!=='amigo'){
+    // Cabeza fijada: el banner muestra solo esa pareja y sus 3 generaciones (antepasados por encima solo en la rama)
+    layout(M[raizId],0);
+  } else {
+    const esRaiz=m=>{ if(m.padre_id||m.madre_id) return false; return !_parejasDe(m).some(p=>p.padre_id||p.madre_id); };
+    arr.filter(esRaiz).forEach(r=>{ if(!vis.has(r.id)) layout(r,0); });
+    arr.forEach(m=>{ if(!vis.has(m.id)) layout(m,0); });
+  }
 
   const ids=Object.keys(pos); if(!ids.length) return;
   const sxs=ids.map(id=>pos[id].sx), minSx=Math.min.apply(null,sxs), maxSx=Math.max.apply(null,sxs), span=maxSx-minSx;
@@ -1201,19 +1239,90 @@ function esquemaHTML(rootId){
   roots.forEach((r,i)=>{ if(hecho.has(r.id)) return; const h=nodo(r, i===0 && !rootId); if(h) lis.push('<li>'+h+'</li>'); });
   return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
 }
+let esqFocusId=null;
+function _topAncestro(id){
+  const M=window._miembros||{}; let cur=M[id], seen=new Set(), guard=0;
+  while(cur && (cur.padre_id||cur.madre_id) && guard++<30){
+    const nx=M[cur.padre_id]||M[cur.madre_id];
+    if(!nx || seen.has(nx.id)) break; seen.add(cur.id); cur=nx;
+  }
+  return cur;
+}
 function abrirEsquema(rootId){
   const M=window._miembros||{};
+  esqFocusId = (rootId && M[rootId]) ? rootId : null;
+  // desde una persona: mostrar toda su línea (desde el antepasado más alto), para ver y añadir ancestros
+  let realRoot=null;
+  if(esqFocusId){ const t=_topAncestro(esqFocusId); realRoot = t?t.id:esqFocusId; }
   let titulo;
-  if(rootId && M[rootId]){ const m=M[rootId]; titulo="Familia "+((m.apellidos||"").trim()||m.nombre); }
+  if(esqFocusId){ const m=M[esqFocusId]; titulo="Rama de "+(m.nombre||"")+((m.apellidos)?" "+m.apellidos:""); }
   else titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico";
   document.getElementById("esq-titulo").textContent=titulo;
-  const html=esquemaHTML(rootId);
+  const html=esquemaHTML(realRoot);
   document.getElementById("esq-tree").innerHTML = html ||
-    '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Al añadir o editar a una persona, di de quién es hijo/a y su pareja.</div>';
+    '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir familiar para empezar la rama.</div>';
+  document.getElementById("rama-form").classList.add("hide");
   const ov=document.getElementById("v-esquema"); ov.classList.add("show"); ov.scrollTop=0;
 }
 function cerrarEsquema(){ document.getElementById("v-esquema").classList.remove("show"); }
 function abrirDesdeEsquema(id){ cerrarEsquema(); abrirFicha(id); }
+function toggleRamaForm(){
+  const f=document.getElementById("rama-form");
+  if(f.classList.contains("hide")){ rellenarRamaBase(); onRelChange(); f.classList.remove("hide"); f.scrollIntoView({behavior:'smooth',block:'center'}); }
+  else f.classList.add("hide");
+}
+function rellenarRamaBase(){
+  const sel=document.getElementById("rf-base");
+  const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
+  sel.innerHTML=personas.map(p=>'<option value="'+p.id+'">'+escapar(p.nombre)+(p.apellidos?' '+escapar(p.apellidos):'')+'</option>').join('');
+  if(esqFocusId && personas.some(p=>p.id===esqFocusId)) sel.value=esqFocusId;
+  document.getElementById("rf-nombre").value=""; limpiar("rf-msg");
+  document.getElementById("rf-rel").onchange=onRelChange;
+}
+function onRelChange(){
+  const rel=document.getElementById("rf-rel").value;
+  document.getElementById("rf-tipowrap").classList.toggle("hide", rel!=='pareja');
+  const map={padre:'¿de quién es el padre?',madre:'¿de quién es la madre?',pareja:'¿pareja de quién?',hijo:'¿hijo/a de quién?',hermano:'¿hermano/a de quién?'};
+  document.getElementById("rf-baselbl").textContent=map[rel]||'¿de quién?';
+}
+async function pinRaizSiHaceFalta(baseId){
+  if(!arbolActual || arbolActual.raiz_id) return;
+  const top=_topAncestro(baseId); if(!top) return;
+  await sb.from("arboles").update({raiz_id:top.id}).eq("id",arbolActual.id);
+  arbolActual.raiz_id=top.id;
+}
+async function anadirEnRama(){
+  limpiar("rf-msg");
+  const nombre=document.getElementById("rf-nombre").value.trim();
+  if(!nombre){ msg("rf-msg","Escribe un nombre."); return; }
+  const rel=document.getElementById("rf-rel").value;
+  const baseId=document.getElementById("rf-base").value;
+  const M=window._miembros||{}, base=M[baseId];
+  if(!base){ msg("rf-msg","Elige de quién es."); return; }
+  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:'persona'}).select().single();
+  if(error||!nuevo){ msg("rf-msg","No se pudo guardar: "+((error&&error.message)||"")); return; }
+  try{
+    if(rel==='padre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({padre_id:nuevo.id}).eq("id",base.id); }
+    else if(rel==='madre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({madre_id:nuevo.id}).eq("id",base.id); }
+    else if(rel==='pareja'){ const tipo=document.getElementById("rf-tipo").value;
+      await sb.from("miembros").update({pareja_id:base.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",nuevo.id);
+      await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",base.id); }
+    else if(rel==='hijo'){ const upd={padre_id:base.id}; if(base.pareja_id) upd.madre_id=base.pareja_id;
+      await sb.from("miembros").update(upd).eq("id",nuevo.id); }
+    else if(rel==='hermano'){ await sb.from("miembros").update({padre_id:base.padre_id||null,madre_id:base.madre_id||null}).eq("id",nuevo.id); }
+  }catch(e){}
+  msg("rf-msg","Añadido ✔","ok");
+  await cargarMiembros();
+  abrirEsquema(esqFocusId);
+}
+async function setCabeza(){
+  if(!miembroActual||!arbolActual) return;
+  const nuevo = arbolActual.raiz_id===miembroActual.id ? null : miembroActual.id;
+  const { error }=await sb.from("arboles").update({raiz_id:nuevo}).eq("id",arbolActual.id);
+  if(error){ msg("edit-msg","No se pudo: "+error.message); return; }
+  arbolActual.raiz_id=nuevo;
+  msg("edit-msg", nuevo?"Ahora es la cabeza del árbol principal ✔":"Ya no es la cabeza (el árbol vuelve a lo de siempre) ✔","ok");
+}
 
 function elegir(tipo){
   tipoElegido=tipo;

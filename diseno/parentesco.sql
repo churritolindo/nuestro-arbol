@@ -23,3 +23,7 @@ alter table miembros add column if not exists grupo text default 'Familia';
 -- Especie (imagen) elegida para el arbolito de amigos y el de mascotas
 alter table arboles add column if not exists especie_amigos   text default 'cerezo';
 alter table arboles add column if not exists especie_mascotas text default 'olivo';
+
+-- Cabeza del árbol principal: la pareja desde la que se pintan las 3 generaciones
+-- (los antepasados por encima -bisabuelos, tatarabuelos- solo salen en "Ver su rama")
+alter table arboles add column if not exists raiz_id uuid;
