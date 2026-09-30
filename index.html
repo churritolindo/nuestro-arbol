@@ -1279,59 +1279,103 @@ function mascotasHTML(mini){
   });
   return h+'</div>';
 }
-function pedigreeHTML(focalId){
+function familiaHTML(focalId){
   const M=window._miembros||{};
-  const arr=Object.values(M).filter(m=>!m.clase||m.clase==='persona');
+  const persona = m => !!m && (!m.clase || m.clase==='persona');
+  const arr=Object.values(M).filter(persona);
   if(!arr.length) return "";
-  let focal = M[focalId] && (!M[focalId].clase||M[focalId].clase==='persona') ? M[focalId] : null;
-  if(!focal){ focal = arr.find(m=>(m.padre_id||m.madre_id) && !arr.some(c=>c.padre_id===m.id||c.madre_id===m.id)) || arr.find(m=>m.padre_id||m.madre_id) || arr[0]; }
-  const GENH=98, KIDGAP=76, HALF=70, SPAN0=102, placed=new Set(), nodes=[], links=[], hearts=[];
-  // ancestros hacia arriba. dir≠0 (pareja central): toda su familia a ese lado. dir=0: padre izq, madre der.
-  function up(id, cx, cy, gen, span, dir){
-    if(!id || placed.has(id)) return; placed.add(id);
-    nodes.push({id, x:cx, y:cy});
-    if(gen>=5) return;
-    const m=M[id]; if(!m) return;
-    const pf=(m.padre_id&&M[m.padre_id])?m.padre_id:null, pm=(m.madre_id&&M[m.madre_id])?m.madre_id:null;
-    const py=cy-GENH;
-    let fxx, mxx;
-    if(dir<0){ fxx=cx-span; mxx=cx-span*0.42; }        // izquierda: padre fuera, madre dentro
-    else if(dir>0){ fxx=cx+span*0.42; mxx=cx+span; }   // derecha: padre dentro, madre fuera
-    else { fxx=cx-span; mxx=cx+span; }                 // normal
-    if(pf){ links.push([cx,cy,fxx,py]); up(pf, fxx, py, gen+1, span*0.6, 0); }
-    if(pm){ links.push([cx,cy,mxx,py]); up(pm, mxx, py, gen+1, span*0.6, 0); }
+  const P=id=>M[id];
+  const parejaDe = m => (m && m.pareja_id && persona(P(m.pareja_id))) ? P(m.pareja_id) : null;
+  const hijosDe = pIds => arr.filter(c=> pIds.includes(c.padre_id)||pIds.includes(c.madre_id));
+  let focal = persona(P(focalId)) ? P(focalId) : null;
+  if(!focal){ focal = arr.find(m=>(m.padre_id||m.madre_id) && hijosDe([m.id]).length===0) || arr.find(m=>m.padre_id||m.madre_id) || arr[0]; }
+  // pareja central = los padres del focal; si no tiene, el focal + su pareja
+  const fa0=P(focal.padre_id), mo0=P(focal.madre_id);
+  let A,B;
+  if(persona(fa0)||persona(mo0)){ A=persona(fa0)?fa0:mo0; B=(persona(fa0)&&persona(mo0))?mo0:null; }
+  else { A=focal; B=parejaDe(focal); }
+
+  const NW=58, COLW=80, GENH=108, placed=new Set(), nodes=[], links=[], hearts=[];
+  let cur=0;
+  // coloca a `id`(+pareja) en fila `y` y sus descendientes debajo; devuelve el centro (x) de la pareja
+  function down(id, y){
+    if(placed.has(id)) return null;
+    const m=P(id); if(!persona(m)) return null;
+    placed.add(id);
+    const par=parejaDe(m); if(par) placed.add(par.id);
+    const pIds=[id]; if(par) pIds.push(par.id);
+    const kids=hijosDe(pIds).filter(k=>persona(k)&&!placed.has(k.id));
+    const cc=[];
+    kids.forEach(k=>{ const c=down(k.id, y+GENH); if(c!=null) cc.push(c); });
+    let center;
+    if(cc.length){ center=(cc[0]+cc[cc.length-1])/2; }
+    else { const span=par?2:1; center=cur+span*COLW/2; cur+=span*COLW; }
+    nodes.push({id, x:(par?center-NW/2:center), y});
+    if(par){ nodes.push({id:par.id, x:center+NW/2, y}); hearts.push({x:center,y,s:_simboloRel(m.tipo_pareja||par.tipo_pareja||'casados')}); }
+    if(cc.length){ const by=y+GENH, my=(y+by)/2;
+      links.push([center,y+26,center,my]);
+      links.push([cc[0],my,cc[cc.length-1],my]);
+      cc.forEach(c=>links.push([c,my,c,by-26]));
+    }
+    return center;
   }
-  // pareja central = los padres del focal (si existen); si no, el focal y su pareja
-  let A,B, hijos, hx;
-  const fa=focal.padre_id&&M[focal.padre_id], mo=focal.madre_id&&M[focal.madre_id];
-  if(fa||mo){
-    A = fa||mo; B = (fa&&mo)? mo : null;
-    const pIds=[A.id]; if(B) pIds.push(B.id);
-    hijos = arr.filter(c=> pIds.includes(c.padre_id)||pIds.includes(c.madre_id) );
-  } else {
-    A = focal; B = (focal.pareja_id&&M[focal.pareja_id])?M[focal.pareja_id]:null;
-    const pIds=[A.id]; if(B) pIds.push(B.id);
-    hijos = arr.filter(c=> pIds.includes(c.padre_id)||pIds.includes(c.madre_id) );
+  const sibsOf = m => {
+    const ps=[m.padre_id,m.madre_id].filter(Boolean); if(!ps.length) return [];
+    return arr.filter(x=> x.id!==m.id && x.id!==(A&&A.id) && x.id!==(B&&B.id) && (ps.includes(x.padre_id)||ps.includes(x.madre_id)));
+  };
+  const leftSibs=sibsOf(A), rightSibs=B?sibsOf(B):[];
+  const lc=[]; leftSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) lc.push(c); });
+  const cAB=down(A.id,0);
+  const rc=[]; rightSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) rc.push(c); });
+  const Ax = B? cAB-NW/2 : cAB, Bx = cAB+NW/2;
+  // ancestros en abanico (padre a la izq, madre a la der)
+  function up(pid, cx, gen){
+    const m=P(pid); if(!m || gen>6) return;
+    const fa=P(m.padre_id), mo=P(m.madre_id);
+    if(!persona(fa)&&!persona(mo)) return;
+    const y=-gen*GENH, cyc=-(gen-1)*GENH, span=Math.max(58,130*Math.pow(0.6,gen-1));
+    if(persona(fa)&&persona(mo)){
+      const fx=cx-span/2, mx=cx+span/2;
+      if(!placed.has(fa.id)){ placed.add(fa.id); nodes.push({id:fa.id,x:fx,y}); }
+      if(!placed.has(mo.id)){ placed.add(mo.id); nodes.push({id:mo.id,x:mx,y}); }
+      hearts.push({x:cx,y,s:_simboloRel(fa.tipo_pareja||mo.tipo_pareja||'casados')});
+      links.push([cx,cyc-26,fx,y+26]); links.push([cx,cyc-26,mx,y+26]);
+      up(fa.id,fx,gen+1); up(mo.id,mx,gen+1);
+    } else { const o=persona(fa)?fa:mo;
+      if(!placed.has(o.id)){ placed.add(o.id); nodes.push({id:o.id,x:cx,y}); }
+      links.push([cx,cyc-26,cx,y+26]); up(o.id,cx,gen+1);
+    }
   }
-  const ax = B? -HALF : 0, bx = HALF;
-  up(A.id, ax, 0, 0, SPAN0, B?-1:0);
-  if(B){ up(B.id, bx, 0, 0, SPAN0, 1); hearts.push({x:0,y:0,s:_simboloRel(A.tipo_pareja||B.tipo_pareja||'casados')}); hx=0; }
-  else hx=0;
-  // descendientes abajo
-  if(hijos.length){
-    const totW=(hijos.length-1)*KIDGAP;
-    hijos.forEach((c,i)=>{ if(placed.has(c.id)) return; const kx=hx + i*KIDGAP - totW/2, ky=GENH;
-      nodes.push({id:c.id, x:kx, y:ky}); placed.add(c.id); links.push([hx,0,kx,ky]); });
+  // padres de A por encima del grupo [hermanos de A + A]; padres de B por encima de [B + hermanos de B]
+  function abuelosDe(person, groupX){
+    const fa=P(person.padre_id), mo=P(person.madre_id);
+    if(!persona(fa)&&!persona(mo)) return;
+    const gmin=Math.min.apply(null,groupX), gmax=Math.max.apply(null,groupX), gc=(gmin+gmax)/2;
+    const y=-GENH, my=-GENH/2, span=130;
+    if(persona(fa)&&persona(mo)){
+      const fx=gc-span/2, mx=gc+span/2;
+      if(!placed.has(fa.id)){ placed.add(fa.id); nodes.push({id:fa.id,x:fx,y}); }
+      if(!placed.has(mo.id)){ placed.add(mo.id); nodes.push({id:mo.id,x:mx,y}); }
+      hearts.push({x:gc,y,s:_simboloRel(fa.tipo_pareja||mo.tipo_pareja||'casados')});
+      links.push([gc,y+26,gc,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
+      up(fa.id,fx,2); up(mo.id,mx,2);
+    } else { const o=persona(fa)?fa:mo;
+      if(!placed.has(o.id)){ placed.add(o.id); nodes.push({id:o.id,x:gc,y}); }
+      links.push([gc,y+26,gc,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
+      up(o.id,gc,2);
+    }
   }
-  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
-  const PADX=44, PADY=48;
-  const minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
-  const minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  abuelosDe(A, lc.concat([Ax]));
+  if(B) abuelosDe(B, rc.concat([Bx]));
+
+  if(!nodes.length) return "";
+  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y), PADX=46, PADY=50;
+  const minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs), minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
   const W=(maxX-minX)+PADX*2, H=(maxY-minY)+PADY*2, ox=PADX-minX, oy=PADY-minY;
   let svg='';
   links.forEach(l=>{ svg+='<path d="M'+(l[0]+ox).toFixed(1)+' '+(l[1]+oy).toFixed(1)+' L'+(l[2]+ox).toFixed(1)+' '+(l[3]+oy).toFixed(1)+'"/>'; });
   let nod='';
-  nodes.forEach(n=>{ const m=M[n.id]; if(!m) return;
+  nodes.forEach(n=>{ const m=P(n.id); if(!m) return;
     nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
       +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
       +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div></div>';
@@ -1409,7 +1453,7 @@ function abrirEsquema(rootId, clase){
     const mh=mascotasHTML(false);
     document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay mascotas.<br>Usa ➕ Añadir para empezar.</div>';
   } else {
-    const html=esquemaHTML(null, 'persona');
+    const html=familiaHTML(esqFocusId);
     document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
   }
   // Mascotas pequeñitas a la derecha SOLO en el árbol familiar completo (no al abrir la rama de una persona)
