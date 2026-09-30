@@ -19,3 +19,7 @@ alter table contenido add column if not exists autor text;      -- quién firma 
 
 -- Grupos de amigos/mascotas ("Amigos de Luis", "Amigos de la familia"…)
 alter table miembros add column if not exists grupo text default 'Familia';
+
+-- Especie (imagen) elegida para el arbolito de amigos y el de mascotas
+alter table arboles add column if not exists especie_amigos   text default 'cerezo';
+alter table arboles add column if not exists especie_mascotas text default 'olivo';

@@ -140,7 +140,7 @@
   .arbpaw{position:absolute;right:8px;bottom:8px;display:flex;gap:2px;align-items:flex-end;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
   .arbpaw svg{display:block}.arbpaw .p1{width:26px;height:26px}.arbpaw .p2{width:19px;height:19px;margin-bottom:6px}
   /* banner del arbol elegido en la pantalla del arbol */
-  .banner-arb{position:relative;width:100%;max-width:390px;margin:0 auto 4px;border-radius:16px;overflow:hidden;
+  .banner-arb{position:relative;width:100%;max-width:372px;margin:0 auto 4px;border-radius:16px;overflow:hidden;
     box-shadow:0 0 0 2px var(--oroO),0 0 0 4px var(--oroC),0 6px 16px rgba(20,30,25,.32)}
   .banner-arb img.main{width:100%;display:block;transform-origin:50% 100%;animation:mecer 6.5s ease-in-out infinite}
   /* nombres sobre los carteles del arbol */
@@ -155,13 +155,15 @@
             mask:radial-gradient(120% 108% at 50% 46%,#000 48%,rgba(0,0,0,0) 80%)}
   .banner-pet .arbpaw{right:2%;bottom:8%}.banner-pet .arbpaw .p1{width:17px;height:17px}.banner-pet .arbpaw .p2{width:12px;height:12px;margin-bottom:4px}
   /* arbolitos laterales (amigos / mascotas) */
-  .inset-arb{position:absolute;bottom:-2%;width:33%;cursor:pointer;z-index:2;text-align:center;transition:transform .15s}
-  .inset-arb.izq{left:-2%}.inset-arb.der{right:-2%}
-  .inset-arb:active{transform:scale(.94)}
-  .inset-arb img{width:100%;display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
-  .inset-arb .inset-ico{position:absolute;right:10%;top:4%;font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
-  .inset-arb .inset-cap{position:absolute;left:0;right:0;bottom:6%;font-size:10.5px;font-weight:700;color:#fff;
-    letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 5px rgba(0,0,0,.7)}
+  .inset-arb{position:absolute;bottom:-2%;width:36%;cursor:pointer;z-index:2;text-align:center}
+  .inset-arb.izq{left:-3%;width:40%}
+  .inset-arb.der{right:-3%}
+  .inset-arb:active img{transform:scale(.94)}
+  .inset-arb img{width:100%;display:block;transform-origin:50% 100%;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));animation:mecer 5.2s ease-in-out infinite}
+  .inset-arb.der img{animation-duration:5.9s}
+  .inset-arb .inset-ico{position:absolute;left:0;right:0;bottom:15%;text-align:center;font-size:19px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8))}
+  .inset-arb .inset-cap{position:absolute;left:0;right:0;bottom:4%;font-size:11px;font-weight:700;color:#fff;
+    letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 6px rgba(0,0,0,.75)}
   .banner-arb.sub{max-width:340px}
   .banner-arb.sub img.main{animation:mecer 6s ease-in-out infinite}
   .grupos{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 2px}
@@ -169,6 +171,10 @@
     font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:20px;cursor:pointer;backdrop-filter:blur(3px);
     text-shadow:0 1px 3px rgba(0,0,0,.6);transition:all .15s}
   .grupo-chip.on{background:var(--oroC);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .placa-wrap{position:absolute;transform:translate(-50%,-50%);text-align:center;pointer-events:auto}
+  .placa-wrap .placa2{border:none;background:transparent;padding:0;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(40,25,5,.45))}
+  .placa-wrap .mini-del{position:absolute;top:-7px;right:-6px;z-index:5;background:rgba(155,32,22,.92);color:#fff;border:1.5px solid #fff;
+    width:20px;height:20px;border-radius:50%;font-size:12px;line-height:1;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.4)}
   /* galeria */
   .galeria{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .rec{background:rgba(255,253,247,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;
@@ -439,6 +445,8 @@
       <div id="sub-cap" style="text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:8px 0 6px"></div>
       <div id="sub-grupos" class="grupos"></div>
       <div id="sub-visual" style="margin-top:8px"></div>
+      <div id="sub-especie-cap" onclick="toggleEspeciesSub()" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px;cursor:pointer">🌳 Toca para cambiar el arbolito</div>
+      <div id="sub-especies" class="hide" style="margin-bottom:10px"></div>
       <div id="sub-vacio" class="hide" style="text-align:center;color:#fff;font-style:italic;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin:6px 0 12px"></div>
       <div class="vidrio">
         <label id="sub-addlbl">Añadir</label>
@@ -772,11 +780,13 @@ function pintarArbol(){
   const arr=window._arr||[];
   const nMasc=arr.filter(m=>m.clase==='mascota').length;
   const nAmig=arr.filter(m=>m.clase==='amigo'&&(!m.creado_por||!usuario||m.creado_por===usuario.id)).length;
+  const espA=(arbolActual&&arbolActual.especie_amigos)||'cerezo';
+  const espM=(arbolActual&&arbolActual.especie_mascotas)||'olivo';
   const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
-    +'<img src="diseno/arboles/mini/cerezo.png"><div class="inset-ico">🧑‍🤝‍🧑</div>'
+    +'<img src="diseno/arboles/mini/'+espA+'.png"><div class="inset-ico">🧑‍🤝‍🧑</div>'
     +'<div class="inset-cap">Amigos'+(nAmig?' · '+nAmig:'')+'</div></div>';
   const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
-    +'<img src="diseno/arboles/mini/olivo.png"><div class="inset-ico">🐾</div>'
+    +'<img src="diseno/arboles/mini/'+espM+'.png"><div class="inset-ico">🐾</div>'
     +'<div class="inset-cap">Mascotas'+(nMasc?' · '+nMasc:'')+'</div></div>';
   document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+'</div>';
   document.getElementById("especies-cap").innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>";
@@ -808,6 +818,7 @@ function abrirSub(clase){
     +' <span style="font-weight:400;color:var(--suave,#8a7340)">(un nombre, o "Familia" para que lo vea todos)</span>';
   document.getElementById("sub-nombre").value="";
   document.getElementById("sub-grupo").value="";
+  document.getElementById("sub-especies").classList.add("hide");
   limpiar("sub-msg");
   fondo("bgL"); ver("v-sub"); window.scrollTo(0,0);
   pintarSub();
@@ -832,7 +843,8 @@ function pintarSub(){
       +(esAmigo?'🧑‍🤝‍🧑 ':'🐾 ')+escapar(g)+'</button>').join('') : '';
   // miembros del grupo elegido
   const vis=ms.filter(m=>_normG(m.grupo).toLowerCase()===subGrupo.toLowerCase());
-  const mini=esAmigo?"diseno/arboles/mini/cerezo.png":"diseno/arboles/mini/olivo.png";
+  const esp=esAmigo?((arbolActual&&arbolActual.especie_amigos)||'cerezo'):((arbolActual&&arbolActual.especie_mascotas)||'olivo');
+  const mini="diseno/arboles/mini/"+esp+".png";
   const n=vis.length, vac=document.getElementById("sub-vacio");
   if(!n){ vac.textContent=esAmigo?"Aún no hay amigos en este grupo. Añade abajo. 👇":"Aún no hay mascotas en este grupo. Añade abajo. 👇"; vac.classList.remove("hide"); }
   else vac.classList.add("hide");
@@ -842,13 +854,50 @@ function pintarSub(){
     const x=inRow===1?50:(17+(col/(inRow-1))*66);
     const y=44+row*24;
     const cara=m._url?'<img src="'+m._url+'">':(m.clase==='mascota'?'🐾':inicial(m.nombre));
-    ov+='<button class="placa" style="left:'+x+'%;top:'+y+'%" onclick="abrirFicha(\''+m.id+'\')" title="'+escapar(m.nombre||"")+'">'
+    ov+='<div class="placa-wrap" style="left:'+x+'%;top:'+y+'%">'
+      +'<button class="mini-del" onclick="event.stopPropagation();borrarMiembro(\''+m.id+'\')" title="Borrar">×</button>'
+      +'<button class="placa2" onclick="abrirFicha(\''+m.id+'\')" title="'+escapar(m.nombre||"")+'">'
       +'<div class="lauro" style="width:42px;height:44px"><img class="lau" src="corona.png">'
       +'<div class="foto" style="width:24px;height:24px;font-size:11px">'+cara+'</div></div>'
-      +'<div style="font-size:9.5px;font-weight:700;color:#3a2c12;margin-top:-2px;line-height:1;white-space:nowrap;text-shadow:0 1px 2px rgba(255,250,235,.9)">'+escapar((m.nombre||"").split(" ")[0])+'</div></button>';
+      +'<div style="font-size:9.5px;font-weight:700;color:#3a2c12;margin-top:-2px;line-height:1;white-space:nowrap;text-shadow:0 1px 2px rgba(255,250,235,.9)">'+escapar((m.nombre||"").split(" ")[0])+'</div></button></div>';
   });
   ov+='</div>';
   document.getElementById("sub-visual").innerHTML='<div class="banner-arb sub"><img class="main" src="'+mini+'">'+ov+'</div>';
+}
+function tarjetasSub(){
+  const sel = subClase==='amigo' ? ((arbolActual&&arbolActual.especie_amigos)||'cerezo') : ((arbolActual&&arbolActual.especie_mascotas)||'olivo');
+  return '<div class="arbsel">'+ARB.map(a=>
+    '<div class="arbcard'+(a.k===sel?' sel':'')+'" onclick="cambiarEspecieSub(\''+a.k+'\')">'
+    +'<div class="arbmarco"><img src="'+a.img+'"><div class="arbtick">✓</div></div>'
+    +'<div class="arbnom">'+a.n+'</div><div class="arbsig">'+a.s+'</div></div>').join('')+'</div>';
+}
+function toggleEspeciesSub(){
+  const p=document.getElementById("sub-especies");
+  if(p.classList.contains("hide")){ p.innerHTML=tarjetasSub(); p.classList.remove("hide"); }
+  else p.classList.add("hide");
+}
+async function cambiarEspecieSub(k){
+  if(!arbolActual) return;
+  const col = subClase==='amigo' ? 'especie_amigos' : 'especie_mascotas';
+  const { error }=await sb.from("arboles").update({[col]:k}).eq("id",arbolActual.id);
+  if(error){ msg("sub-msg","No se pudo cambiar: "+error.message); return; }
+  arbolActual[col]=k;
+  document.getElementById("sub-especies").classList.add("hide");
+  pintarSub();
+}
+async function borrarMiembro(id){
+  const m=window._miembros&&window._miembros[id]; if(!m) return;
+  if(!confirm("¿Borrar a "+(m.nombre||"este")+"? Se borrarán también sus fotos y recuerdos. No se puede deshacer.")) return;
+  try{
+    const { data:cont }=await sb.from("contenido").select("archivo_path").eq("miembro_id",id);
+    const paths=(cont||[]).filter(c=>c.archivo_path).map(c=>c.archivo_path);
+    if(m.foto) paths.push(m.foto);
+    if(paths.length) await sb.storage.from(BUCKET).remove(paths);
+    await sb.from("contenido").delete().eq("miembro_id",id);
+  }catch(e){}
+  const { error }=await sb.from("miembros").delete().eq("id",id);
+  if(error){ msg("sub-msg","No se pudo borrar: "+error.message); return; }
+  await cargarMiembros(); ver("v-sub"); pintarSub();
 }
 async function anadirSub(){
   if(!arbolActual) return; limpiar("sub-msg");
