@@ -176,14 +176,16 @@
   .inset-arb .mini-med{position:absolute;transform:translate(-50%,-50%) scale(.5);filter:drop-shadow(0 1px 2px rgba(40,25,5,.5))}
   .inset-arb .mini-med .lauro{width:50px;height:53px}
   .inset-arb .mini-med .foto{width:29px;height:29px;top:47%;font-size:13px}
-  /* rótulo dorado del árbol de amigos: marco elaborado + letras oro */
-  .amigos-emblem{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:60%;pointer-events:none}
-  .amigos-emblem .marco{width:100%;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
-  .amigos-emblem .txt{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);white-space:nowrap;
-    font-family:'Cinzel',Georgia,serif;font-weight:700;font-size:13.5px;letter-spacing:.5px;
+  /* rótulo dorado (marco elaborado + letras oro), abajo en el tronco */
+  .tree-label{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);width:58%;pointer-events:none}
+  .tree-label .marco{width:100%;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
+  .tree-label .txt{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);white-space:nowrap;
+    font-family:'Cinzel',Georgia,serif;font-weight:700;font-size:10px;letter-spacing:.2px;
     background:linear-gradient(180deg,#fff7c2 0%,#ffe071 40%,#f4bd34 70%,#cf941f 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    filter:drop-shadow(0 1px 1px rgba(50,30,0,.65))}
+    filter:drop-shadow(0 1px 1px rgba(50,30,0,.7))}
+  .tree-label .paw-top{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-size:13px;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
   .banner-arb.sub{max-width:340px}
   .banner-arb.sub img.main{animation:mecer 6s ease-in-out infinite}
   .grupos{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 2px}
@@ -834,13 +836,12 @@ function pintarArbol(){
   const nAmig=arr.filter(m=>m.clase==='amigo'&&(!m.creado_por||!usuario||m.creado_por===usuario.id)).length;
   const espA=(arbolActual&&arbolActual.especie_amigos)||'cerezo';
   const espM=(arbolActual&&arbolActual.especie_mascotas)||'olivo';
-  const mascotasVis=arr.filter(m=>m.clase==='mascota');
   const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
     +'<img src="diseno/arboles/mini/'+espA+'.png">'
-    +'<div class="amigos-emblem"><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Amigos</span></div></div>';
+    +'<div class="tree-label"><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Amigos</span></div></div>';
   const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
-    +'<img src="diseno/arboles/mini/'+espM+'.png">'+_medallitas(mascotasVis)+'<div class="inset-ico">🐾</div>'
-    +'<div class="inset-cap">Mascotas'+(nMasc?' · '+nMasc:'')+'</div></div>';
+    +'<img src="diseno/arboles/mini/'+espM+'.png">'
+    +'<div class="tree-label"><span class="paw-top">🐾</span><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Mascotas</span></div></div>';
   document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+'</div>';
   document.getElementById("especies-cap").innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>";
   pintarPlacas();
