@@ -962,7 +962,7 @@ function abrirSub(clase){
   fondo("bgL"); ver("v-sub"); window.scrollTo(0,0);
   pintarSub();
 }
-function verSubPapiro(){ abrirEsquema(null, subClase); }
+function verSubPapiro(){ abrirEsquema(null, subClase, subGrupo); }
 function cerrarSub(){ pintarArbol(); fondo("bgL"); ver("v-arbol"); }
 function seleccionarGrupo(g){ subGrupo=g; pintarSub(); }
 function rellenarGrupoSelect(){
@@ -1263,9 +1263,10 @@ function _mascNode(m){
     +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
     +(meta?'<div class="pr">'+meta+'</div>':'')+'</div>';
 }
-function mascotasHTML(mini, clase){
+function mascotasHTML(mini, clase, grupo){
   clase = clase || 'mascota';
-  const arr=(window._arr||[]).filter(m=>m.clase===clase).slice();
+  const gf = grupo ? _normG(grupo).toLowerCase() : null;
+  const arr=(window._arr||[]).filter(m=>m.clase===clase && (!gf || _normG(m.grupo).toLowerCase()===gf)).slice();
   if(!arr.length) return "";
   arr.sort((a,b)=>{ const x=a.nacimiento||'9999-99-99', y=b.nacimiento||'9999-99-99'; return x<y?-1:(x>y?1:0); });
   // agrupar parejas (pareja_id) en la misma fila con corazón; el resto, una debajo de otra
@@ -1441,22 +1442,35 @@ function _topAncestro(id){
   }
   return cur;
 }
-let esqClase='persona';
-function abrirEsquema(rootId, clase){
+let esqClase='persona', esqGrupo=null;
+function abrirEsquema(rootId, clase, grupo){
   esqClase = (clase==='mascota'||clase==='amigo') ? clase : 'persona';
+  esqGrupo = (esqClase!=='persona' && grupo) ? grupo : null;
   const M=window._miembros||{};
   esqFocusId = (rootId && M[rootId]) ? rootId : null;
   // mostramos el árbol completo (todos los antepasados de todos los lados); esqFocusId solo fija el "de quién" del formulario
+  const esAmigo=esqClase==='amigo';
+  const deTxt = esqGrupo ? (_normG(esqGrupo).toLowerCase()==='familia' ? ' de la familia' : ' de '+esqGrupo) : '';
   let titulo, rama;
-  if(esqClase==='mascota'){ titulo="🐾 Árbol de las mascotas"; rama="La familia peluda"; }
-  else if(esqClase==='amigo'){ titulo="🧑‍🤝‍🧑 Árbol de la amistad"; rama="Los amigos"; }
+  if(esqClase==='mascota'){ titulo="🐾 Mascotas"+deTxt; rama="La familia peluda"; }
+  else if(esAmigo){ titulo="🧑‍🤝‍🧑 Amigos"+deTxt; rama="Árbol de la amistad"; }
   else if(esqFocusId){ const m=M[esqFocusId]; titulo="Rama de "+(m.nombre||"")+((m.apellidos)?" "+m.apellidos:""); rama="Rama de la familia"; }
   else { titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico"; rama="Rama de la familia"; }
   document.getElementById("esq-titulo").textContent=titulo;
   const ramaEl=document.querySelector("#v-esquema .rama"); if(ramaEl) ramaEl.textContent=rama;
   if(esqClase==='mascota'||esqClase==='amigo'){
-    const mh=mascotasHTML(false, esqClase);
-    document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay '+(esqClase==='amigo'?'amigos':'mascotas')+'.<br>Usa ➕ Añadir para empezar.</div>';
+    // pestañas de grupo para no mezclar (amigos de Luis / de la familia…)
+    const todos=(window._arr||[]).filter(m=>m.clase===esqClase);
+    const grupos=[]; todos.forEach(m=>{ const g=_normG(m.grupo); if(!grupos.some(x=>x.toLowerCase()===g.toLowerCase())) grupos.push(g); });
+    let chips='';
+    if(grupos.length>1){
+      chips='<div class="grupos" style="margin-bottom:12px">'+grupos.map(g=>{
+        const on = esqGrupo && _normG(esqGrupo).toLowerCase()===g.toLowerCase();
+        return '<button class="grupo-chip'+(on?' on':'')+'" onclick="abrirEsquema(null,\''+esqClase+'\',\''+g.replace(/\\/g,"\\\\").replace(/'/g,"\\'")+'\')">'+(esAmigo?'🧑‍🤝‍🧑 ':'🐾 ')+escapar(g)+'</button>';
+      }).join('')+'</div>';
+    }
+    const mh=mascotasHTML(false, esqClase, esqGrupo);
+    document.getElementById("esq-tree").innerHTML = chips + (mh || '<div class="hint" style="margin-top:30px">Aún no hay '+(esAmigo?'amigos':'mascotas')+' en este grupo.<br>Usa ➕ Añadir para empezar.</div>');
   } else {
     const html=familiaHTML(esqFocusId);
     document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
