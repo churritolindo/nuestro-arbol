@@ -514,6 +514,7 @@
       <div id="sub-visual" style="margin-top:8px"></div>
       <div id="sub-especie-cap" onclick="toggleEspeciesSub()" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px;cursor:pointer">🌳 Toca para cambiar el arbolito</div>
       <div id="sub-especies" class="hide" style="margin-bottom:10px"></div>
+      <button class="btn sec" id="sub-papiro-btn" style="margin:0 0 10px" onclick="verSubPapiro()">📜 Ver el árbol genealógico</button>
       <div id="sub-vacio" class="hide" style="text-align:center;color:#fff;font-style:italic;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin:6px 0 12px"></div>
       <div class="vidrio">
         <label id="sub-addlbl">Añadir</label>
@@ -923,7 +924,7 @@ function pintarArbol(){
   const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
     +'<img src="diseno/arboles/mini/'+espA+'.png">'
     +'<div class="tree-label"><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Amigos</span></div></div>';
-  const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirMascotasPapiro()" title="Mascotas">'
+  const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
     +'<img src="diseno/arboles/mini/'+espM+'.png">'
     +'<div class="tree-label"><span class="paw-top">🐾</span><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Mascotas</span></div></div>';
   document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+'</div>';
@@ -954,12 +955,14 @@ function abrirSub(clase){
   document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
   document.getElementById("sub-grupolbl").textContent=esAmigo?"¿De quién es este amigo/a?":"¿De quién es esta mascota?";
   document.getElementById("sub-nombre").value="";
+  const pb=document.getElementById("sub-papiro-btn"); if(pb) pb.textContent=esAmigo?"🌳 Ver el árbol de la amistad":"📜 Ver el árbol genealógico";
   rellenarGrupoSelect();
   document.getElementById("sub-especies").classList.add("hide");
   limpiar("sub-msg");
   fondo("bgL"); ver("v-sub"); window.scrollTo(0,0);
   pintarSub();
 }
+function verSubPapiro(){ abrirEsquema(null, subClase); }
 function cerrarSub(){ pintarArbol(); fondo("bgL"); ver("v-arbol"); }
 function seleccionarGrupo(g){ subGrupo=g; pintarSub(); }
 function rellenarGrupoSelect(){
@@ -1250,7 +1253,8 @@ function _persTree(m){
     +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
 function _mascNode(m){
-  const cara=m._url?'<img src="'+m._url+'">':'🐾';
+  const ph = m.clase==='amigo' ? '🧑‍🤝‍🧑' : '🐾';
+  const cara=m._url?'<img src="'+m._url+'">':ph;
   const g=_normG(m.grupo); const de = g.toLowerCase()==='familia'?'':escapar(g);
   const anio = m.nacimiento?String(m.nacimiento).slice(0,4):'';
   const meta=[anio,de].filter(Boolean).join(' · ');
@@ -1259,8 +1263,9 @@ function _mascNode(m){
     +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
     +(meta?'<div class="pr">'+meta+'</div>':'')+'</div>';
 }
-function mascotasHTML(mini){
-  const arr=(window._arr||[]).filter(m=>m.clase==='mascota').slice();
+function mascotasHTML(mini, clase){
+  clase = clase || 'mascota';
+  const arr=(window._arr||[]).filter(m=>m.clase===clase).slice();
   if(!arr.length) return "";
   arr.sort((a,b)=>{ const x=a.nacimiento||'9999-99-99', y=b.nacimiento||'9999-99-99'; return x<y?-1:(x>y?1:0); });
   // agrupar parejas (pareja_id) en la misma fila con corazón; el resto, una debajo de otra
@@ -1438,20 +1443,20 @@ function _topAncestro(id){
 }
 let esqClase='persona';
 function abrirEsquema(rootId, clase){
-  esqClase = (clase==='mascota') ? 'mascota' : 'persona';
+  esqClase = (clase==='mascota'||clase==='amigo') ? clase : 'persona';
   const M=window._miembros||{};
   esqFocusId = (rootId && M[rootId]) ? rootId : null;
   // mostramos el árbol completo (todos los antepasados de todos los lados); esqFocusId solo fija el "de quién" del formulario
-  let realRoot=null;
   let titulo, rama;
   if(esqClase==='mascota'){ titulo="🐾 Árbol de las mascotas"; rama="La familia peluda"; }
+  else if(esqClase==='amigo'){ titulo="🧑‍🤝‍🧑 Árbol de la amistad"; rama="Los amigos"; }
   else if(esqFocusId){ const m=M[esqFocusId]; titulo="Rama de "+(m.nombre||"")+((m.apellidos)?" "+m.apellidos:""); rama="Rama de la familia"; }
   else { titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico"; rama="Rama de la familia"; }
   document.getElementById("esq-titulo").textContent=titulo;
   const ramaEl=document.querySelector("#v-esquema .rama"); if(ramaEl) ramaEl.textContent=rama;
-  if(esqClase==='mascota'){
-    const mh=mascotasHTML(false);
-    document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay mascotas.<br>Usa ➕ Añadir para empezar.</div>';
+  if(esqClase==='mascota'||esqClase==='amigo'){
+    const mh=mascotasHTML(false, esqClase);
+    document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay '+(esqClase==='amigo'?'amigos':'mascotas')+'.<br>Usa ➕ Añadir para empezar.</div>';
   } else {
     const html=familiaHTML(esqFocusId);
     document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
@@ -1471,7 +1476,7 @@ function abrirEsquema(rootId, clase){
 function abrirMascotasPapiro(){ abrirEsquema(null,'mascota'); }
 function verSuRama(){
   if(!miembroActual) return;
-  if(miembroActual.clase==='mascota') abrirMascotasPapiro();
+  if(miembroActual.clase==='mascota') abrirSub('mascota');
   else if(miembroActual.clase==='amigo') abrirSub('amigo');
   else abrirEsquema(miembroActual.id);
 }
@@ -1483,12 +1488,12 @@ function toggleRamaForm(){
   else f.classList.add("hide");
 }
 function rellenarRamaBase(){
-  const esMasc = esqClase==='mascota';
-  document.getElementById("rf-titulo").textContent = esMasc ? "Añadir una mascota" : "Añadir un familiar a la rama";
+  const esMasc = (esqClase==='mascota'||esqClase==='amigo');
+  document.getElementById("rf-titulo").textContent = esMasc ? (esqClase==='amigo'?"Añadir un amigo/a":"Añadir una mascota") : "Añadir un familiar a la rama";
   document.getElementById("rf-persona-fields").classList.toggle("hide", esMasc);
   document.getElementById("rf-masc-fields").classList.toggle("hide", !esMasc);
   document.getElementById("rf-nombre").value=""; limpiar("rf-msg");
-  document.getElementById("rf-nombre").placeholder = esMasc ? "Ej. Nova" : "Ej. Bisabuelo Antonio";
+  document.getElementById("rf-nombre").placeholder = esMasc ? (esqClase==='amigo'?"Ej. Marcos":"Ej. Nova") : "Ej. Bisabuelo Antonio";
   if(esMasc){
     const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
     document.getElementById("rf-grupo").innerHTML='<option value="Familia">👨‍👩‍👧‍👦 Toda la familia</option>'
@@ -1518,15 +1523,15 @@ async function anadirEnRama(){
   limpiar("rf-msg");
   const nombre=document.getElementById("rf-nombre").value.trim();
   if(!nombre){ msg("rf-msg","Escribe un nombre."); return; }
-  // MASCOTA: por antigüedad (fecha), sin parentesco
-  if(esqClase==='mascota'){
-    const ins={arbol_id:arbolActual.id,nombre,clase:'mascota',
+  // MASCOTA/AMIGO: por antigüedad (fecha), sin parentesco
+  if(esqClase==='mascota'||esqClase==='amigo'){
+    const ins={arbol_id:arbolActual.id,nombre,clase:esqClase,
       grupo:document.getElementById("rf-grupo").value||'Familia',
       nacimiento:document.getElementById("rf-nac").value||null,
       fallecimiento:document.getElementById("rf-fall").value||null};
     const { error }=await sb.from("miembros").insert(ins);
     if(error){ msg("rf-msg","No se pudo guardar: "+error.message); return; }
-    msg("rf-msg","Añadida ✔","ok"); await cargarMiembros(); abrirEsquema(null,'mascota'); return;
+    msg("rf-msg","Añadido ✔","ok"); await cargarMiembros(); abrirEsquema(null,esqClase); return;
   }
   const rel=document.getElementById("rf-rel").value;
   const baseId=document.getElementById("rf-base").value;
