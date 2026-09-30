@@ -61,7 +61,7 @@
   .msg.ok{background:#e9f2ea;color:var(--ok);border:1px solid #cfe4d1;display:block}
   .cargando{text-align:center;color:var(--suave);padding:30px 0;font-size:14px}
   .vacio{text-align:center;color:var(--suave);font-size:14px;padding:22px 10px}
-  .hide{display:none}
+  .hide{display:none!important}
   /* etiqueta seccion */
   .setiq{text-align:center;font-size:11.5px;letter-spacing:2px;color:#fff;text-transform:uppercase;font-weight:700;
     margin:8px 0 12px;display:flex;align-items:center;justify-content:center;gap:11px;text-shadow:0 1px 5px rgba(0,0,0,.5)}
@@ -118,6 +118,32 @@
   .subir-fila button:active{transform:scale(.98)}
   .subir-fila .ic{font-size:20px}
   .subir-fila b{font-size:11px;color:var(--verde);font-weight:700;font-family:Georgia,serif}
+  /* contadores de cuánto queda por ficha */
+  .contadores{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .contadores span{font-size:11px;color:var(--verde);background:rgba(255,253,247,.55);padding:5px 11px;border-radius:11px;
+    font-family:Georgia,serif;font-weight:700;box-shadow:0 0 0 1px var(--oroO)}
+  .contadores span.lleno{color:#b23b2e;background:rgba(200,80,60,.12);box-shadow:0 0 0 1px rgba(178,59,46,.4)}
+  /* grabadora con reloj */
+  .rec-cam{position:fixed;inset:0;z-index:9999;background:rgba(18,13,9,.95);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;padding:22px}
+  .rec-cam.hide{display:none}
+  .rec-cam video{width:100%;max-width:420px;aspect-ratio:3/4;object-fit:cover;border-radius:20px;background:#000;
+    box-shadow:0 0 0 2px var(--oroO),0 0 0 5px var(--oroC),0 10px 30px rgba(0,0,0,.5)}
+  .rec-clock{position:absolute;top:20px;right:20px;background:rgba(0,0,0,.55);color:#fff;font-family:Georgia,serif;
+    font-size:22px;font-weight:700;padding:9px 15px;border-radius:15px;border:1px solid rgba(255,255,255,.3);letter-spacing:2px}
+  .rec-clock.fin{background:#c0392b;border-color:#e57;animation:pulso 1s infinite}
+  @keyframes pulso{50%{opacity:.35}}
+  .rec-mic{width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,#4a3a26,#1a130c);
+    display:flex;align-items:center;justify-content:center;font-size:70px;box-shadow:0 0 0 2px var(--oroO),0 0 0 6px var(--oroC)}
+  .rec-mic.on{animation:latido 1s infinite}
+  @keyframes latido{50%{transform:scale(1.1);box-shadow:0 0 0 2px var(--oroO),0 0 0 6px var(--oroC),0 0 30px 10px rgba(197,58,43,.5)}}
+  .rec-hint{color:#fff;font-family:Georgia,serif;font-size:13.5px;opacity:.85;text-align:center}
+  .rec-controls{display:flex;gap:22px;align-items:center}
+  .rec-rec{width:76px;height:76px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.5);
+    cursor:pointer;transition:all .2s}
+  .rec-rec.grabando{background:#c0392b;border-radius:18px;width:56px;height:56px}
+  .rec-x{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:22px;cursor:pointer}
+  .mote{font-size:15px;color:var(--oroO,#b78b3a);font-style:italic;margin:-2px 0 2px;text-align:center;font-weight:600}
   .prog{font-size:12.5px;color:var(--verde);margin-top:10px;display:none;text-align:center;font-weight:600}
   .historia-txt{font-size:14.5px;line-height:1.6;color:var(--texto);white-space:pre-wrap;font-family:Georgia,serif;margin:2px 0 4px}
   .arbolito{width:148px;height:120px;display:block;margin:0 auto;filter:drop-shadow(0 3px 5px rgba(20,40,25,.35))}
@@ -403,6 +429,7 @@
         <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
         <input type="file" id="foto-input" accept="image/*" class="hide" onchange="fotoPerfilElegida()">
         <div class="nom serif" id="f-nom">Nombre</div>
+        <div class="mote serif" id="f-mote" style="display:none"></div>
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
         <button class="btn sec" id="f-rama-btn" style="margin-top:10px" onclick="verSuRama()">📜 Ver su rama</button>
@@ -424,6 +451,7 @@
           <button onclick="elegir('audio')"><span class="ic">🎤</span><b>Audio</b></button>
           <button onclick="abrirTexto()"><span class="ic">✍️</span><b>Texto</b></button>
         </div>
+        <div id="contadores" class="contadores"></div>
         <input type="file" id="file-input" class="hide" onchange="archivoElegido()">
         <div id="texto-box" class="hide">
           <label>Escribe el recuerdo</label>
@@ -440,6 +468,19 @@
       <div id="galeria-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay recuerdos.<br>Añade el primero arriba. 👆</div>
     </div>
 
+    <!-- GRABADORA (vídeo / audio) con reloj de cuenta atrás -->
+    <div id="rec-cam" class="rec-cam hide">
+      <div class="rec-clock" id="rec-clock">00:00</div>
+      <video id="rec-video" autoplay muted playsinline></video>
+      <div id="rec-micbox" class="rec-mic hide">🎤</div>
+      <div id="rec-hint" class="rec-hint">Toca el círculo para empezar a grabar</div>
+      <div class="rec-controls">
+        <button class="rec-x" onclick="cerrarCam()" title="Cerrar">✕</button>
+        <button class="rec-rec" id="rec-rec" onclick="toggleGrab()" title="Grabar"></button>
+        <div style="width:52px"></div>
+      </div>
+    </div>
+
     <!-- EDITAR -->
     <div id="v-editar" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cancelarEditar()">‹ Volver</button>
@@ -447,6 +488,8 @@
         <h2>Editar familiar</h2>
         <label>Nombre</label>
         <input id="e-nombre">
+        <label>Mote / apodo (opcional)</label>
+        <input id="e-apodo" placeholder="Ej. El guapo, la abuela, el gordi…">
         <div class="fila">
           <div><label>Hijo/a de… (padre)</label><select id="e-padre"></select></div>
           <div><label>…y de (madre)</label><select id="e-madre"></select></div>
@@ -1070,6 +1113,8 @@ function abrirFicha(id){
   const m=miembroActual;
   pintarFotoFicha(m);
   document.getElementById("f-nom").textContent = m.nombre;
+  const moteEl=document.getElementById("f-mote"), ap=(m.apodo||"").trim();
+  if(ap){ moteEl.textContent="«"+ap+"»"; moteEl.style.display="block"; } else moteEl.style.display="none";
   if(m.clase==="mascota"||m.clase==="amigo"){
     const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
     document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ;
@@ -1122,6 +1167,7 @@ async function fotoPerfilElegida(){
 function abrirEditar(){
   if(!miembroActual) return; const m=miembroActual;
   document.getElementById("e-nombre").value=m.nombre||"";
+  document.getElementById("e-apodo").value=m.apodo||"";
   document.getElementById("e-clase").value=m.clase||"persona";
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
@@ -1204,6 +1250,7 @@ async function guardarEdicion(){
   const pareja=document.getElementById("e-pareja").value||null;
   const tipoP=document.getElementById("e-tipopareja").value;
   const cambios={ nombre,
+    apodo:document.getElementById("e-apodo").value.trim()||null,
     clase:document.getElementById("e-clase").value,
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
@@ -1576,13 +1623,105 @@ async function setCabeza(){
   msg("edit-msg", nuevo?"Ahora es la cabeza del árbol principal ✔":"Ya no es la cabeza (el árbol vuelve a lo de siempre) ✔","ok");
 }
 
+/* Límites por ficha (fáciles de cambiar) */
+const MAX_FOTOS=30, MAX_VIDEOS=10, MAX_AUDIOS=20;
+const MAX_SEG={video:60, audio:120};   // duración máxima de grabación (segundos)
+let _cuenta={foto:0,video:0,audio:0};
+let _stream=null,_rec=null,_chunks=[],_recTipo=null,_recT=null,_recQueda=0;
+
+function _cupoDe(tipo){ return tipo==="foto"?MAX_FOTOS: tipo==="video"?MAX_VIDEOS: MAX_AUDIOS; }
+function _plural(tipo){ return tipo==="foto"?"fotos": tipo==="video"?"vídeos":"audios"; }
+
 function elegir(tipo){
   tipoElegido=tipo;
   document.getElementById("texto-box").classList.add("hide");
-  const inp=document.getElementById("file-input");
-  inp.accept = tipo==="foto"?"image/*" : tipo==="video"?"video/*" : "audio/*";
-  inp.value="";
-  inp.click();
+  limpiar("rec-msg");
+  const max=_cupoDe(tipo);
+  if((_cuenta[tipo]||0)>=max){ msg("rec-msg","Esta ficha ya tiene el máximo de "+max+" "+_plural(tipo)+". Borra alguno para añadir más."); return; }
+  if(tipo==="foto"){ const inp=document.getElementById("file-input"); inp.accept="image/*"; inp.value=""; inp.click(); return; }
+  abrirCam(tipo);
+}
+
+/* ===== Grabadora en la app con reloj de cuenta atrás ===== */
+async function abrirCam(tipo){
+  _recTipo=tipo;
+  const vid=document.getElementById("rec-video"), mic=document.getElementById("rec-micbox");
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){
+    msg("rec-msg","Tu navegador no permite grabar aquí. Prueba con Chrome o Safari actualizados."); return;
+  }
+  try{
+    _stream=await navigator.mediaDevices.getUserMedia(
+      tipo==="video" ? {video:{facingMode:"user"},audio:true} : {audio:true});
+  }catch(e){
+    msg("rec-msg","No pude acceder a "+(tipo==="video"?"la cámara":"el micrófono")+". Revisa los permisos del navegador."); return;
+  }
+  if(tipo==="video"){ vid.classList.remove("hide"); mic.classList.add("hide"); vid.srcObject=_stream; }
+  else { vid.classList.add("hide"); mic.classList.remove("hide"); mic.classList.remove("on"); }
+  _recQueda=MAX_SEG[tipo]; pintarReloj();
+  document.getElementById("rec-rec").classList.remove("grabando");
+  document.getElementById("rec-hint").textContent="Toca el círculo para empezar a grabar";
+  document.getElementById("rec-clock").classList.remove("fin");
+  document.getElementById("rec-cam").classList.remove("hide");
+}
+function pintarReloj(){
+  const s=Math.max(0,_recQueda);
+  const mm=String(Math.floor(s/60)).padStart(2,"0"), ss=String(s%60).padStart(2,"0");
+  const c=document.getElementById("rec-clock"); c.textContent=mm+":"+ss;
+  c.classList.toggle("fin", s<=10);
+}
+function toggleGrab(){
+  if(_rec && _rec.state==="recording"){ _rec.stop(); return; }
+  if(!_stream) return;
+  _chunks=[];
+  let mime = _recTipo==="video" ? "video/webm;codecs=vp8,opus" : "audio/webm";
+  if(!MediaRecorder.isTypeSupported(mime)) mime = _recTipo==="video" ? "video/mp4" : "audio/mp4";
+  const opt = MediaRecorder.isTypeSupported(mime) ? {mimeType:mime} : {};
+  try{ _rec=new MediaRecorder(_stream,opt); }catch(e){ _rec=new MediaRecorder(_stream); }
+  _rec.ondataavailable=e=>{ if(e.data&&e.data.size) _chunks.push(e.data); };
+  _rec.onstop=subirGrabacion;
+  _rec.start();
+  document.getElementById("rec-rec").classList.add("grabando");
+  document.getElementById("rec-micbox").classList.add("on");
+  document.getElementById("rec-hint").textContent="Grabando… toca de nuevo para parar";
+  _recT=setInterval(()=>{
+    _recQueda--; pintarReloj();
+    if(_recQueda<=0){ clearInterval(_recT); if(_rec&&_rec.state==="recording") _rec.stop(); }
+  },1000);
+}
+function pararStream(){ if(_stream){ _stream.getTracks().forEach(t=>t.stop()); _stream=null; } }
+function cerrarCam(){
+  if(_rec&&_rec.state==="recording"){ _rec.onstop=null; try{_rec.stop();}catch(e){} }
+  clearInterval(_recT); pararStream();
+  document.getElementById("rec-micbox").classList.remove("on");
+  document.getElementById("rec-cam").classList.add("hide");
+}
+async function subirGrabacion(){
+  clearInterval(_recT);
+  const t0=_chunks[0], mime=(t0&&t0.type)||(_recTipo==="video"?"video/webm":"audio/webm");
+  const blob=new Blob(_chunks,{type:mime});
+  const ext = mime.includes("mp4")?"mp4" : mime.includes("ogg")?"ogg" : "webm";
+  pararStream();
+  document.getElementById("rec-micbox").classList.remove("on");
+  document.getElementById("rec-cam").classList.add("hide");
+  if(!blob.size){ msg("rec-msg","No se grabó nada. Inténtalo otra vez."); return; }
+  if(blob.size > LIMITE_MB*1024*1024){ msg("rec-msg","La grabación pesa "+(blob.size/1048576).toFixed(0)+" MB (máx "+LIMITE_MB+" MB). Graba algo más corto."); return; }
+  const prog=document.getElementById("prog"); prog.style.display="block";
+  const ruta=usuario.id+"/"+miembroActual.id+"/"+_recTipo+"_"+Date.now()+"."+ext;
+  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,blob,{contentType:mime});
+  if(upErr){ prog.style.display="none"; msg("rec-msg","No se pudo subir: "+upErr.message); return; }
+  const { error:dbErr }=await sb.from("contenido").insert({
+    miembro_id:miembroActual.id, tipo:_recTipo, archivo_path:ruta,
+    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id });
+  prog.style.display="none";
+  if(dbErr){ msg("rec-msg","Subido, pero no se guardó: "+dbErr.message); return; }
+  msg("rec-msg","¡Recuerdo guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
+  cargarRecuerdos();
+}
+function pintarContadores(){
+  const el=document.getElementById("contadores"); if(!el) return;
+  const filas=[["foto","📷",MAX_FOTOS],["video","🎬",MAX_VIDEOS],["audio","🎤",MAX_AUDIOS]];
+  el.innerHTML=filas.map(([k,ic,mx])=>{ const q=Math.max(0,mx-(_cuenta[k]||0));
+    return `<span class="${q<=0?'lleno':''}">${ic} quedan ${q}</span>`; }).join("");
 }
 function abrirTexto(){
   document.getElementById("texto-box").classList.toggle("hide");
@@ -1631,8 +1770,10 @@ async function cargarRecuerdos(){
   const g=document.getElementById("galeria"), vac=document.getElementById("galeria-vacio");
   g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
   vac.classList.add("hide");
+  _cuenta={foto:0,video:0,audio:0}; pintarContadores();
   const { data,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).neq("tipo","anecdota").order("creado",{ascending:false});
   if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
+  data.forEach(r=>{ if(_cuenta[r.tipo]!=null) _cuenta[r.tipo]++; }); pintarContadores();
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const piezas=await Promise.all(data.map(async r=>{
     if(r.tipo==="texto"){
