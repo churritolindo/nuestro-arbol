@@ -23,6 +23,15 @@ alter table miembros add column if not exists grupo text default 'Familia';
 -- Mote / apodo (ej. "el guapo", "el gordi") — se muestra bajo el nombre en la ficha
 alter table miembros add column if not exists apodo text;
 
+-- Zona privada (diario + mensajes con destinatario y temporizador)
+alter table miembros  add column if not exists zona_codigo text;   -- código de la zona privada (huella, no el código en claro)
+alter table miembros  add column if not exists responsable text;   -- quién podrá abrir la zona privada el día de mañana
+alter table contenido add column if not exists privado boolean default false;  -- true = está en la zona privada, no en Recuerdos
+alter table contenido add column if not exists para_quien text;    -- destinatario libre (ej. "mis hijos", "Pilar")
+alter table contenido add column if not exists relacion text;      -- familiar / amigo / pareja / otro
+alter table contenido add column if not exists cuando text;        -- 'fallecimiento' | 'fecha' | 'siempre'
+alter table contenido add column if not exists fecha_ver date;     -- si cuando='fecha', día en que se puede ver
+
 -- Especie (imagen) elegida para el arbolito de amigos y el de mascotas
 alter table arboles add column if not exists especie_amigos   text default 'cerezo';
 alter table arboles add column if not exists especie_mascotas text default 'olivo';

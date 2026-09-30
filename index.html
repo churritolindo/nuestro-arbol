@@ -433,6 +433,7 @@
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
         <button class="btn sec" id="f-rama-btn" style="margin-top:10px" onclick="verSuRama()">📜 Ver su rama</button>
+        <button class="btn sec" id="f-priv-btn" style="margin-top:8px" onclick="abrirPrivada()">🔒 Zona privada</button>
       </div>
 
       <div class="vidrio">
@@ -549,6 +550,80 @@
       </div>
     </div>
 
+    <!-- ZONA PRIVADA (diario / mensajes con destinatario y temporizador) -->
+    <div id="v-privada" class="hide">
+      <button class="btn sec" style="margin-top:4px" onclick="cerrarPrivada()">‹ Volver</button>
+
+      <!-- CANDADO -->
+      <div id="priv-lock" class="vidrio" style="margin-top:12px;text-align:center">
+        <div style="font-size:44px">🔒</div>
+        <h2 id="priv-lock-tit" style="margin-top:4px">Zona privada</h2>
+        <p class="sub" id="priv-lock-sub">Solo tú entras aquí. Pon un código para protegerla.</p>
+        <input id="priv-code" type="password" inputmode="numeric" placeholder="Tu código" style="text-align:center;letter-spacing:4px;font-size:20px;max-width:220px;margin:6px auto" autocomplete="off">
+        <input id="priv-code2" type="password" inputmode="numeric" placeholder="Repite el código" style="text-align:center;letter-spacing:4px;font-size:20px;max-width:220px;margin:6px auto" autocomplete="off">
+        <button class="btn" id="priv-lock-btn" onclick="entrarZona()">Entrar</button>
+        <div id="priv-lock-msg" class="msg"></div>
+        <button class="link" id="priv-olvide" onclick="olvideCodigo()" style="margin-top:6px;display:none">¿Olvidaste el código?</button>
+      </div>
+
+      <!-- CONTENIDO (desbloqueado) -->
+      <div id="priv-cont" class="hide">
+        <div class="vidrio" style="margin-top:12px">
+          <h2 id="priv-tit">🔒 Zona privada</h2>
+          <p class="sub">Aquí guardas lo que quieres dejar. Nadie más lo ve. Para cada cosa eliges <b>para quién</b> es y <b>cuándo</b> podrá verla.</p>
+          <label>Responsable (quién podrá abrir esto el día de mañana)</label>
+          <div style="display:flex;gap:8px">
+            <input id="priv-resp" placeholder="Ej. mi hijo Luis Miguel" style="flex:1;min-width:0">
+            <button class="btn sec" style="flex:none;width:auto;padding:11px 14px" onclick="guardarResponsable()">Guardar</button>
+          </div>
+          <div id="priv-resp-msg" class="msg"></div>
+        </div>
+
+        <div class="vidrio" style="margin-top:12px">
+          <h2>Dejar algo nuevo</h2>
+          <label>¿Para quién es?</label>
+          <input id="priv-para" placeholder="Ej. Pepe, mis hijos, Pilar…">
+          <div class="fila">
+            <div><label>¿Qué relación?</label>
+              <select id="priv-relacion"><option value="familiar">Familiar</option><option value="amigo">Amigo/a</option><option value="pareja">Pareja</option><option value="otro">Otro</option></select>
+            </div>
+            <div><label>¿Cuándo podrá verlo?</label>
+              <select id="priv-cuando" onchange="privCuandoCambia()">
+                <option value="fallecimiento">Cuando yo falte</option>
+                <option value="fecha">En una fecha concreta</option>
+                <option value="siempre">Ya mismo (siempre)</option>
+              </select>
+            </div>
+          </div>
+          <div id="priv-fecha-box" style="display:none">
+            <label>¿Qué día se abre? (ej. cuando cumplan 18)</label>
+            <input type="date" id="priv-fecha">
+          </div>
+          <p class="sub" style="margin-top:12px">Elige qué dejar:</p>
+          <div class="subir-fila">
+            <button onclick="elegirPriv('foto')"><span class="ic">📷</span><b>Foto</b></button>
+            <button onclick="elegirPriv('video')"><span class="ic">🎬</span><b>Vídeo</b></button>
+            <button onclick="elegirPriv('audio')"><span class="ic">🎤</span><b>Audio</b></button>
+            <button onclick="abrirTextoPriv()"><span class="ic">✍️</span><b>Texto</b></button>
+          </div>
+          <div id="priv-texto-box" class="hide">
+            <label>Escribe tu mensaje</label>
+            <textarea id="priv-texto-cuerpo" placeholder="Lo que quieras dejarle…"></textarea>
+            <input id="priv-texto-titulo" placeholder="Título (opcional)" style="margin-top:8px">
+            <button class="btn" onclick="guardarTextoPriv()">Guardar mensaje</button>
+          </div>
+          <div id="priv-prog" class="prog">Guardando… un momento ⏳</div>
+          <div id="priv-msg" class="msg"></div>
+        </div>
+
+        <div class="setiq">Lo que has dejado</div>
+        <div id="priv-lista" class="galeria"></div>
+        <div id="priv-vacio" class="vacio hide" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no has dejado nada aquí.</div>
+
+        <button class="link" style="color:#ffd7c2;margin-top:14px" onclick="cambiarCodigo()">🔑 Cambiar el código</button>
+      </div>
+    </div>
+
     <!-- MINI-ÁRBOL DE MASCOTAS / AMIGOS -->
     <div id="v-sub" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cerrarSub()">‹ Volver al árbol familiar</button>
@@ -659,7 +734,7 @@ let especieElegida = "olivo", mascotaOn = false;
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-sub","v-ayuda"].forEach(v=>{
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-privada","v-sub","v-ayuda"].forEach(v=>{
     document.getElementById(v).classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
@@ -1628,18 +1703,41 @@ const MAX_FOTOS=30, MAX_VIDEOS=10, MAX_AUDIOS=20;
 const MAX_SEG={video:60, audio:120};   // duración máxima de grabación (segundos)
 let _cuenta={foto:0,video:0,audio:0};
 let _stream=null,_rec=null,_chunks=[],_recTipo=null,_recT=null,_recQueda=0;
+let _privActivo=false;   // true mientras se sube algo a la zona privada
+function _pMsg(){ return _privActivo?"priv-msg":"rec-msg"; }
+function _pProg(){ return _privActivo?"priv-prog":"prog"; }
 
 function _cupoDe(tipo){ return tipo==="foto"?MAX_FOTOS: tipo==="video"?MAX_VIDEOS: MAX_AUDIOS; }
 function _plural(tipo){ return tipo==="foto"?"fotos": tipo==="video"?"vídeos":"audios"; }
 
-function elegir(tipo){
+function elegir(tipo){ _privActivo=false; _elegirComun(tipo); }
+function elegirPriv(tipo){
+  limpiar("priv-msg");
+  if(!document.getElementById("priv-para").value.trim()){ msg("priv-msg","Escribe primero para quién es."); return; }
+  if(document.getElementById("priv-cuando").value==="fecha" && !document.getElementById("priv-fecha").value){ msg("priv-msg","Elige la fecha en la que se podrá ver."); return; }
+  _privActivo=true; _elegirComun(tipo);
+}
+function _elegirComun(tipo){
   tipoElegido=tipo;
   document.getElementById("texto-box").classList.add("hide");
-  limpiar("rec-msg");
-  const max=_cupoDe(tipo);
-  if((_cuenta[tipo]||0)>=max){ msg("rec-msg","Esta ficha ya tiene el máximo de "+max+" "+_plural(tipo)+". Borra alguno para añadir más."); return; }
+  document.getElementById("priv-texto-box").classList.add("hide");
+  limpiar(_pMsg());
+  if(!_privActivo){
+    const max=_cupoDe(tipo);
+    if((_cuenta[tipo]||0)>=max){ msg("rec-msg","Esta ficha ya tiene el máximo de "+max+" "+_plural(tipo)+". Borra alguno para añadir más."); return; }
+  }
   if(tipo==="foto"){ const inp=document.getElementById("file-input"); inp.accept="image/*"; inp.value=""; inp.click(); return; }
   abrirCam(tipo);
+}
+// Campos privados que se guardan con cada recuerdo de la zona privada
+function _privCampos(){
+  if(!_privActivo) return {};
+  const cuando=document.getElementById("priv-cuando").value;
+  return { privado:true,
+    para_quien:document.getElementById("priv-para").value.trim()||null,
+    relacion:document.getElementById("priv-relacion").value,
+    cuando:cuando,
+    fecha_ver:cuando==="fecha" ? (document.getElementById("priv-fecha").value||null) : null };
 }
 
 /* ===== Grabadora en la app con reloj de cuenta atrás ===== */
@@ -1703,19 +1801,20 @@ async function subirGrabacion(){
   pararStream();
   document.getElementById("rec-micbox").classList.remove("on");
   document.getElementById("rec-cam").classList.add("hide");
-  if(!blob.size){ msg("rec-msg","No se grabó nada. Inténtalo otra vez."); return; }
-  if(blob.size > LIMITE_MB*1024*1024){ msg("rec-msg","La grabación pesa "+(blob.size/1048576).toFixed(0)+" MB (máx "+LIMITE_MB+" MB). Graba algo más corto."); return; }
-  const prog=document.getElementById("prog"); prog.style.display="block";
+  const MSG=_pMsg();
+  if(!blob.size){ msg(MSG,"No se grabó nada. Inténtalo otra vez."); return; }
+  if(blob.size > LIMITE_MB*1024*1024){ msg(MSG,"La grabación pesa "+(blob.size/1048576).toFixed(0)+" MB (máx "+LIMITE_MB+" MB). Graba algo más corto."); return; }
+  const prog=document.getElementById(_pProg()); prog.style.display="block";
   const ruta=usuario.id+"/"+miembroActual.id+"/"+_recTipo+"_"+Date.now()+"."+ext;
   const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,blob,{contentType:mime});
-  if(upErr){ prog.style.display="none"; msg("rec-msg","No se pudo subir: "+upErr.message); return; }
-  const { error:dbErr }=await sb.from("contenido").insert({
+  if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
+  const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
     miembro_id:miembroActual.id, tipo:_recTipo, archivo_path:ruta,
-    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id });
+    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id }, _privCampos()));
   prog.style.display="none";
-  if(dbErr){ msg("rec-msg","Subido, pero no se guardó: "+dbErr.message); return; }
-  msg("rec-msg","¡Recuerdo guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
-  cargarRecuerdos();
+  if(dbErr){ msg(MSG,"Subido, pero no se guardó: "+dbErr.message); return; }
+  msg(MSG,"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),1800);
+  if(_privActivo) cargarPrivado(); else cargarRecuerdos();
 }
 function pintarContadores(){
   const el=document.getElementById("contadores"); if(!el) return;
@@ -1730,26 +1829,26 @@ function abrirTexto(){
 }
 
 async function archivoElegido(){
-  limpiar("rec-msg");
+  const MSG=_pMsg(); limpiar(MSG);
   const inp=document.getElementById("file-input");
   const file=inp.files[0]; if(!file) return;
   if(file.size > LIMITE_MB*1024*1024){
-    msg("rec-msg","Ese archivo pesa "+(file.size/1048576).toFixed(0)+" MB. De momento el máximo por archivo es "+LIMITE_MB+" MB. Prueba con uno más ligero o un vídeo más corto.");
+    msg(MSG,"Ese archivo pesa "+(file.size/1048576).toFixed(0)+" MB. De momento el máximo por archivo es "+LIMITE_MB+" MB. Prueba con uno más ligero o un vídeo más corto.");
     return;
   }
-  const prog=document.getElementById("prog"); prog.style.display="block";
+  const prog=document.getElementById(_pProg()); prog.style.display="block";
   const ext=(file.name.split(".").pop()||"dat").toLowerCase();
   const ruta = usuario.id+"/"+miembroActual.id+"/"+Date.now()+"."+ext;
   const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,file,{contentType:file.type});
-  if(upErr){ prog.style.display="none"; msg("rec-msg","No se pudo subir: "+upErr.message); return; }
+  if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
   const tipoBD = tipoElegido==="foto"?"foto":tipoElegido;
-  const { error:dbErr }=await sb.from("contenido").insert({
+  const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
     miembro_id:miembroActual.id, tipo:tipoBD, archivo_path:ruta, titulo:file.name, subido_por:usuario.id
-  });
+  }, _privCampos()));
   prog.style.display="none";
-  if(dbErr){ msg("rec-msg","Subido, pero no se guardó la ficha: "+dbErr.message); return; }
-  msg("rec-msg","¡Recuerdo guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
-  cargarRecuerdos();
+  if(dbErr){ msg(MSG,"Subido, pero no se guardó la ficha: "+dbErr.message); return; }
+  msg(MSG,"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),1800);
+  if(_privActivo) cargarPrivado(); else cargarRecuerdos();
 }
 
 async function guardarTexto(){
@@ -1771,8 +1870,9 @@ async function cargarRecuerdos(){
   g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
   vac.classList.add("hide");
   _cuenta={foto:0,video:0,audio:0}; pintarContadores();
-  const { data,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).neq("tipo","anecdota").order("creado",{ascending:false});
+  const { data:todo,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).neq("tipo","anecdota").order("creado",{ascending:false});
   if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
+  const data=(todo||[]).filter(r=>!r.privado);   // los de la zona privada no salen aquí
   data.forEach(r=>{ if(_cuenta[r.tipo]!=null) _cuenta[r.tipo]++; }); pintarContadores();
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const piezas=await Promise.all(data.map(async r=>{
@@ -1802,6 +1902,138 @@ async function borrar(id,ruta){
   if(error){ msg("rec-msg","No se pudo borrar: "+error.message); return; }
   cargarRecuerdos();
 }
+
+/* ===== ZONA PRIVADA (diario / mensajes con destinatario y temporizador) ===== */
+let _privModo="entrar";
+function _hash(s){ let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } return "h"+h.toString(36); }
+function abrirPrivada(){
+  if(!miembroActual) return;
+  _privActivo=false; limpiar("priv-lock-msg");
+  const tiene=!!miembroActual.zona_codigo;
+  _privModo=tiene?"entrar":"crear";
+  const nom=miembroActual.nombre||"";
+  document.getElementById("priv-code").value="";
+  document.getElementById("priv-code2").value="";
+  document.getElementById("priv-code2").style.display=tiene?"none":"block";
+  document.getElementById("priv-lock-tit").textContent="Zona privada de "+nom;
+  document.getElementById("priv-tit").textContent="🔒 Zona privada de "+nom;
+  document.getElementById("priv-lock-sub").textContent=tiene
+    ? "Introduce tu código para abrir la zona privada."
+    : "Aún no tienes código. Crea uno (mínimo 4 cifras) para proteger tu zona privada.";
+  document.getElementById("priv-lock-btn").textContent=tiene?"Entrar":"Crear y entrar";
+  document.getElementById("priv-olvide").style.display=tiene?"inline":"none";
+  document.getElementById("priv-lock").classList.remove("hide");
+  document.getElementById("priv-cont").classList.add("hide");
+  fondo("bgL"); ver("v-privada"); window.scrollTo(0,0);
+}
+async function entrarZona(){
+  limpiar("priv-lock-msg");
+  const c1=document.getElementById("priv-code").value.trim();
+  if(c1.length<4){ msg("priv-lock-msg","El código debe tener al menos 4 cifras."); return; }
+  if(_privModo==="crear"){
+    const c2=document.getElementById("priv-code2").value.trim();
+    if(c1!==c2){ msg("priv-lock-msg","Los dos códigos no coinciden."); return; }
+    const h=_hash(c1);
+    const { error }=await sb.from("miembros").update({zona_codigo:h}).eq("id",miembroActual.id);
+    if(error){ msg("priv-lock-msg","No se pudo guardar el código: "+error.message); return; }
+    miembroActual.zona_codigo=h; if(window._miembros&&window._miembros[miembroActual.id]) window._miembros[miembroActual.id].zona_codigo=h;
+    _mostrarZona();
+  } else {
+    if(_hash(c1)!==miembroActual.zona_codigo){ msg("priv-lock-msg","Código incorrecto."); return; }
+    _mostrarZona();
+  }
+}
+function _mostrarZona(){
+  document.getElementById("priv-lock").classList.add("hide");
+  document.getElementById("priv-cont").classList.remove("hide");
+  document.getElementById("priv-resp").value=miembroActual.responsable||"";
+  document.getElementById("priv-texto-box").classList.add("hide");
+  document.getElementById("priv-fecha-box").style.display="none";
+  limpiar("priv-msg"); limpiar("priv-resp-msg");
+  cargarPrivado(); window.scrollTo(0,0);
+}
+function privCuandoCambia(){
+  const v=document.getElementById("priv-cuando").value;
+  document.getElementById("priv-fecha-box").style.display=v==="fecha"?"block":"none";
+}
+function abrirTextoPriv(){
+  document.getElementById("priv-texto-box").classList.toggle("hide");
+  document.getElementById("priv-texto-cuerpo").value="";
+  document.getElementById("priv-texto-titulo").value="";
+}
+async function guardarTextoPriv(){
+  limpiar("priv-msg");
+  if(!document.getElementById("priv-para").value.trim()){ msg("priv-msg","Escribe primero para quién es."); return; }
+  if(document.getElementById("priv-cuando").value==="fecha" && !document.getElementById("priv-fecha").value){ msg("priv-msg","Elige la fecha en la que se podrá ver."); return; }
+  const cuerpo=document.getElementById("priv-texto-cuerpo").value.trim();
+  if(!cuerpo){ msg("priv-msg","Escribe el mensaje primero."); return; }
+  _privActivo=true;
+  const { error }=await sb.from("contenido").insert(Object.assign({
+    miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo,
+    titulo:document.getElementById("priv-texto-titulo").value.trim()||null, subido_por:usuario.id }, _privCampos()));
+  if(error){ msg("priv-msg","No se pudo guardar: "+error.message); return; }
+  document.getElementById("priv-texto-box").classList.add("hide");
+  msg("priv-msg","¡Guardado! ✔","ok"); setTimeout(()=>limpiar("priv-msg"),1800);
+  cargarPrivado();
+}
+async function guardarResponsable(){
+  limpiar("priv-resp-msg");
+  const r=document.getElementById("priv-resp").value.trim()||null;
+  const { error }=await sb.from("miembros").update({responsable:r}).eq("id",miembroActual.id);
+  if(error){ msg("priv-resp-msg","No se pudo guardar: "+error.message); return; }
+  miembroActual.responsable=r; if(window._miembros&&window._miembros[miembroActual.id]) window._miembros[miembroActual.id].responsable=r;
+  msg("priv-resp-msg","Responsable guardado ✔","ok"); setTimeout(()=>limpiar("priv-resp-msg"),1800);
+}
+function _cuandoTxt(r){
+  if(r.cuando==="fecha") return "📅 Se abre el "+fmtFecha(r.fecha_ver||"");
+  if(r.cuando==="siempre") return "👁️ Visible ya";
+  return "🕊️ Cuando yo falte";
+}
+async function cargarPrivado(){
+  const g=document.getElementById("priv-lista"), vac=document.getElementById("priv-vacio");
+  g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
+  vac.classList.add("hide");
+  const { data:todo,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).order("creado",{ascending:false});
+  if(error){ g.innerHTML=""; msg("priv-msg","Error al leer: "+error.message); return; }
+  const data=(todo||[]).filter(r=>r.privado);
+  if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
+  const piezas=await Promise.all(data.map(async r=>{
+    const cab=`<div style="font-size:12px;color:#4e6b3a;background:rgba(78,107,58,.12);border-radius:10px;padding:6px 8px;margin-bottom:6px;text-align:center;line-height:1.35">📩 Para <b style="color:#3b3320">${escapar(r.para_quien||"—")}</b> · ${escapar(r.relacion||"")}<br>${_cuandoTxt(r)}</div>`;
+    const del=`<button class="borrar" onclick="borrarPriv('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
+    if(r.tipo==="texto") return `<div class="rec texto">${del}${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
+    let url=""; if(r.archivo_path){ const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(r.archivo_path,3600); url=sig?sig.signedUrl:""; }
+    if(r.tipo==="foto")  return `<div class="rec">${del}${cab}<div class="marco-f"><img src="${url}" loading="lazy"></div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${del}${cab}<audio src="${url}" controls></audio></div>`;
+    return "";
+  }));
+  g.innerHTML=piezas.join("");
+}
+async function borrarPriv(id,ruta){
+  if(!confirm("¿Borrar esto de tu zona privada? No se puede deshacer.")) return;
+  if(ruta){ await sb.storage.from(BUCKET).remove([ruta]); }
+  const { error }=await sb.from("contenido").delete().eq("id",id);
+  if(error){ msg("priv-msg","No se pudo borrar: "+error.message); return; }
+  cargarPrivado();
+}
+function cambiarCodigo(){
+  _privModo="crear";
+  document.getElementById("priv-cont").classList.add("hide");
+  document.getElementById("priv-lock").classList.remove("hide");
+  document.getElementById("priv-code").value=""; document.getElementById("priv-code2").value="";
+  document.getElementById("priv-code2").style.display="block";
+  document.getElementById("priv-lock-sub").textContent="Escribe tu nuevo código dos veces.";
+  document.getElementById("priv-lock-btn").textContent="Guardar nuevo código";
+  document.getElementById("priv-olvide").style.display="none";
+  limpiar("priv-lock-msg"); window.scrollTo(0,0);
+}
+function olvideCodigo(){
+  const em=prompt("Para restablecer el código, escribe el correo de tu cuenta:");
+  if(em===null) return;
+  if((em||"").trim().toLowerCase()!==((usuario&&usuario.email)||"").toLowerCase()){ msg("priv-lock-msg","Ese correo no coincide con el de tu cuenta."); return; }
+  cambiarCodigo();
+}
+function cerrarPrivada(){ _privActivo=false; if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
 
 document.getElementById("pass").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
 arranque();
