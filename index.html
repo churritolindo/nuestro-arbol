@@ -93,6 +93,10 @@
     padding:6px 15px;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--oro)}
   .edit-badge{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.55);border:1px solid var(--oroC);
     border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;z-index:4;box-shadow:0 1px 5px rgba(0,0,0,.25)}
+  .save-badge{position:absolute;right:12px;top:12px;border:none;border-radius:50%;width:40px;height:40px;font-size:19px;
+    cursor:pointer;z-index:4;color:#4a3410;background:linear-gradient(160deg,#fff3b0,#f4cf55 45%,#c9932b);
+    box-shadow:0 2px 6px rgba(60,40,5,.45),inset 0 1px 2px rgba(255,255,255,.6);line-height:1}
+  .save-badge:active{transform:scale(.93)}
   .cam-badge{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:linear-gradient(135deg,#4a7a5e,#2f5340);
     color:#fff;border:2px solid #fff;border-radius:20px;font-size:13px;padding:2px 12px;cursor:pointer;line-height:1.5;
     box-shadow:0 0 0 1px var(--oroO),0 2px 6px rgba(0,0,0,.3);z-index:3}
@@ -172,15 +176,14 @@
   .inset-arb .mini-med{position:absolute;transform:translate(-50%,-50%) scale(.5);filter:drop-shadow(0 1px 2px rgba(40,25,5,.5))}
   .inset-arb .mini-med .lauro{width:50px;height:53px}
   .inset-arb .mini-med .foto{width:29px;height:29px;top:47%;font-size:13px}
-  /* rótulo dorado del árbol de amigos */
-  .amigos-emblem{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;
-    padding:7px 16px 8px;border-radius:50%/62%;
-    background:radial-gradient(ellipse at 50% 45%,rgba(38,26,8,.62),rgba(38,26,8,.30));
-    border:2px solid #e8c874;box-shadow:0 0 0 2px rgba(184,134,11,.95),inset 0 0 12px rgba(0,0,0,.45),0 2px 7px rgba(0,0,0,.45)}
-  .amigos-emblem .fl{display:block;color:#f0d488;font-size:12px;line-height:.9;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6))}
-  .amigos-emblem .txt{font-family:'Cinzel',Georgia,serif;font-weight:700;font-size:16px;letter-spacing:1.2px;
-    background:linear-gradient(180deg,#fff6d5 0%,#f4d778 45%,#c9932b 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
-    filter:drop-shadow(0 1px 1px rgba(60,40,5,.55))}
+  /* rótulo dorado del árbol de amigos: marco elaborado + letras oro */
+  .amigos-emblem{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:60%;pointer-events:none}
+  .amigos-emblem .marco{width:100%;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
+  .amigos-emblem .txt{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);white-space:nowrap;
+    font-family:'Cinzel',Georgia,serif;font-weight:700;font-size:13.5px;letter-spacing:.5px;
+    background:linear-gradient(180deg,#fff7c2 0%,#ffe071 40%,#f4bd34 70%,#cf941f 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 1px 1px rgba(50,30,0,.65))}
   .banner-arb.sub{max-width:340px}
   .banner-arb.sub img.main{animation:mecer 6s ease-in-out infinite}
   .grupos{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 2px}
@@ -394,7 +397,8 @@
     <!-- EDITAR -->
     <div id="v-editar" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cancelarEditar()">‹ Volver</button>
-      <div class="vidrio" style="margin-top:12px">
+      <div class="vidrio" style="margin-top:12px;position:relative">
+        <button class="save-badge" onclick="guardarEdicion()" title="Guardar">💾</button>
         <h2>Editar familiar</h2>
         <label>Nombre</label>
         <input id="e-nombre">
@@ -425,7 +429,8 @@
     <!-- SU HISTORIA (biografía + lugar + nicho) -->
     <div id="v-historia" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cerrarHistoria()">‹ Volver</button>
-      <div class="vidrio" style="margin-top:12px">
+      <div class="vidrio" style="margin-top:12px;position:relative">
+        <button class="save-badge" onclick="guardarHistoria()" title="Guardar">💾</button>
         <h2 id="hist-titulo">Su historia</h2>
         <label>¿Dónde nació? (ciudad, pueblo…)</label>
         <input id="h-lugar" placeholder="Ej. Jaén">
@@ -832,7 +837,7 @@ function pintarArbol(){
   const mascotasVis=arr.filter(m=>m.clase==='mascota');
   const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
     +'<img src="diseno/arboles/mini/'+espA+'.png">'
-    +'<div class="amigos-emblem"><span class="fl">❦</span><span class="txt">Amigos</span><span class="fl">❦</span></div></div>';
+    +'<div class="amigos-emblem"><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Amigos</span></div></div>';
   const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
     +'<img src="diseno/arboles/mini/'+espM+'.png">'+_medallitas(mascotasVis)+'<div class="inset-ico">🐾</div>'
     +'<div class="inset-cap">Mascotas'+(nMasc?' · '+nMasc:'')+'</div></div>';
