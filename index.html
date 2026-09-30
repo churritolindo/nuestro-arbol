@@ -451,9 +451,9 @@
       <div class="vidrio">
         <label id="sub-addlbl">Añadir</label>
         <input id="sub-nombre" placeholder="Nombre">
-        <label id="sub-grupolbl" style="margin-top:8px">¿De quién es este grupo? <span style="font-weight:400;color:var(--suave,#8a7340)">(escribe un nombre, o "Familia" para que lo vea todos)</span></label>
+        <label id="sub-grupolbl" style="margin-top:8px">¿De quién es?</label>
         <div class="fila" style="align-items:flex-end;gap:8px">
-          <div style="flex:1"><input id="sub-grupo" placeholder="Ej. Luis · José · Familia"></div>
+          <div style="flex:1"><select id="sub-grupo"></select></div>
           <button class="btn" style="width:auto;padding:12px 18px;margin:0" onclick="anadirSub()">＋ Añadir</button>
         </div>
         <div id="sub-msg" class="msg"></div>
@@ -602,6 +602,23 @@ async function cargarMiembros(){
   }
   data.forEach(m=>{ if(m.foto&&urls[m.foto]) window._miembros[m.id]._url=urls[m.foto]; });
   window._arr=data;
+  // Medallón automático: si una mascota/amigo (o cualquiera) no tiene avatar, usar su primera foto de recuerdos
+  try{
+    const sinAvatar=data.filter(m=>!m.foto);
+    if(sinAvatar.length){
+      const ids=sinAvatar.map(m=>m.id);
+      const { data:fotos }=await sb.from("contenido").select("miembro_id,archivo_path,creado").eq("tipo","foto").in("miembro_id",ids).order("creado",{ascending:true});
+      if(fotos&&fotos.length){
+        const primera={}; fotos.forEach(f=>{ if(!primera[f.miembro_id]&&f.archivo_path) primera[f.miembro_id]=f.archivo_path; });
+        const paths=Object.values(primera);
+        if(paths.length){
+          const { data:sg }=await sb.storage.from(BUCKET).createSignedUrls(paths,3600);
+          const byPath={}; if(sg) sg.forEach((s,i)=>{ if(s&&s.signedUrl) byPath[paths[i]]=s.signedUrl; });
+          Object.keys(primera).forEach(id=>{ const u=byPath[primera[id]]; if(u&&window._miembros[id]) window._miembros[id]._url=u; });
+        }
+      }
+    }
+  }catch(e){}
   ["m-padre","m-madre","m-pareja"].forEach(id=>pintaSelect(id,"",null));
   pintarPlacas();
   lista.innerHTML="";
@@ -814,10 +831,9 @@ function abrirSub(clase){
     ?"🧑‍🤝‍🧑 <b>Nuestros amigos</b>"
     :"🐾 <b>Nuestras mascotas</b>";
   document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
-  document.getElementById("sub-grupolbl").innerHTML=(esAmigo?"¿De quién son estos amigos?":"¿De quién son estas mascotas?")
-    +' <span style="font-weight:400;color:var(--suave,#8a7340)">(un nombre, o "Familia" para que lo vea todos)</span>';
+  document.getElementById("sub-grupolbl").textContent=esAmigo?"¿De quién es este amigo/a?":"¿De quién es esta mascota?";
   document.getElementById("sub-nombre").value="";
-  document.getElementById("sub-grupo").value="";
+  rellenarGrupoSelect();
   document.getElementById("sub-especies").classList.add("hide");
   limpiar("sub-msg");
   fondo("bgL"); ver("v-sub"); window.scrollTo(0,0);
@@ -825,6 +841,13 @@ function abrirSub(clase){
 }
 function cerrarSub(){ pintarArbol(); fondo("bgL"); ver("v-arbol"); }
 function seleccionarGrupo(g){ subGrupo=g; pintarSub(); }
+function rellenarGrupoSelect(){
+  const sel=document.getElementById("sub-grupo"); if(!sel) return;
+  const esAmigo=subClase==='amigo';
+  const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
+  sel.innerHTML='<option value="Familia">👨‍👩‍👧‍👦 Toda la familia</option>'
+    +personas.map(p=>'<option value="'+escapar(p.nombre)+'">'+(esAmigo?'Amigo/a de ':'Mascota de ')+escapar(p.nombre)+'</option>').join('');
+}
 function pintarSub(){
   const arr=window._arr||[]; const esAmigo=subClase==='amigo';
   let ms=arr.filter(m=>m.clase===subClase);
@@ -1097,25 +1120,37 @@ function esquemaHTML(rootId){
     arr.forEach(x=>{ if((ids.includes(x.padre_id)||ids.includes(x.madre_id)) && !seen.has(x.id)){ seen.add(x.id); out.push(x); } });
     return out;
   }
-  function nodo(m){
+  const esExtra=x=>x.clase==='mascota'||x.clase==='amigo';
+  function extrasDe(nombres, isRoot){
+    return arr.filter(x=>esExtra(x) && !hecho.has(x.id) && (
+      nombres.some(nm=>_normG(x.grupo).toLowerCase()===String(nm||"").toLowerCase())
+      || (isRoot && _normG(x.grupo).toLowerCase()==='familia')
+    ));
+  }
+  function nodo(m, isRoot){
     if(hecho.has(m.id)) return "";
     hecho.add(m.id);
     const par = (m.pareja_id && M[m.pareja_id]) ? M[m.pareja_id] : null;
     if(par) hecho.add(par.id);
     const ids=[m.id]; if(par) ids.push(par.id);
+    const nombres=ids.map(id=>M[id]&&M[id].nombre).filter(Boolean);
     const tipoP=(par&&par.tipo_pareja)||m.tipo_pareja||'pareja';
     const cab = par
       ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+_simboloRel(tipoP)+'</span>'+_persTree(par)+'</div>'
       : '<div class="node">'+_persTree(m)+'</div>';
-    const hijos=hijosDe(ids);
-    const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h)+'</li>').join("")+'</ul>' : "";
+    const hijos=hijosDe(ids).filter(h=>!esExtra(h));
+    const extras=extrasDe(nombres, isRoot);
+    extras.forEach(x=>hecho.add(x.id));
+    const items=hijos.map(h=>'<li>'+nodo(h,false)+'</li>')
+      .concat(extras.map(x=>'<li>'+_persTree(x)+'</li>'));
+    const sub = items.length ? '<ul>'+items.join("")+'</ul>' : "";
     return cab+sub;
   }
   let roots;
   if(rootId && M[rootId]) roots=[M[rootId]];
-  else roots=arr.filter(m=>!m.padre_id && !m.madre_id);
+  else roots=arr.filter(m=>!m.padre_id && !m.madre_id && !esExtra(m));
   const lis=[];
-  roots.forEach(r=>{ if(hecho.has(r.id)) return; const h=nodo(r); if(h) lis.push('<li>'+h+'</li>'); });
+  roots.forEach((r,i)=>{ if(hecho.has(r.id)) return; const h=nodo(r, i===0 && !rootId); if(h) lis.push('<li>'+h+'</li>'); });
   return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
 }
 function abrirEsquema(rootId){
