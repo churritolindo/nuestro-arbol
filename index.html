@@ -405,7 +405,7 @@
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
-        <button class="btn sec" style="margin-top:10px" onclick="abrirEsquema(miembroActual.id)">📜 Ver su rama</button>
+        <button class="btn sec" id="f-rama-btn" style="margin-top:10px" onclick="verSuRama()">📜 Ver su rama</button>
       </div>
 
       <div class="vidrio">
@@ -1071,6 +1071,8 @@ function abrirFicha(id){
     const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
     document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ;
   } else document.getElementById("f-rel").textContent = m.apellidos||"";
+  const rb=document.getElementById("f-rama-btn");
+  if(rb) rb.textContent = m.clase==='mascota' ? '🐾 Ver el árbol de mascotas' : (m.clase==='amigo' ? '🧑‍🤝‍🧑 Ver el árbol de amigos' : '📜 Ver su rama');
   const hEl=document.getElementById("f-historia");
   const h=(m.historia||"").trim(), lug=(m.lugar_nac||"").trim();
   const cuerpo=(lug?("📍 Nació en "+lug+"\n\n"):"")+h;
@@ -1370,11 +1372,15 @@ function esquemaHTML(rootId, clase){
     const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h,true)+'</li>').join("")+'</ul>' : "";
     return cab+sub;
   }
+  // raíz = sin padres, y sin pareja-con-padres (así entramos a la pareja por quien tiene ancestros y la rayita sale de esa persona)
+  const esRaiz = m => !m.padre_id && !m.madre_id && !(m.pareja_id && M[m.pareja_id] && (M[m.pareja_id].padre_id||M[m.pareja_id].madre_id));
   let roots;
   if(rootId && M[rootId] && incluir(M[rootId])) roots=[M[rootId]];
-  else roots=arr.filter(m=>!m.padre_id && !m.madre_id);
+  else roots=arr.filter(esRaiz);
   const lis=[];
   roots.forEach(r=>{ if(hecho.has(r.id)) return; const h=nodo(r,false); if(h) lis.push('<li>'+h+'</li>'); });
+  // por si quedara alguien suelto (sin enlazar), añadirlo también
+  arr.forEach(m=>{ if(!hecho.has(m.id) && !m.padre_id && !m.madre_id){ const h=nodo(m,false); if(h) lis.push('<li>'+h+'</li>'); } });
   return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
 }
 let esqFocusId=null;
@@ -1403,13 +1409,13 @@ function abrirEsquema(rootId, clase){
     const mh=mascotasHTML(false);
     document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay mascotas.<br>Usa ➕ Añadir para empezar.</div>';
   } else {
-    const html=pedigreeHTML(esqFocusId);
+    const html=esquemaHTML(null, 'persona');
     document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
   }
-  // Mascotas pequeñitas a la derecha (solo en el árbol de la familia), sin recuadro
+  // Mascotas pequeñitas a la derecha SOLO en el árbol familiar completo (no al abrir la rama de una persona)
   const mp=document.getElementById("esq-mascotas");
   if(mp){
-    if(esqClase==='persona'){
+    if(esqClase==='persona' && !esqFocusId){
       const mh=mascotasHTML(true);
       if(mh){ mp.innerHTML='<div class="masc-title">🐾 Mascotas</div>'+mh; mp.classList.remove("hide"); }
       else mp.classList.add("hide");
@@ -1419,6 +1425,12 @@ function abrirEsquema(rootId, clase){
   const ov=document.getElementById("v-esquema"); ov.classList.add("show"); ov.scrollTop=0;
 }
 function abrirMascotasPapiro(){ abrirEsquema(null,'mascota'); }
+function verSuRama(){
+  if(!miembroActual) return;
+  if(miembroActual.clase==='mascota') abrirMascotasPapiro();
+  else if(miembroActual.clase==='amigo') abrirSub('amigo');
+  else abrirEsquema(miembroActual.id);
+}
 function cerrarEsquema(){ document.getElementById("v-esquema").classList.remove("show"); }
 function abrirDesdeEsquema(id){ cerrarEsquema(); abrirFicha(id); }
 function toggleRamaForm(){
