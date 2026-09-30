@@ -97,6 +97,7 @@
     cursor:pointer;z-index:4;color:#4a3410;background:linear-gradient(160deg,#fff3b0,#f4cf55 45%,#c9932b);
     box-shadow:0 2px 6px rgba(60,40,5,.45),inset 0 1px 2px rgba(255,255,255,.6);line-height:1}
   .save-badge:active{transform:scale(.93)}
+  .save-badge.ficha-sv{top:54px;right:14px;width:34px;height:34px;font-size:16px}
   .cam-badge{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:linear-gradient(135deg,#4a7a5e,#2f5340);
     color:#fff;border:2px solid #fff;border-radius:20px;font-size:13px;padding:2px 12px;cursor:pointer;line-height:1.5;
     box-shadow:0 0 0 1px var(--oroO),0 2px 6px rgba(0,0,0,.3);z-index:3}
@@ -354,6 +355,7 @@
     <div id="v-ficha" class="hide">
       <div class="vidrio perfil">
         <button class="edit-badge" onclick="abrirEditar()">✏️</button>
+        <button class="save-badge ficha-sv" id="ficha-save" onclick="guardarFicha()" title="Guardar">💾</button>
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
         <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
@@ -399,8 +401,7 @@
     <!-- EDITAR -->
     <div id="v-editar" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cancelarEditar()">‹ Volver</button>
-      <div class="vidrio" style="margin-top:12px;position:relative">
-        <button class="save-badge" onclick="guardarEdicion()" title="Guardar">💾</button>
+      <div class="vidrio" style="margin-top:12px">
         <h2>Editar familiar</h2>
         <label>Nombre</label>
         <input id="e-nombre">
@@ -431,8 +432,7 @@
     <!-- SU HISTORIA (biografía + lugar + nicho) -->
     <div id="v-historia" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cerrarHistoria()">‹ Volver</button>
-      <div class="vidrio" style="margin-top:12px;position:relative">
-        <button class="save-badge" onclick="guardarHistoria()" title="Guardar">💾</button>
+      <div class="vidrio" style="margin-top:12px">
         <h2 id="hist-titulo">Su historia</h2>
         <label>¿Dónde nació? (ciudad, pueblo…)</label>
         <input id="h-lugar" placeholder="Ej. Jaén">
@@ -1124,6 +1124,18 @@ async function guardarEdicion(){
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
   if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
+}
+async function guardarFicha(){
+  if(!miembroActual) return;
+  const b=document.getElementById("ficha-save"); const m=miembroActual;
+  if(b) b.textContent="…";
+  const cambios={ nombre:m.nombre, apellidos:m.apellidos, clase:m.clase,
+    padre_id:m.padre_id, madre_id:m.madre_id, pareja_id:m.pareja_id,
+    tipo_pareja:m.tipo_pareja, expareja:m.expareja, nacimiento:m.nacimiento,
+    fallecimiento:m.fallecimiento, lugar_nac:m.lugar_nac, trabajo:m.trabajo,
+    historia:m.historia, nicho:m.nicho, grupo:m.grupo };
+  const { error }=await sb.from("miembros").update(cambios).eq("id",m.id);
+  if(b){ b.textContent=error?"✕":"✔"; setTimeout(()=>{ b.textContent="💾"; },1300); }
 }
 function volverArbol(){
   const cl=miembroActual&&miembroActual.clase;
