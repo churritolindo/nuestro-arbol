@@ -236,7 +236,7 @@
   /* ===== árbol genealógico (esquema) ===== */
   .esq{position:fixed;inset:0;z-index:60;overflow:auto;background:#c9b389;display:none}
   .esq.show{display:block}
-  .esq-scroll{min-height:100vh;border-style:solid;border-width:56px 14px 56px 14px;
+  .esq-scroll{position:relative;min-height:100vh;border-style:solid;border-width:56px 14px 56px 14px;
     border-image:url('diseno/papiro.png') 100 26 100 26 fill stretch;padding:8px 6px 16px}
   .esq .top{text-align:center;margin:2px 0 4px}
   .esq .rama{font-size:11px;letter-spacing:2px;color:#8a6d2a;text-transform:uppercase}
@@ -271,6 +271,20 @@
   .tree .foto{width:26px;height:26px;font-size:12px}
   .tree .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
   .tree .pr{font-size:9px;color:#8a7340;font-style:italic}
+  /* pareja "anclada": el hijo/a de sangre queda centrado bajo la rayita, la pareja cuelga al lado (margen simétrico para no descentrar) */
+  .tree .pareja.anchored{position:relative;display:inline-block;vertical-align:top;margin:0 62px}
+  .tree .pareja.anchored>.corazon.lado{position:absolute;left:100%;top:16px;transform:translateX(0);margin:0;font-size:12px}
+  .tree .pareja.anchored>.conyuge{position:absolute;left:100%;top:0;transform:translateX(12px)}
+  .tree.mini .pareja.anchored{margin:0 50px}
+  /* familia (izq) + mascotas (der, pequeñito) en columnas */
+  .esq-cols{display:flex;gap:10px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  .esq-cols .tree{flex:0 1 auto}
+  .esq-mascotas{flex:0 0 auto;align-self:flex-start;max-width:160px;background:rgba(251,244,223,.7);
+    border-radius:14px;padding:8px 6px;box-shadow:0 0 0 1.5px var(--oroC),0 3px 10px rgba(60,40,10,.25)}
+  .esq-mascotas .mp-tit{font-family:Georgia,serif;font-weight:700;color:var(--verde);font-size:12px;text-align:center;margin-bottom:2px}
+  .tree.mini{transform:scale(.62);transform-origin:top center;overflow:visible;padding:0}
+  .tree.mini .pnode{width:46px}
+  .tree.mini .pn{font-size:9px}.tree.mini .pr{font-size:8px}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -527,8 +541,11 @@
           <button class="btn" style="margin-top:12px" onclick="anadirEnRama()">＋ Añadir a la rama</button>
           <div id="rf-msg" class="msg"></div>
         </div>
-        <div class="tree" id="esq-tree"></div>
-        <div class="hint">Desliza para ver toda la rama · toca una persona para abrir su ficha</div>
+        <div class="esq-cols">
+          <div class="tree" id="esq-tree"></div>
+          <div id="esq-mascotas" class="esq-mascotas hide"></div>
+        </div>
+        <div class="hint">Desliza para ver toda la rama · toca una corona para abrir su ficha</div>
       </div>
     </div>
 
@@ -882,7 +899,7 @@ function pintarArbol(){
   const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
     +'<img src="diseno/arboles/mini/'+espA+'.png">'
     +'<div class="tree-label"><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Amigos</span></div></div>';
-  const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
+  const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirMascotasPapiro()" title="Mascotas">'
     +'<img src="diseno/arboles/mini/'+espM+'.png">'
     +'<div class="tree-label"><span class="paw-top">🐾</span><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Mascotas</span></div></div>';
   document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+'</div>';
@@ -1206,33 +1223,42 @@ function _persTree(m){
     +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
     +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
-function esquemaHTML(rootId){
-  const M=window._miembros||{}; const arr=Object.values(M); const hecho=new Set();
+function esquemaHTML(rootId, clase){
+  const soloM = clase==='mascota';
+  const incluir = x => soloM ? x.clase==='mascota' : (!x.clase || x.clase==='persona');
+  const M=window._miembros||{}; const arr=Object.values(M).filter(incluir); const hecho=new Set();
   function hijosDe(ids){
     const seen=new Set(), out=[];
     arr.forEach(x=>{ if((ids.includes(x.padre_id)||ids.includes(x.madre_id)) && !seen.has(x.id)){ seen.add(x.id); out.push(x); } });
     return out;
   }
-  const esExtra=x=>x.clase==='mascota'||x.clase==='amigo';
-  function nodo(m){
+  function nodo(m, esHijo){
     if(hecho.has(m.id)) return "";
     hecho.add(m.id);
-    const par = (m.pareja_id && M[m.pareja_id]) ? M[m.pareja_id] : null;
+    const par = (m.pareja_id && M[m.pareja_id] && incluir(M[m.pareja_id])) ? M[m.pareja_id] : null;
     if(par) hecho.add(par.id);
     const ids=[m.id]; if(par) ids.push(par.id);
     const tipoP=(par&&par.tipo_pareja)||m.tipo_pareja||'pareja';
-    const cab = par
-      ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+_simboloRel(tipoP)+'</span>'+_persTree(par)+'</div>'
-      : '<div class="node">'+_persTree(m)+'</div>';
-    const hijos=hijosDe(ids).filter(h=>!esExtra(h));
-    const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h)+'</li>').join("")+'</ul>' : "";
+    let cab;
+    if(par && esHijo){
+      // el hijo/a de sangre (m) va centrado bajo la rayita; su pareja cuelga al lado
+      cab='<div class="node pareja anchored">'+_persTree(m)
+        +'<span class="corazon lado">'+_simboloRel(tipoP)+'</span>'
+        +'<div class="conyuge">'+_persTree(par)+'</div></div>';
+    } else if(par){
+      cab='<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+_simboloRel(tipoP)+'</span>'+_persTree(par)+'</div>';
+    } else {
+      cab='<div class="node">'+_persTree(m)+'</div>';
+    }
+    const hijos=hijosDe(ids);
+    const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h,true)+'</li>').join("")+'</ul>' : "";
     return cab+sub;
   }
   let roots;
-  if(rootId && M[rootId]) roots=[M[rootId]];
-  else roots=arr.filter(m=>!m.padre_id && !m.madre_id && !esExtra(m));
+  if(rootId && M[rootId] && incluir(M[rootId])) roots=[M[rootId]];
+  else roots=arr.filter(m=>!m.padre_id && !m.madre_id);
   const lis=[];
-  roots.forEach(r=>{ if(hecho.has(r.id)) return; const h=nodo(r); if(h) lis.push('<li>'+h+'</li>'); });
+  roots.forEach(r=>{ if(hecho.has(r.id)) return; const h=nodo(r,false); if(h) lis.push('<li>'+h+'</li>'); });
   return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
 }
 let esqFocusId=null;
@@ -1244,22 +1270,35 @@ function _topAncestro(id){
   }
   return cur;
 }
-function abrirEsquema(rootId){
+let esqClase='persona';
+function abrirEsquema(rootId, clase){
+  esqClase = (clase==='mascota') ? 'mascota' : 'persona';
   const M=window._miembros||{};
   esqFocusId = (rootId && M[rootId]) ? rootId : null;
-  // desde una persona: mostrar toda su línea (desde el antepasado más alto), para ver y añadir ancestros
+  // mostramos el árbol completo (todos los antepasados de todos los lados); esqFocusId solo fija el "de quién" del formulario
   let realRoot=null;
-  if(esqFocusId){ const t=_topAncestro(esqFocusId); realRoot = t?t.id:esqFocusId; }
-  let titulo;
-  if(esqFocusId){ const m=M[esqFocusId]; titulo="Rama de "+(m.nombre||"")+((m.apellidos)?" "+m.apellidos:""); }
-  else titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico";
+  let titulo, rama;
+  if(esqClase==='mascota'){ titulo="🐾 Árbol de las mascotas"; rama="La familia peluda"; }
+  else if(esqFocusId){ const m=M[esqFocusId]; titulo="Rama de "+(m.nombre||"")+((m.apellidos)?" "+m.apellidos:""); rama="Rama de la familia"; }
+  else { titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico"; rama="Rama de la familia"; }
   document.getElementById("esq-titulo").textContent=titulo;
-  const html=esquemaHTML(realRoot);
+  const ramaEl=document.querySelector("#v-esquema .rama"); if(ramaEl) ramaEl.textContent=rama;
+  const html=esquemaHTML(realRoot, esqClase);
   document.getElementById("esq-tree").innerHTML = html ||
-    '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir familiar para empezar la rama.</div>';
+    '<div class="hint" style="margin-top:40px">'+(esqClase==='mascota'?'Aún no hay mascotas.':'Aún no has enlazado a nadie.')+'<br>Usa ➕ Añadir para empezar.</div>';
+  // Panel de mascotas a la derecha (solo en el árbol de la familia)
+  const mp=document.getElementById("esq-mascotas");
+  if(mp){
+    if(esqClase==='persona'){
+      const mh=esquemaHTML(null,'mascota');
+      if(mh){ mp.innerHTML='<div class="mp-tit">🐾 Mascotas</div><div class="tree mini">'+mh+'</div>'; mp.classList.remove("hide"); }
+      else mp.classList.add("hide");
+    } else mp.classList.add("hide");
+  }
   document.getElementById("rama-form").classList.add("hide");
   const ov=document.getElementById("v-esquema"); ov.classList.add("show"); ov.scrollTop=0;
 }
+function abrirMascotasPapiro(){ abrirEsquema(null,'mascota'); }
 function cerrarEsquema(){ document.getElementById("v-esquema").classList.remove("show"); }
 function abrirDesdeEsquema(id){ cerrarEsquema(); abrirFicha(id); }
 function toggleRamaForm(){
@@ -1269,10 +1308,11 @@ function toggleRamaForm(){
 }
 function rellenarRamaBase(){
   const sel=document.getElementById("rf-base");
-  const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
-  sel.innerHTML=personas.map(p=>'<option value="'+p.id+'">'+escapar(p.nombre)+(p.apellidos?' '+escapar(p.apellidos):'')+'</option>').join('');
-  if(esqFocusId && personas.some(p=>p.id===esqFocusId)) sel.value=esqFocusId;
+  const base=(window._arr||[]).filter(m=> esqClase==='mascota' ? m.clase==='mascota' : (!m.clase||m.clase==='persona'));
+  sel.innerHTML=base.map(p=>'<option value="'+p.id+'">'+escapar(p.nombre)+(p.apellidos?' '+escapar(p.apellidos):'')+'</option>').join('');
+  if(esqFocusId && base.some(p=>p.id===esqFocusId)) sel.value=esqFocusId;
   document.getElementById("rf-nombre").value=""; limpiar("rf-msg");
+  document.getElementById("rf-nombre").placeholder = esqClase==='mascota' ? "Ej. Toby (abuelo perruno)" : "Ej. Bisabuelo Antonio";
   document.getElementById("rf-rel").onchange=onRelChange;
 }
 function onRelChange(){
@@ -1295,11 +1335,14 @@ async function anadirEnRama(){
   const baseId=document.getElementById("rf-base").value;
   const M=window._miembros||{}, base=M[baseId];
   if(!base){ msg("rf-msg","Elige de quién es."); return; }
-  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:'persona'}).select().single();
+  const claseNueva = esqClase==='mascota' ? 'mascota' : 'persona';
+  const insBase = {arbol_id:arbolActual.id,nombre,clase:claseNueva};
+  if(claseNueva==='mascota') insBase.grupo = base.grupo || 'Familia';
+  const { data:nuevo, error }=await sb.from("miembros").insert(insBase).select().single();
   if(error||!nuevo){ msg("rf-msg","No se pudo guardar: "+((error&&error.message)||"")); return; }
   try{
-    if(rel==='padre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({padre_id:nuevo.id}).eq("id",base.id); }
-    else if(rel==='madre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({madre_id:nuevo.id}).eq("id",base.id); }
+    if(rel==='padre'){ if(claseNueva==='persona') await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({padre_id:nuevo.id}).eq("id",base.id); }
+    else if(rel==='madre'){ if(claseNueva==='persona') await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({madre_id:nuevo.id}).eq("id",base.id); }
     else if(rel==='pareja'){ const tipo=document.getElementById("rf-tipo").value;
       await sb.from("miembros").update({pareja_id:base.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",nuevo.id);
       await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",base.id); }
@@ -1309,7 +1352,7 @@ async function anadirEnRama(){
   }catch(e){}
   msg("rf-msg","Añadido ✔","ok");
   await cargarMiembros();
-  abrirEsquema(esqFocusId);
+  abrirEsquema(esqFocusId, esqClase);
 }
 async function setCabeza(){
   if(!miembroActual||!arbolActual) return;
