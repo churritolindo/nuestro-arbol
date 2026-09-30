@@ -272,19 +272,21 @@
   .tree .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
   .tree .pr{font-size:9px;color:#8a7340;font-style:italic}
   /* pareja "anclada": el hijo/a de sangre queda centrado bajo la rayita, la pareja cuelga al lado (margen simétrico para no descentrar) */
-  .tree .pareja.anchored{position:relative;display:inline-block;vertical-align:top;margin:0 62px}
-  .tree .pareja.anchored>.corazon.lado{position:absolute;left:100%;top:16px;transform:translateX(0);margin:0;font-size:12px}
-  .tree .pareja.anchored>.conyuge{position:absolute;left:100%;top:0;transform:translateX(12px)}
-  .tree.mini .pareja.anchored{margin:0 50px}
-  /* familia (izq) + mascotas (der, pequeñito) en columnas */
-  .esq-cols{display:flex;gap:10px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  .tree .pareja.anchored{position:relative;display:inline-block;vertical-align:top;margin:0 40px}
+  .tree .pareja.anchored>.corazon.lado{position:absolute;left:100%;top:14px;transform:translateX(0);margin:0;font-size:11px}
+  .tree .pareja.anchored>.conyuge{position:absolute;left:100%;top:0;transform:translateX(8px)}
+  /* familia (izq) + mascotas (der, pequeñito) en columnas, sin recuadro */
+  .esq-cols{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
   .esq-cols .tree{flex:0 1 auto}
-  .esq-mascotas{flex:0 0 auto;align-self:flex-start;max-width:160px;background:rgba(251,244,223,.7);
-    border-radius:14px;padding:8px 6px;box-shadow:0 0 0 1.5px var(--oroC),0 3px 10px rgba(60,40,10,.25)}
-  .esq-mascotas .mp-tit{font-family:Georgia,serif;font-weight:700;color:var(--verde);font-size:12px;text-align:center;margin-bottom:2px}
-  .tree.mini{transform:scale(.62);transform-origin:top center;overflow:visible;padding:0}
-  .tree.mini .pnode{width:46px}
-  .tree.mini .pn{font-size:9px}.tree.mini .pr{font-size:8px}
+  .esq-mascotas{flex:0 0 auto;align-self:flex-start;max-width:160px}
+  .masc-title{font-family:Georgia,serif;font-weight:700;color:var(--verde);font-size:13px;text-align:center;margin-bottom:4px}
+  .masc-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 4px;max-width:200px;margin:0 auto}
+  .masc-grid.mini{max-width:150px}
+  .masc-node{width:52px;text-align:center;cursor:pointer}
+  .masc-node .lauro{width:44px;height:47px;margin:0 auto}
+  .masc-node .foto{width:25px;height:25px;font-size:11px}
+  .masc-node .pn{font-size:9.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
+  .masc-node .pr{font-size:8px;color:#8a7340;font-style:italic;line-height:1}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -521,24 +523,34 @@
       <div class="esq-scroll">
         <div class="top"><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
         <div id="rama-form" class="rama-form hide">
-          <h3>Añadir un familiar a la rama</h3>
+          <h3 id="rf-titulo">Añadir un familiar a la rama</h3>
           <label>Nombre</label>
           <input id="rf-nombre" placeholder="Ej. Bisabuelo Antonio">
-          <label>Esta persona es…</label>
-          <select id="rf-rel">
-            <option value="padre">el padre de…</option>
-            <option value="madre">la madre de…</option>
-            <option value="pareja">la pareja de…</option>
-            <option value="hijo">hijo/a de…</option>
-            <option value="hermano">hermano/a de…</option>
-          </select>
-          <label id="rf-baselbl">¿de quién?</label>
-          <select id="rf-base"></select>
-          <div id="rf-tipowrap" class="hide">
-            <label>¿Qué relación de pareja?</label>
-            <select id="rf-tipo"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select>
+          <div id="rf-persona-fields">
+            <label>Esta persona es…</label>
+            <select id="rf-rel">
+              <option value="padre">el padre de…</option>
+              <option value="madre">la madre de…</option>
+              <option value="pareja">la pareja de…</option>
+              <option value="hijo">hijo/a de…</option>
+              <option value="hermano">hermano/a de…</option>
+            </select>
+            <label id="rf-baselbl">¿de quién?</label>
+            <select id="rf-base"></select>
+            <div id="rf-tipowrap" class="hide">
+              <label>¿Qué relación de pareja?</label>
+              <select id="rf-tipo"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select>
+            </div>
           </div>
-          <button class="btn" style="margin-top:12px" onclick="anadirEnRama()">＋ Añadir a la rama</button>
+          <div id="rf-masc-fields" class="hide">
+            <label>¿De quién es?</label>
+            <select id="rf-grupo"></select>
+            <div class="fila">
+              <div style="flex:1"><label>Nació</label><input type="date" id="rf-nac"></div>
+              <div style="flex:1"><label>Se fue (opcional)</label><input type="date" id="rf-fall"></div>
+            </div>
+          </div>
+          <button class="btn" style="margin-top:12px" onclick="anadirEnRama()">＋ Añadir</button>
           <div id="rf-msg" class="msg"></div>
         </div>
         <div class="esq-cols">
@@ -1223,6 +1235,21 @@ function _persTree(m){
     +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
     +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
+function mascotasHTML(mini){
+  const arr=(window._arr||[]).filter(m=>m.clase==='mascota').slice();
+  if(!arr.length) return "";
+  arr.sort((a,b)=>{ const x=a.nacimiento||'9999-99-99', y=b.nacimiento||'9999-99-99'; return x<y?-1:(x>y?1:0); });
+  return '<div class="masc-grid'+(mini?' mini':'')+'">'+arr.map(m=>{
+    const cara=m._url?'<img src="'+m._url+'">':'🐾';
+    const g=_normG(m.grupo); const de = g.toLowerCase()==='familia'?'':escapar(g);
+    const anio = m.nacimiento?String(m.nacimiento).slice(0,4):'';
+    const meta=[anio,de].filter(Boolean).join(' · ');
+    return '<div class="masc-node" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
+      +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+cara+'</div></div>'
+      +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
+      +(meta?'<div class="pr">'+meta+'</div>':'')+'</div>';
+  }).join('')+'</div>';
+}
 function esquemaHTML(rootId, clase){
   const soloM = clase==='mascota';
   const incluir = x => soloM ? x.clase==='mascota' : (!x.clase || x.clase==='persona');
@@ -1283,15 +1310,19 @@ function abrirEsquema(rootId, clase){
   else { titulo=(arbolActual&&arbolActual.nombre)||"Árbol genealógico"; rama="Rama de la familia"; }
   document.getElementById("esq-titulo").textContent=titulo;
   const ramaEl=document.querySelector("#v-esquema .rama"); if(ramaEl) ramaEl.textContent=rama;
-  const html=esquemaHTML(realRoot, esqClase);
-  document.getElementById("esq-tree").innerHTML = html ||
-    '<div class="hint" style="margin-top:40px">'+(esqClase==='mascota'?'Aún no hay mascotas.':'Aún no has enlazado a nadie.')+'<br>Usa ➕ Añadir para empezar.</div>';
-  // Panel de mascotas a la derecha (solo en el árbol de la familia)
+  if(esqClase==='mascota'){
+    const mh=mascotasHTML(false);
+    document.getElementById("esq-tree").innerHTML = mh || '<div class="hint" style="margin-top:40px">Aún no hay mascotas.<br>Usa ➕ Añadir para empezar.</div>';
+  } else {
+    const html=esquemaHTML(realRoot, 'persona');
+    document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
+  }
+  // Mascotas pequeñitas a la derecha (solo en el árbol de la familia), sin recuadro
   const mp=document.getElementById("esq-mascotas");
   if(mp){
     if(esqClase==='persona'){
-      const mh=esquemaHTML(null,'mascota');
-      if(mh){ mp.innerHTML='<div class="mp-tit">🐾 Mascotas</div><div class="tree mini">'+mh+'</div>'; mp.classList.remove("hide"); }
+      const mh=mascotasHTML(true);
+      if(mh){ mp.innerHTML='<div class="masc-title">🐾 Mascotas</div>'+mh; mp.classList.remove("hide"); }
       else mp.classList.add("hide");
     } else mp.classList.add("hide");
   }
@@ -1307,13 +1338,24 @@ function toggleRamaForm(){
   else f.classList.add("hide");
 }
 function rellenarRamaBase(){
-  const sel=document.getElementById("rf-base");
-  const base=(window._arr||[]).filter(m=> esqClase==='mascota' ? m.clase==='mascota' : (!m.clase||m.clase==='persona'));
-  sel.innerHTML=base.map(p=>'<option value="'+p.id+'">'+escapar(p.nombre)+(p.apellidos?' '+escapar(p.apellidos):'')+'</option>').join('');
-  if(esqFocusId && base.some(p=>p.id===esqFocusId)) sel.value=esqFocusId;
+  const esMasc = esqClase==='mascota';
+  document.getElementById("rf-titulo").textContent = esMasc ? "Añadir una mascota" : "Añadir un familiar a la rama";
+  document.getElementById("rf-persona-fields").classList.toggle("hide", esMasc);
+  document.getElementById("rf-masc-fields").classList.toggle("hide", !esMasc);
   document.getElementById("rf-nombre").value=""; limpiar("rf-msg");
-  document.getElementById("rf-nombre").placeholder = esqClase==='mascota' ? "Ej. Toby (abuelo perruno)" : "Ej. Bisabuelo Antonio";
-  document.getElementById("rf-rel").onchange=onRelChange;
+  document.getElementById("rf-nombre").placeholder = esMasc ? "Ej. Nova" : "Ej. Bisabuelo Antonio";
+  if(esMasc){
+    const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
+    document.getElementById("rf-grupo").innerHTML='<option value="Familia">👨‍👩‍👧‍👦 Toda la familia</option>'
+      +personas.map(p=>'<option value="'+escapar(p.nombre)+'">de '+escapar(p.nombre)+'</option>').join('');
+    document.getElementById("rf-nac").value=""; document.getElementById("rf-fall").value="";
+  } else {
+    const base=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
+    const sel=document.getElementById("rf-base");
+    sel.innerHTML=base.map(p=>'<option value="'+p.id+'">'+escapar(p.nombre)+(p.apellidos?' '+escapar(p.apellidos):'')+'</option>').join('');
+    if(esqFocusId && base.some(p=>p.id===esqFocusId)) sel.value=esqFocusId;
+    document.getElementById("rf-rel").onchange=onRelChange;
+  }
 }
 function onRelChange(){
   const rel=document.getElementById("rf-rel").value;
@@ -1331,18 +1373,25 @@ async function anadirEnRama(){
   limpiar("rf-msg");
   const nombre=document.getElementById("rf-nombre").value.trim();
   if(!nombre){ msg("rf-msg","Escribe un nombre."); return; }
+  // MASCOTA: por antigüedad (fecha), sin parentesco
+  if(esqClase==='mascota'){
+    const ins={arbol_id:arbolActual.id,nombre,clase:'mascota',
+      grupo:document.getElementById("rf-grupo").value||'Familia',
+      nacimiento:document.getElementById("rf-nac").value||null,
+      fallecimiento:document.getElementById("rf-fall").value||null};
+    const { error }=await sb.from("miembros").insert(ins);
+    if(error){ msg("rf-msg","No se pudo guardar: "+error.message); return; }
+    msg("rf-msg","Añadida ✔","ok"); await cargarMiembros(); abrirEsquema(null,'mascota'); return;
+  }
   const rel=document.getElementById("rf-rel").value;
   const baseId=document.getElementById("rf-base").value;
   const M=window._miembros||{}, base=M[baseId];
   if(!base){ msg("rf-msg","Elige de quién es."); return; }
-  const claseNueva = esqClase==='mascota' ? 'mascota' : 'persona';
-  const insBase = {arbol_id:arbolActual.id,nombre,clase:claseNueva};
-  if(claseNueva==='mascota') insBase.grupo = base.grupo || 'Familia';
-  const { data:nuevo, error }=await sb.from("miembros").insert(insBase).select().single();
+  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:'persona'}).select().single();
   if(error||!nuevo){ msg("rf-msg","No se pudo guardar: "+((error&&error.message)||"")); return; }
   try{
-    if(rel==='padre'){ if(claseNueva==='persona') await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({padre_id:nuevo.id}).eq("id",base.id); }
-    else if(rel==='madre'){ if(claseNueva==='persona') await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({madre_id:nuevo.id}).eq("id",base.id); }
+    if(rel==='padre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({padre_id:nuevo.id}).eq("id",base.id); }
+    else if(rel==='madre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({madre_id:nuevo.id}).eq("id",base.id); }
     else if(rel==='pareja'){ const tipo=document.getElementById("rf-tipo").value;
       await sb.from("miembros").update({pareja_id:base.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",nuevo.id);
       await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",base.id); }
