@@ -98,6 +98,10 @@
     box-shadow:0 2px 6px rgba(60,40,5,.45),inset 0 1px 2px rgba(255,255,255,.6);line-height:1}
   .save-badge:active{transform:scale(.93)}
   .save-badge.ficha-sv{top:54px;right:14px;width:34px;height:34px;font-size:16px}
+  .del-badge{position:absolute;border:none;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer;z-index:4;
+    color:#fff;background:linear-gradient(160deg,#c86a5a,#9b2216);box-shadow:0 2px 6px rgba(60,20,10,.45),inset 0 1px 2px rgba(255,255,255,.35);line-height:1}
+  .del-badge:active{transform:scale(.93)}
+  .del-badge.ficha-del{top:94px;right:14px}
   .cam-badge{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:linear-gradient(135deg,#4a7a5e,#2f5340);
     color:#fff;border:2px solid #fff;border-radius:20px;font-size:13px;padding:2px 12px;cursor:pointer;line-height:1.5;
     box-shadow:0 0 0 1px var(--oroO),0 2px 6px rgba(0,0,0,.3);z-index:3}
@@ -262,11 +266,11 @@
   .tree .node{display:inline-block;vertical-align:top}
   .tree .pareja{display:inline-flex;gap:2px;align-items:flex-start}
   .tree .pareja .corazon{align-self:center;color:#a15a6a;font-size:14px;margin-top:-14px}
-  .tree .pnode{display:inline-block;cursor:pointer;width:72px}
-  .tree .lauro{width:58px;height:62px;margin:0 auto}
-  .tree .foto{width:33px;height:33px;font-size:14px}
-  .tree .pn{font-size:12px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
-  .tree .pr{font-size:10px;color:#8a7340;font-style:italic}
+  .tree .pnode{display:inline-block;cursor:pointer;width:58px}
+  .tree .lauro{width:46px;height:49px;margin:0 auto}
+  .tree .foto{width:26px;height:26px;font-size:12px}
+  .tree .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px}
+  .tree .pr{font-size:9px;color:#8a7340;font-style:italic}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -365,6 +369,7 @@
       <div class="vidrio perfil">
         <button class="edit-badge" onclick="abrirEditar()">✏️</button>
         <button class="save-badge ficha-sv" id="ficha-save" onclick="guardarFicha()" title="Guardar">💾</button>
+        <button class="del-badge ficha-del" onclick="borrarMiembro()" title="Borrar">🗑️</button>
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
         <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
@@ -953,7 +958,6 @@ function pintarSub(){
     const y=44+row*24;
     const cara=m._url?'<img src="'+m._url+'">':(m.clase==='mascota'?'🐾':inicial(m.nombre));
     ov+='<div class="placa-wrap" style="left:'+x+'%;top:'+y+'%">'
-      +'<button class="mini-del" onclick="event.stopPropagation();borrarMiembro(\''+m.id+'\')" title="Borrar">×</button>'
       +'<button class="placa2" onclick="abrirFicha(\''+m.id+'\')" title="'+escapar(m.nombre||"")+'">'
       +'<div class="lauro" style="width:42px;height:44px"><img class="lau" src="corona.png">'
       +'<div class="foto" style="width:24px;height:24px;font-size:11px">'+cara+'</div></div>'
@@ -1022,7 +1026,10 @@ function abrirFicha(id){
   const m=miembroActual;
   pintarFotoFicha(m);
   document.getElementById("f-nom").textContent = m.nombre;
-  document.getElementById("f-rel").textContent = (m.clase&&m.clase!=="persona") ? (m.clase==="mascota"?"🐾 Mascota":"Amigo/a") : (m.apellidos||"");
+  if(m.clase==="mascota"||m.clase==="amigo"){
+    const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
+    document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ;
+  } else document.getElementById("f-rel").textContent = m.apellidos||"";
   const hEl=document.getElementById("f-historia");
   const h=(m.historia||"").trim(), lug=(m.lugar_nac||"").trim();
   const cuerpo=(lug?("📍 Nació en "+lug+"\n\n"):"")+h;
@@ -1207,36 +1214,25 @@ function esquemaHTML(rootId){
     return out;
   }
   const esExtra=x=>x.clase==='mascota'||x.clase==='amigo';
-  function extrasDe(nombres, isRoot){
-    return arr.filter(x=>esExtra(x) && !hecho.has(x.id) && (
-      nombres.some(nm=>_normG(x.grupo).toLowerCase()===String(nm||"").toLowerCase())
-      || (isRoot && _normG(x.grupo).toLowerCase()==='familia')
-    ));
-  }
-  function nodo(m, isRoot){
+  function nodo(m){
     if(hecho.has(m.id)) return "";
     hecho.add(m.id);
     const par = (m.pareja_id && M[m.pareja_id]) ? M[m.pareja_id] : null;
     if(par) hecho.add(par.id);
     const ids=[m.id]; if(par) ids.push(par.id);
-    const nombres=ids.map(id=>M[id]&&M[id].nombre).filter(Boolean);
     const tipoP=(par&&par.tipo_pareja)||m.tipo_pareja||'pareja';
     const cab = par
       ? '<div class="node pareja">'+_persTree(m)+'<span class="corazon">'+_simboloRel(tipoP)+'</span>'+_persTree(par)+'</div>'
       : '<div class="node">'+_persTree(m)+'</div>';
     const hijos=hijosDe(ids).filter(h=>!esExtra(h));
-    const extras=extrasDe(nombres, isRoot);
-    extras.forEach(x=>hecho.add(x.id));
-    const items=hijos.map(h=>'<li>'+nodo(h,false)+'</li>')
-      .concat(extras.map(x=>'<li>'+_persTree(x)+'</li>'));
-    const sub = items.length ? '<ul>'+items.join("")+'</ul>' : "";
+    const sub = hijos.length ? '<ul>'+hijos.map(h=>'<li>'+nodo(h)+'</li>').join("")+'</ul>' : "";
     return cab+sub;
   }
   let roots;
   if(rootId && M[rootId]) roots=[M[rootId]];
   else roots=arr.filter(m=>!m.padre_id && !m.madre_id && !esExtra(m));
   const lis=[];
-  roots.forEach((r,i)=>{ if(hecho.has(r.id)) return; const h=nodo(r, i===0 && !rootId); if(h) lis.push('<li>'+h+'</li>'); });
+  roots.forEach(r=>{ if(hecho.has(r.id)) return; const h=nodo(r); if(h) lis.push('<li>'+h+'</li>'); });
   return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
 }
 let esqFocusId=null;
