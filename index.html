@@ -189,7 +189,8 @@
   .ofr-op img{width:42px;height:42px;object-fit:contain}
   .ofr-op b{font-size:9.5px;color:var(--verde,#4e6b3a);font-weight:700;font-family:Georgia,serif;text-align:center;line-height:1.1}
   .mote{font-size:15px;color:var(--oroO,#b78b3a);font-style:italic;margin:-2px 0 2px;text-align:center;font-weight:600}
-  .f-relig{font-size:12.5px;color:var(--suave,#7a6b48);text-align:center;margin:1px 0 2px;font-family:Georgia,serif}
+  .f-relig{font-size:13px;color:var(--suave,#7a6b48);margin:3px 0 2px;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;gap:7px}
+  .relig-med{width:34px;height:34px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1.5px var(--oroO,#d9b96a)}
   .ofr-emoji{font-size:42px;line-height:1;display:inline-block}
   #ofr-pop-img.emoji{font-size:80px;width:auto;height:auto}
   .ofr-item .ofr-emoji{font-size:46px}
@@ -1308,7 +1309,7 @@ function abrirFicha(id){
   const moteEl=document.getElementById("f-mote"), ap=(m.apodo||"").trim();
   if(ap){ moteEl.textContent="«"+ap+"»"; moteEl.style.display="block"; } else moteEl.style.display="none";
   const relg=document.getElementById("f-relig"), ri=REL_INFO[m.religion];
-  if(ri){ relg.textContent=ri.s+" "+ri.n; relg.style.display="block"; } else relg.style.display="none";
+  if(ri){ relg.innerHTML=(ri.img?`<img class="relig-med" src="diseno/religiones/${ri.img}.png" alt="">`:(ri.s?ri.s+" ":""))+escapar(ri.n); relg.style.display="flex"; } else relg.style.display="none";
   if(m.clase==="mascota"||m.clase==="amigo"){
     const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
     document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ;
@@ -2070,8 +2071,8 @@ const OFR_MASCOTA=[
  ["Para jugar", ["hueso","pelota_tenis","pelota_futbol","pelota_baloncesto","pelota_beisbol","juguete_varita","raton_rojo","raton_marron","raton_muelle"]],
  ["Cumpleaños", ["tarta","cupcake"]]
 ];
-const REL_INFO={ cristiana:{s:"✝️",n:"Cristiana"}, judia:{s:"✡️",n:"Judía"}, musulmana:{s:"☪️",n:"Musulmana"},
- budista:{s:"☸️",n:"Budista"}, hindu:{s:"🕉️",n:"Hindú"}, otra:{s:"🕊️",n:""}, ninguna:null };
+const REL_INFO={ cristiana:{img:"cristiana",n:"Cristiana"}, judia:{img:"judia",n:"Judía"}, musulmana:{img:"musulmana",n:"Musulmana"},
+ budista:{img:"budista",n:"Budista"}, hindu:{img:"hindu",n:"Hindú"}, otra:{s:"🕊️",n:"Otra"}, ninguna:{img:"ninguna",n:"Sin religión"} };
 // gestos hechos de emoji (para los que no son objeto-foto). Fácil de cambiar por imágenes de Luis.
 const OFR_EMOJI={ oracion:{e:"🤲",n:"Una oración"}, coran:{e:"📖",n:"Recitar el Corán"}, caridad:{e:"🕌",n:"Una caridad"},
  loto:{e:"🪷",n:"Flor de loto"}, diya:{e:"🪔",n:"Una diya"}, estrella_david:{e:"✡️",n:"Estrella"} };
