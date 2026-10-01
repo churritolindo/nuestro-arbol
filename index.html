@@ -156,6 +156,19 @@
   .priv-chk{display:flex;align-items:center;gap:9px;background:rgba(255,253,247,.55);border-radius:12px;
     padding:9px 12px;font-size:14.5px;color:var(--verde,#4e6b3a);cursor:pointer;box-shadow:0 0 0 1px var(--oroO,#d9b96a)}
   .priv-chk input{width:19px;height:19px;accent-color:#4e6b3a;flex:none}
+  /* ofrendas */
+  .ofr-altar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 2px;min-height:4px}
+  .ofr-item{position:relative;display:flex;flex-direction:column;align-items:center;width:62px}
+  .ofr-item img{width:50px;height:50px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(40,25,5,.3))}
+  .ofr-item .q{font-size:10.5px;color:var(--suave,#7a6b48);font-family:Georgia,serif;margin-top:1px;text-align:center;line-height:1.2}
+  .ofr-item .x{position:absolute;top:-6px;right:0;background:rgba(155,32,22,.9);color:#fff;border:1.5px solid #fff;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:15px;cursor:pointer;padding:0}
+  .ofr-vacio{font-size:12.5px;color:var(--suave,#7a6b48);font-style:italic;text-align:center}
+  .ofr-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .ofr-grupo{grid-column:1/-1;font-family:'Cinzel',Georgia,serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--oroO,#b78b3a);text-align:center;margin:4px 0 0}
+  .ofr-op{background:rgba(255,253,247,.6);border:none;border-radius:14px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:0 0 0 1px var(--oroO,#d9b96a)}
+  .ofr-op:active{transform:scale(.96)}
+  .ofr-op img{width:42px;height:42px;object-fit:contain}
+  .ofr-op b{font-size:9.5px;color:var(--verde,#4e6b3a);font-weight:700;font-family:Georgia,serif;text-align:center;line-height:1.1}
   .mote{font-size:15px;color:var(--oroO,#b78b3a);font-style:italic;margin:-2px 0 2px;text-align:center;font-weight:600}
   .prog{font-size:12.5px;color:var(--verde);margin-top:10px;display:none;text-align:center;font-weight:600}
   .historia-txt{font-size:14.5px;line-height:1.6;color:var(--texto);white-space:pre-wrap;font-family:Georgia,serif;margin:2px 0 4px}
@@ -456,6 +469,17 @@
         <p id="f-historia" class="historia-txt">—</p>
         <div id="f-nicho" class="fechas" style="display:none;margin-top:6px"></div>
         <button class="btn sec" onclick="abrirHistoria()">✍️ Editar su historia</button>
+      </div>
+
+      <!-- OFRENDAS / GESTOS -->
+      <div class="vidrio">
+        <h2 id="ofr-tit">🕯️ Ofrendas</h2>
+        <p class="sub" id="ofr-sub">Deja un gesto de cariño: una vela, flores, una piedra…</p>
+        <div id="ofr-altar" class="ofr-altar"></div>
+        <input id="ofr-autor" placeholder="Tu nombre (ej. su nieto Luis)" style="margin-top:8px">
+        <button class="btn sec" style="margin-top:8px" onclick="toggleOfrendas()">🤍 Dejar una ofrenda</button>
+        <div id="ofr-picker" class="ofr-picker hide"></div>
+        <div id="ofr-msg" class="msg"></div>
       </div>
 
       <div class="vidrio">
@@ -1252,9 +1276,15 @@ function abrirFicha(id){
   else { fEl.style.display="none"; fondo("bgV"); }
   document.getElementById("texto-box").classList.add("hide");
   limpiar("rec-msg");
+  document.getElementById("ofr-picker").classList.add("hide");
+  document.getElementById("ofr-tit").textContent = m.clase==='mascota' ? "🦴 Ofrendas" : "🕯️ Ofrendas";
+  document.getElementById("ofr-sub").textContent = m.clase==='mascota' ? "Déjale un juguete, una pelota, un hueso…" : "Deja un gesto de cariño: una vela, flores, una piedra…";
+  if(document.getElementById("ofr-autor")) document.getElementById("ofr-autor").value=_ultimoAutor||"";
+  limpiar("ofr-msg");
   ver("v-ficha");
   window.scrollTo(0,0);
   cargarRecuerdos();
+  cargarOfrendas();
 }
 async function pintarFotoFicha(m){
   const el=document.getElementById("f-av");
@@ -1930,7 +1960,7 @@ async function cargarRecuerdos(){
   _cuenta={foto:0,video:0,audio:0}; pintarContadores();
   const { data:todo,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).neq("tipo","anecdota").order("creado",{ascending:false});
   if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
-  const data=(todo||[]).filter(r=>!r.privado);   // los de la zona privada no salen aquí
+  const data=(todo||[]).filter(r=>!r.privado && r.tipo!=="ofrenda");   // privados y ofrendas no salen aquí
   data.forEach(r=>{ if(_cuenta[r.tipo]!=null) _cuenta[r.tipo]++; }); pintarContadores();
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const piezas=await Promise.all(data.map(async r=>{
@@ -1959,6 +1989,69 @@ async function borrar(id,ruta){
   const { error }=await sb.from("contenido").delete().eq("id",id);
   if(error){ msg("rec-msg","No se pudo borrar: "+error.message); return; }
   cargarRecuerdos();
+}
+
+/* ===== OFRENDAS / GESTOS (velas, flores, piedras… / pelotas, huesos, ratones) ===== */
+const OFR_DIR="diseno/ofrendas/";
+const OFR_NOM={
+ vela_doble:"Velas", vela_vaso:"Vela", vela_rosa:"Vela y rosa",
+ flores_rojas:"Rosas", flores_colores:"Flores", flores_girasoles:"Girasoles", rosa_playa:"Rosa",
+ piedra_corazon:"En el corazón", piedra_memoria:"En tu memoria", estrella:"Estrella",
+ tarta:"Tarta", cupcake:"Cupcake",
+ hueso:"Hueso", pelota_tenis:"Pelota", pelota_futbol:"Balón", pelota_baloncesto:"Balón", pelota_beisbol:"Pelota",
+ juguete_varita:"Juguete", raton_rojo:"Ratón", raton_marron:"Ratón", raton_muelle:"Ratones"
+};
+const OFR_PERSONA=[
+ ["Velas y flores", ["vela_doble","vela_vaso","vela_rosa","flores_rojas","flores_colores","flores_girasoles","rosa_playa"]],
+ ["Recuerdo", ["piedra_corazon","piedra_memoria","estrella"]],
+ ["Cumpleaños", ["tarta","cupcake"]]
+];
+const OFR_MASCOTA=[
+ ["Para jugar", ["hueso","pelota_tenis","pelota_futbol","pelota_baloncesto","pelota_beisbol","juguete_varita","raton_rojo","raton_marron","raton_muelle"]],
+ ["Cumpleaños", ["tarta","cupcake"]]
+];
+function toggleOfrendas(){
+  const p=document.getElementById("ofr-picker");
+  if(p.classList.contains("hide")){ pintarPicker(); p.classList.remove("hide"); }
+  else p.classList.add("hide");
+}
+function pintarPicker(){
+  const p=document.getElementById("ofr-picker");
+  const cat=(miembroActual&&miembroActual.clase==='mascota')?OFR_MASCOTA:OFR_PERSONA;
+  p.innerHTML=cat.map(([g,keys])=>
+    `<div class="ofr-grupo">${g}</div>`+
+    keys.map(k=>`<button class="ofr-op" onclick="dejarOfrenda('${k}')"><img src="${OFR_DIR}${k}.png" alt=""><b>${OFR_NOM[k]||k}</b></button>`).join("")
+  ).join("");
+}
+async function dejarOfrenda(k){
+  if(!miembroActual) return; limpiar("ofr-msg");
+  const autor=document.getElementById("ofr-autor").value.trim()||null; _ultimoAutor=autor||_ultimoAutor;
+  const { error }=await sb.from("contenido").insert({ miembro_id:miembroActual.id, tipo:"ofrenda", texto:k, autor, subido_por:usuario.id });
+  if(error){ msg("ofr-msg","No se pudo dejar la ofrenda: "+error.message); return; }
+  document.getElementById("ofr-picker").classList.add("hide");
+  msg("ofr-msg","Gracias por tu gesto 🤍","ok"); setTimeout(()=>limpiar("ofr-msg"),1600);
+  cargarOfrendas();
+}
+async function cargarOfrendas(){
+  const alt=document.getElementById("ofr-altar"); if(!alt||!miembroActual) return;
+  alt.innerHTML="";
+  const { data,error }=await sb.from("contenido").select("id,texto,autor,creado").eq("miembro_id",miembroActual.id).eq("tipo","ofrenda").order("creado",{ascending:false});
+  if(error){ return; }
+  const arr=data||[];
+  if(!arr.length){ alt.innerHTML='<div class="ofr-vacio">Aún no hay ofrendas. Deja la primera 🤍</div>'; return; }
+  const grupos={}; arr.forEach(r=>{ (grupos[r.texto]=grupos[r.texto]||[]).push(r); });
+  alt.innerHTML=Object.keys(grupos).map(k=>{
+    const g=grupos[k]; const autores=[...new Set(g.map(x=>x.autor).filter(Boolean))].slice(0,2).join(", ");
+    const cnt = g.length>1 ? "×"+g.length+" " : "";
+    return `<div class="ofr-item"><button class="x" onclick="borrarOfrenda('${g[0].id}')">×</button>`+
+      `<img src="${OFR_DIR}${escapar(k)}.png" alt="${escapar(OFR_NOM[k]||k)}">`+
+      `<div class="q">${cnt}${escapar(autores)}</div></div>`;
+  }).join("");
+}
+async function borrarOfrenda(id){
+  const { error }=await sb.from("contenido").delete().eq("id",id);
+  if(error){ msg("ofr-msg","No se pudo quitar: "+error.message); return; }
+  cargarOfrendas();
 }
 
 /* ===== ZONA PRIVADA (diario / mensajes con destinatario y temporizador) ===== */
