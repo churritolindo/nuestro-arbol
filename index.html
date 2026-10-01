@@ -2060,7 +2060,8 @@ const OFR_NOM={
  piedra_corazon:"En el corazón", piedra_memoria:"En tu memoria", estrella:"Estrella",
  tarta:"Tarta", cupcake:"Cupcake",
  hueso:"Hueso", pelota_tenis:"Pelota", pelota_futbol:"Balón", pelota_baloncesto:"Balón", pelota_beisbol:"Pelota",
- juguete_varita:"Juguete", raton_rojo:"Ratón", raton_marron:"Ratón", raton_muelle:"Ratones"
+ juguete_varita:"Juguete", raton_rojo:"Ratón", raton_marron:"Ratón", raton_muelle:"Ratones",
+ ganesha:"Ganesha", buda:"Buda", coran:"El Corán", loto:"Flor de loto"
 };
 const OFR_PERSONA=[
  ["Velas y flores", ["vela_doble","vela_vaso","vela_rosa","flores_rojas","flores_colores","flores_girasoles","rosa_playa"]],
@@ -2074,16 +2075,16 @@ const OFR_MASCOTA=[
 const REL_INFO={ cristiana:{img:"cristiana",n:"Cristiana"}, judia:{img:"judia",n:"Judía"}, musulmana:{img:"musulmana",n:"Musulmana"},
  budista:{img:"budista",n:"Budista"}, hindu:{img:"hindu",n:"Hindú"}, otra:{s:"🕊️",n:"Otra"}, ninguna:{img:"ninguna",n:"Sin religión"} };
 // gestos hechos de emoji (para los que no son objeto-foto). Fácil de cambiar por imágenes de Luis.
-const OFR_EMOJI={ oracion:{e:"🤲",n:"Una oración"}, coran:{e:"📖",n:"Recitar el Corán"}, caridad:{e:"🕌",n:"Una caridad"},
- loto:{e:"🪷",n:"Flor de loto"}, diya:{e:"🪔",n:"Una diya"}, estrella_david:{e:"✡️",n:"Estrella"} };
+const OFR_EMOJI={ oracion:{e:"🤲",n:"Una oración"}, caridad:{e:"🤲",n:"Una caridad"},
+ diya:{e:"🪔",n:"Una diya"}, estrella_david:{e:"✡️",n:"Estrella"} };
 function ofrNom(k){ return (OFR_EMOJI[k]&&OFR_EMOJI[k].n) || OFR_NOM[k] || k; }
 function ofrVisual(k){ return OFR_EMOJI[k] ? `<span class="ofr-emoji">${OFR_EMOJI[k].e}</span>` : `<img src="${OFR_DIR}${k}.png" alt="${escapar(ofrNom(k))}">`; }
 // qué gestos se ofrecen según la religión (primera versión; Luis la ajusta)
 const REL_OFR={
  judia:    [["Gestos", ["piedra_corazon","piedra_memoria","estrella_david","vela_vaso","flores_colores"]], ["Cumpleaños", ["tarta","cupcake"]]],
  musulmana:[["Gestos", ["oracion","coran","caridad","flores_rojas","flores_colores"]], ["Cumpleaños", ["tarta","cupcake"]]],
- budista:  [["Gestos", ["loto","flores_colores","flores_rojas","vela_vaso"]], ["Cumpleaños", ["tarta","cupcake"]]],
- hindu:    [["Gestos", ["diya","loto","flores_colores","flores_rojas"]], ["Cumpleaños", ["tarta","cupcake"]]]
+ budista:  [["Gestos", ["buda","loto","flores_colores","vela_vaso"]], ["Cumpleaños", ["tarta","cupcake"]]],
+ hindu:    [["Gestos", ["ganesha","loto","diya","flores_colores","flores_rojas"]], ["Cumpleaños", ["tarta","cupcake"]]]
 };
 function toggleOfrendas(){
   const p=document.getElementById("ofr-picker");
