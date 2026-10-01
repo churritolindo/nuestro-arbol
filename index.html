@@ -579,6 +579,8 @@
           <div><label>Nacimiento</label><input type="date" id="e-nac"></div>
           <div><label>Fallecimiento</label><input type="date" id="e-fall"></div>
         </div>
+        <label>💍 Aniversario de boda (opcional)</label>
+        <input type="date" id="e-boda">
         <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
         <div id="edit-msg" class="msg"></div>
         <button class="btn sec" style="margin-top:8px" onclick="setCabeza()">🏠 Cabeza del árbol principal</button>
@@ -1351,6 +1353,7 @@ function abrirEditar(){
   document.getElementById("e-clase").value=m.clase||"persona";
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
+  document.getElementById("e-boda").value=m.fecha_boda||"";
   document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
   pintaSelect("e-padre",m.padre_id,m.id);
@@ -1434,6 +1437,7 @@ async function guardarEdicion(){
     clase:document.getElementById("e-clase").value,
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
+    fecha_boda:document.getElementById("e-boda").value.trim()||null,
     apellidos:document.getElementById("e-apellidos").value.trim()||null,
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
@@ -2027,6 +2031,7 @@ async function borrar(id,ruta){
 
 /* ===== OFRENDAS / GESTOS (velas, flores, piedras… / pelotas, huesos, ratones) ===== */
 const OFR_DIR="diseno/ofrendas/";
+const OFR_DIAS=15;   // las ofrendas caducan solas a los N días (fácil de cambiar)
 const OFR_NOM={
  vela_doble:"Velas", vela_vaso:"Vela", vela_rosa:"Vela y rosa",
  flores_rojas:"Rosas", flores_colores:"Flores", flores_girasoles:"Girasoles", rosa_playa:"Rosa",
@@ -2072,6 +2077,9 @@ async function dejarOfrenda(k){
 async function cargarOfrendas(){
   const alt=document.getElementById("ofr-altar"); if(!alt||!miembroActual) return;
   alt.innerHTML=""; _ofrCache={};
+  // las ofrendas caducan solas: borra las de más de OFR_DIAS días
+  try{ const cutoff=new Date(Date.now()-OFR_DIAS*86400000).toISOString();
+    await sb.from("contenido").delete().eq("miembro_id",miembroActual.id).eq("tipo","ofrenda").lt("creado",cutoff); }catch(e){}
   const { data,error }=await sb.from("contenido").select("id,texto,titulo,autor,creado").eq("miembro_id",miembroActual.id).eq("tipo","ofrenda").order("creado",{ascending:false});
   if(error){ return; }
   const arr=data||[];
@@ -2245,9 +2253,10 @@ function calcAnivs(){
   _anivs=new Map(); _anivsLista=[];
   const hoy=_hoyMMDD(), yr=new Date().getFullYear();
   (window._arr||[]).forEach(m=>{
-    const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim();
+    const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim(), boda=(m.fecha_boda||"").trim();
     let badge=null, tipo=null, anios=null;
     if(fall && fall.slice(5,10)===hoy){ badge="🕯️"; tipo="aniversario"; anios=yr-parseInt(fall.slice(0,4)); }
+    else if(boda && boda.slice(5,10)===hoy){ badge="💍"; tipo="boda"; anios=yr-parseInt(boda.slice(0,4)); }
     else if(nac && nac.slice(5,10)===hoy){ badge="🎂"; tipo="cumple"; anios=yr-parseInt(nac.slice(0,4)); }
     if(badge){ _anivs.set(m.id,badge); _anivsLista.push({id:m.id,nombre:m.nombre||"",tipo,badge,anios}); }
   });
@@ -2255,10 +2264,11 @@ function calcAnivs(){
 function pintarAnivsBar(){
   const bar=document.getElementById("anivs-bar"); if(!bar) return;
   if(!_anivsLista.length){ bar.classList.add("hide"); bar.innerHTML=""; return; }
-  bar.innerHTML=_anivsLista.map(a=> a.tipo==="aniversario"
-    ? a.badge+" Hoy recordamos a <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+" años)"):"")
-    : a.badge+" Hoy es el cumpleaños de <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+")"):"")
-  ).join(" · ");
+  bar.innerHTML=_anivsLista.map(a=>{
+    if(a.tipo==="aniversario") return a.badge+" Hoy recordamos a <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+" años)"):"");
+    if(a.tipo==="boda") return a.badge+" Aniversario de boda de <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+" años)"):"");
+    return a.badge+" Hoy es el cumpleaños de <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+")"):"");
+  }).join(" · ");
   bar.classList.remove("hide");
 }
 function _msgActivo(r){
