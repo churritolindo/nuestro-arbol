@@ -152,6 +152,24 @@
     margin:0 0 10px;font-size:14px;text-align:center;cursor:pointer;box-shadow:0 4px 12px rgba(150,40,20,.4);
     animation:latidoBar 1.6s ease-in-out infinite}
   .avisos-bar b{text-decoration:underline}
+  /* aniversarios: barra dorada + foto festejando con su emoji */
+  .anivs-bar{background:linear-gradient(90deg,#b7892f,#d8b24a);color:#3a2d12;border-radius:14px;padding:11px 15px;
+    margin:0 0 10px;font-size:14px;text-align:center;box-shadow:0 4px 12px rgba(150,110,30,.35);font-family:Georgia,serif}
+  .anivs-bar b{color:#4a2f12}
+  .placa.festeja .lauro{animation:parpadeo 1.1s ease-in-out infinite}
+  .placa.festeja::before{content:attr(data-badge);position:absolute;top:-8px;left:-5px;font-size:16px;z-index:6;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));pointer-events:none}
+  /* ventanita del mensaje de ofrenda */
+  .ofr-pop{position:fixed;inset:0;z-index:9998;background:rgba(20,15,9,.7);display:flex;align-items:center;justify-content:center;padding:24px}
+  .ofr-pop.hide{display:none}
+  .ofr-pop-card{background:var(--papel,#fffdf6);border-radius:22px;max-width:320px;width:100%;padding:22px;text-align:center;
+    position:relative;box-shadow:0 0 0 2px var(--oroO,#d9b96a),0 10px 30px rgba(0,0,0,.4)}
+  .ofr-pop-x{position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#8a7340}
+  #ofr-pop-img{width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(40,25,5,.3))}
+  #ofr-pop-de{font-family:Georgia,serif;font-weight:700;color:var(--verde,#4e6b3a);margin-top:8px;font-size:15px}
+  #ofr-pop-txt{font-family:Georgia,serif;color:var(--texto,#3b3320);font-size:15px;line-height:1.5;margin-top:8px;white-space:pre-wrap}
+  #ofr-pop-fecha{font-size:12px;color:var(--suave,#8a7340);margin-top:10px}
+  .ofr-item{cursor:pointer}
   .priv-personas{display:flex;flex-direction:column;gap:6px;margin:2px 0 4px}
   .priv-chk{display:flex;align-items:center;gap:9px;background:rgba(255,253,247,.55);border-radius:12px;
     padding:9px 12px;font-size:14.5px;color:var(--verde,#4e6b3a);cursor:pointer;box-shadow:0 0 0 1px var(--oroO,#d9b96a)}
@@ -406,6 +424,7 @@
 
     <!-- ÁRBOL -->
     <div id="v-arbol" class="hide">
+      <div id="anivs-bar" class="anivs-bar hide"></div>
       <div id="avisos-bar" class="avisos-bar hide" onclick="abrirBuzon()"></div>
       <div id="arbol-visual" onclick="toggleEspecies()" style="cursor:pointer"></div>
       <div id="especies-cap" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
@@ -477,6 +496,7 @@
         <p class="sub" id="ofr-sub">Deja un gesto de cariño: una vela, flores, una piedra…</p>
         <div id="ofr-altar" class="ofr-altar"></div>
         <input id="ofr-autor" placeholder="Tu nombre (ej. su nieto Luis)" style="margin-top:8px">
+        <input id="ofr-mensaje" placeholder="Un mensajito (opcional)" style="margin-top:8px">
         <button class="btn sec" style="margin-top:8px" onclick="toggleOfrendas()">🤍 Dejar una ofrenda</button>
         <div id="ofr-picker" class="ofr-picker hide"></div>
         <div id="ofr-msg" class="msg"></div>
@@ -518,6 +538,17 @@
         <button class="rec-x" onclick="cerrarCam()" title="Cerrar">✕</button>
         <button class="rec-rec" id="rec-rec" onclick="toggleGrab()" title="Grabar"></button>
         <div style="width:52px"></div>
+      </div>
+    </div>
+
+    <!-- VENTANITA para leer el mensaje de una ofrenda -->
+    <div id="ofr-pop" class="ofr-pop hide" onclick="cerrarOfrenda(event)">
+      <div class="ofr-pop-card" onclick="event.stopPropagation()">
+        <button class="ofr-pop-x" onclick="cerrarOfrenda()">✕</button>
+        <img id="ofr-pop-img" src="" alt="">
+        <div id="ofr-pop-de" class="ofr-pop-de"></div>
+        <div id="ofr-pop-txt" class="ofr-pop-txt"></div>
+        <div id="ofr-pop-fecha" class="ofr-pop-fecha"></div>
       </div>
     </div>
 
@@ -998,7 +1029,9 @@ function pintarPlacas(){
   ids.forEach(id=>{
     const m=M[id]; if(!m) return; const p=pos[id];
     const b=document.createElement("button");
-    b.className="placa"+(_avisos.has(id)?" avisa":""); b.style.left=X(p.sx)+"%"; b.style.top=Y(p.depth,p.drop)+"%"; b.title=m.nombre;
+    b.className="placa"+(_avisos.has(id)?" avisa":"")+(_anivs.has(id)?" festeja":"");
+    if(_anivs.has(id)) b.setAttribute("data-badge",_anivs.get(id));
+    b.style.left=X(p.sx)+"%"; b.style.top=Y(p.depth,p.drop)+"%"; b.title=m.nombre;
     const cara=m._url?'<img src="'+m._url+'">':inicial(m.nombre);
     b.innerHTML='<div class="lauro" style="width:'+sz+'px;height:'+Math.round(sz*1.06)+'px"><img class="lau" src="corona.png"><div class="foto" style="width:'+foto+'px;height:'+foto+'px">'+cara+'</div></div>';
     b.onclick=(e)=>{ e.stopPropagation(); abrirFicha(m.id); };
@@ -1280,6 +1313,7 @@ function abrirFicha(id){
   document.getElementById("ofr-tit").textContent = m.clase==='mascota' ? "🦴 Ofrendas" : "🕯️ Ofrendas";
   document.getElementById("ofr-sub").textContent = m.clase==='mascota' ? "Déjale un juguete, una pelota, un hueso…" : "Deja un gesto de cariño: una vela, flores, una piedra…";
   if(document.getElementById("ofr-autor")) document.getElementById("ofr-autor").value=_ultimoAutor||"";
+  if(document.getElementById("ofr-mensaje")) document.getElementById("ofr-mensaje").value="";
   limpiar("ofr-msg");
   ver("v-ficha");
   window.scrollTo(0,0);
@@ -2023,31 +2057,42 @@ function pintarPicker(){
     keys.map(k=>`<button class="ofr-op" onclick="dejarOfrenda('${k}')"><img src="${OFR_DIR}${k}.png" alt=""><b>${OFR_NOM[k]||k}</b></button>`).join("")
   ).join("");
 }
+let _ofrCache={};
 async function dejarOfrenda(k){
   if(!miembroActual) return; limpiar("ofr-msg");
   const autor=document.getElementById("ofr-autor").value.trim()||null; _ultimoAutor=autor||_ultimoAutor;
-  const { error }=await sb.from("contenido").insert({ miembro_id:miembroActual.id, tipo:"ofrenda", texto:k, autor, subido_por:usuario.id });
+  const mensaje=document.getElementById("ofr-mensaje").value.trim()||null;
+  const { error }=await sb.from("contenido").insert({ miembro_id:miembroActual.id, tipo:"ofrenda", texto:k, titulo:mensaje, autor, subido_por:usuario.id });
   if(error){ msg("ofr-msg","No se pudo dejar la ofrenda: "+error.message); return; }
   document.getElementById("ofr-picker").classList.add("hide");
+  document.getElementById("ofr-mensaje").value="";
   msg("ofr-msg","Gracias por tu gesto 🤍","ok"); setTimeout(()=>limpiar("ofr-msg"),1600);
   cargarOfrendas();
 }
 async function cargarOfrendas(){
   const alt=document.getElementById("ofr-altar"); if(!alt||!miembroActual) return;
-  alt.innerHTML="";
-  const { data,error }=await sb.from("contenido").select("id,texto,autor,creado").eq("miembro_id",miembroActual.id).eq("tipo","ofrenda").order("creado",{ascending:false});
+  alt.innerHTML=""; _ofrCache={};
+  const { data,error }=await sb.from("contenido").select("id,texto,titulo,autor,creado").eq("miembro_id",miembroActual.id).eq("tipo","ofrenda").order("creado",{ascending:false});
   if(error){ return; }
   const arr=data||[];
   if(!arr.length){ alt.innerHTML='<div class="ofr-vacio">Aún no hay ofrendas. Deja la primera 🤍</div>'; return; }
-  const grupos={}; arr.forEach(r=>{ (grupos[r.texto]=grupos[r.texto]||[]).push(r); });
-  alt.innerHTML=Object.keys(grupos).map(k=>{
-    const g=grupos[k]; const autores=[...new Set(g.map(x=>x.autor).filter(Boolean))].slice(0,2).join(", ");
-    const cnt = g.length>1 ? "×"+g.length+" " : "";
-    return `<div class="ofr-item"><button class="x" onclick="borrarOfrenda('${g[0].id}')">×</button>`+
-      `<img src="${OFR_DIR}${escapar(k)}.png" alt="${escapar(OFR_NOM[k]||k)}">`+
-      `<div class="q">${cnt}${escapar(autores)}</div></div>`;
+  alt.innerHTML=arr.map(r=>{
+    _ofrCache[r.id]=r;
+    const pie = r.titulo ? "💬 "+escapar(r.autor||"") : escapar(r.autor||"");
+    return `<div class="ofr-item" onclick="verOfrenda('${r.id}')"><button class="x" onclick="event.stopPropagation();borrarOfrenda('${r.id}')">×</button>`+
+      `<img src="${OFR_DIR}${escapar(r.texto)}.png" alt="${escapar(OFR_NOM[r.texto]||r.texto)}">`+
+      `<div class="q">${pie}</div></div>`;
   }).join("");
 }
+function verOfrenda(id){
+  const r=_ofrCache[id]; if(!r) return;
+  document.getElementById("ofr-pop-img").src=OFR_DIR+r.texto+".png";
+  document.getElementById("ofr-pop-de").textContent = r.autor ? ("De "+r.autor) : "Una ofrenda";
+  const t=document.getElementById("ofr-pop-txt"); t.textContent=r.titulo||"(sin mensaje)"; t.style.opacity=r.titulo?"1":".5";
+  document.getElementById("ofr-pop-fecha").textContent = r.creado ? new Date(r.creado).toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}) : "";
+  document.getElementById("ofr-pop").classList.remove("hide");
+}
+function cerrarOfrenda(e){ document.getElementById("ofr-pop").classList.add("hide"); }
 async function borrarOfrenda(id){
   const { error }=await sb.from("contenido").delete().eq("id",id);
   if(error){ msg("ofr-msg","No se pudo quitar: "+error.message); return; }
@@ -2193,7 +2238,29 @@ function cerrarPrivada(){ _privActivo=false; if(miembroActual) abrirFicha(miembr
 
 /* ===== AVISO de mensajes que ya se pueden ver (foto parpadeando + barra + buzón) ===== */
 let _avisos=new Set(), _avisosLista=[];
+let _anivs=new Map(), _anivsLista=[];
 function _hoy(){ return new Date().toISOString().slice(0,10); }
+function _hoyMMDD(){ const d=new Date(); return String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function calcAnivs(){
+  _anivs=new Map(); _anivsLista=[];
+  const hoy=_hoyMMDD(), yr=new Date().getFullYear();
+  (window._arr||[]).forEach(m=>{
+    const nac=(m.nacimiento||"").trim(), fall=(m.fallecimiento||"").trim();
+    let badge=null, tipo=null, anios=null;
+    if(fall && fall.slice(5,10)===hoy){ badge="🕯️"; tipo="aniversario"; anios=yr-parseInt(fall.slice(0,4)); }
+    else if(nac && nac.slice(5,10)===hoy){ badge="🎂"; tipo="cumple"; anios=yr-parseInt(nac.slice(0,4)); }
+    if(badge){ _anivs.set(m.id,badge); _anivsLista.push({id:m.id,nombre:m.nombre||"",tipo,badge,anios}); }
+  });
+}
+function pintarAnivsBar(){
+  const bar=document.getElementById("anivs-bar"); if(!bar) return;
+  if(!_anivsLista.length){ bar.classList.add("hide"); bar.innerHTML=""; return; }
+  bar.innerHTML=_anivsLista.map(a=> a.tipo==="aniversario"
+    ? a.badge+" Hoy recordamos a <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+" años)"):"")
+    : a.badge+" Hoy es el cumpleaños de <b>"+escapar(a.nombre)+"</b>"+(a.anios?(" ("+a.anios+")"):"")
+  ).join(" · ");
+  bar.classList.remove("hide");
+}
 function _msgActivo(r){
   if(!r.privado || r.leido) return false;
   if(r.cuando==="siempre") return true;
@@ -2210,7 +2277,9 @@ async function cargarAvisos(){
       (data||[]).forEach(r=>{ if(_msgActivo(r)){ _avisos.add(r.miembro_id); _avisosLista.push(r); } });
     }
   }catch(e){}
+  calcAnivs();
   pintarAvisosBar();
+  pintarAnivsBar();
   pintarPlacas();
 }
 function pintarAvisosBar(){
