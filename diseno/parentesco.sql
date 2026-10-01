@@ -26,6 +26,9 @@ alter table miembros add column if not exists apodo text;
 -- Aniversario de boda (además de cumpleaños -nacimiento- y aniversario -fallecimiento-)
 alter table miembros add column if not exists fecha_boda date;
 
+-- Religión / cultura (adapta los gestos de ofrenda). Valores: cristiana/judia/musulmana/budista/hindu/otra/ninguna
+alter table miembros add column if not exists religion text;
+
 -- Zona privada (diario + mensajes con destinatario y temporizador)
 alter table miembros  add column if not exists zona_codigo text;   -- código de la zona privada (huella, no el código en claro)
 alter table miembros  add column if not exists responsable text;   -- quién podrá abrir la zona privada el día de mañana

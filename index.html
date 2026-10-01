@@ -165,7 +165,8 @@
   .ofr-pop-card{background:var(--papel,#fffdf6);border-radius:22px;max-width:320px;width:100%;padding:22px;text-align:center;
     position:relative;box-shadow:0 0 0 2px var(--oroO,#d9b96a),0 10px 30px rgba(0,0,0,.4)}
   .ofr-pop-x{position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#8a7340}
-  #ofr-pop-img{width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(40,25,5,.3))}
+  #ofr-pop-vis img{width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(40,25,5,.3))}
+  #ofr-pop-vis .ofr-emoji{font-size:78px}
   #ofr-pop-de{font-family:Georgia,serif;font-weight:700;color:var(--verde,#4e6b3a);margin-top:8px;font-size:15px}
   #ofr-pop-txt{font-family:Georgia,serif;color:var(--texto,#3b3320);font-size:15px;line-height:1.5;margin-top:8px;white-space:pre-wrap}
   #ofr-pop-fecha{font-size:12px;color:var(--suave,#8a7340);margin-top:10px}
@@ -188,6 +189,10 @@
   .ofr-op img{width:42px;height:42px;object-fit:contain}
   .ofr-op b{font-size:9.5px;color:var(--verde,#4e6b3a);font-weight:700;font-family:Georgia,serif;text-align:center;line-height:1.1}
   .mote{font-size:15px;color:var(--oroO,#b78b3a);font-style:italic;margin:-2px 0 2px;text-align:center;font-weight:600}
+  .f-relig{font-size:12.5px;color:var(--suave,#7a6b48);text-align:center;margin:1px 0 2px;font-family:Georgia,serif}
+  .ofr-emoji{font-size:42px;line-height:1;display:inline-block}
+  #ofr-pop-img.emoji{font-size:80px;width:auto;height:auto}
+  .ofr-item .ofr-emoji{font-size:46px}
   .prog{font-size:12.5px;color:var(--verde);margin-top:10px;display:none;text-align:center;font-weight:600}
   .historia-txt{font-size:14.5px;line-height:1.6;color:var(--texto);white-space:pre-wrap;font-family:Georgia,serif;margin:2px 0 4px}
   .arbolito{width:148px;height:120px;display:block;margin:0 auto;filter:drop-shadow(0 3px 5px rgba(20,40,25,.35))}
@@ -477,6 +482,7 @@
         <input type="file" id="foto-input" accept="image/*" class="hide" onchange="fotoPerfilElegida()">
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="mote serif" id="f-mote" style="display:none"></div>
+        <div class="f-relig" id="f-relig" style="display:none"></div>
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
         <button class="btn sec" id="f-rama-btn" style="margin-top:10px" onclick="verSuRama()">📜 Ver su rama</button>
@@ -545,7 +551,7 @@
     <div id="ofr-pop" class="ofr-pop hide" onclick="cerrarOfrenda(event)">
       <div class="ofr-pop-card" onclick="event.stopPropagation()">
         <button class="ofr-pop-x" onclick="cerrarOfrenda()">✕</button>
-        <img id="ofr-pop-img" src="" alt="">
+        <div id="ofr-pop-vis"></div>
         <div id="ofr-pop-de" class="ofr-pop-de"></div>
         <div id="ofr-pop-txt" class="ofr-pop-txt"></div>
         <div id="ofr-pop-fecha" class="ofr-pop-fecha"></div>
@@ -581,6 +587,17 @@
         </div>
         <label>💍 Aniversario de boda (opcional)</label>
         <input type="date" id="e-boda">
+        <label>🕊️ Religión / cultura (opcional)</label>
+        <select id="e-religion">
+          <option value="">— Sin especificar —</option>
+          <option value="cristiana">✝️ Cristiana</option>
+          <option value="judia">✡️ Judía</option>
+          <option value="musulmana">☪️ Musulmana</option>
+          <option value="budista">☸️ Budista</option>
+          <option value="hindu">🕉️ Hindú</option>
+          <option value="otra">🕊️ Otra</option>
+          <option value="ninguna">· Sin religión</option>
+        </select>
         <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
         <div id="edit-msg" class="msg"></div>
         <button class="btn sec" style="margin-top:8px" onclick="setCabeza()">🏠 Cabeza del árbol principal</button>
@@ -1290,6 +1307,8 @@ function abrirFicha(id){
   document.getElementById("f-nom").textContent = m.nombre;
   const moteEl=document.getElementById("f-mote"), ap=(m.apodo||"").trim();
   if(ap){ moteEl.textContent="«"+ap+"»"; moteEl.style.display="block"; } else moteEl.style.display="none";
+  const relg=document.getElementById("f-relig"), ri=REL_INFO[m.religion];
+  if(ri){ relg.textContent=ri.s+" "+ri.n; relg.style.display="block"; } else relg.style.display="none";
   if(m.clase==="mascota"||m.clase==="amigo"){
     const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
     document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ;
@@ -1354,6 +1373,7 @@ function abrirEditar(){
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
   document.getElementById("e-boda").value=m.fecha_boda||"";
+  document.getElementById("e-religion").value=m.religion||"";
   document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
   pintaSelect("e-padre",m.padre_id,m.id);
@@ -1438,6 +1458,7 @@ async function guardarEdicion(){
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
     fecha_boda:document.getElementById("e-boda").value.trim()||null,
+    religion:document.getElementById("e-religion").value||null,
     apellidos:document.getElementById("e-apellidos").value.trim()||null,
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
@@ -2049,6 +2070,20 @@ const OFR_MASCOTA=[
  ["Para jugar", ["hueso","pelota_tenis","pelota_futbol","pelota_baloncesto","pelota_beisbol","juguete_varita","raton_rojo","raton_marron","raton_muelle"]],
  ["Cumpleaños", ["tarta","cupcake"]]
 ];
+const REL_INFO={ cristiana:{s:"✝️",n:"Cristiana"}, judia:{s:"✡️",n:"Judía"}, musulmana:{s:"☪️",n:"Musulmana"},
+ budista:{s:"☸️",n:"Budista"}, hindu:{s:"🕉️",n:"Hindú"}, otra:{s:"🕊️",n:""}, ninguna:null };
+// gestos hechos de emoji (para los que no son objeto-foto). Fácil de cambiar por imágenes de Luis.
+const OFR_EMOJI={ oracion:{e:"🤲",n:"Una oración"}, coran:{e:"📖",n:"Recitar el Corán"}, caridad:{e:"🕌",n:"Una caridad"},
+ loto:{e:"🪷",n:"Flor de loto"}, diya:{e:"🪔",n:"Una diya"}, estrella_david:{e:"✡️",n:"Estrella"} };
+function ofrNom(k){ return (OFR_EMOJI[k]&&OFR_EMOJI[k].n) || OFR_NOM[k] || k; }
+function ofrVisual(k){ return OFR_EMOJI[k] ? `<span class="ofr-emoji">${OFR_EMOJI[k].e}</span>` : `<img src="${OFR_DIR}${k}.png" alt="${escapar(ofrNom(k))}">`; }
+// qué gestos se ofrecen según la religión (primera versión; Luis la ajusta)
+const REL_OFR={
+ judia:    [["Gestos", ["piedra_corazon","piedra_memoria","estrella_david","vela_vaso","flores_colores"]], ["Cumpleaños", ["tarta","cupcake"]]],
+ musulmana:[["Gestos", ["oracion","coran","caridad","flores_rojas","flores_colores"]], ["Cumpleaños", ["tarta","cupcake"]]],
+ budista:  [["Gestos", ["loto","flores_colores","flores_rojas","vela_vaso"]], ["Cumpleaños", ["tarta","cupcake"]]],
+ hindu:    [["Gestos", ["diya","loto","flores_colores","flores_rojas"]], ["Cumpleaños", ["tarta","cupcake"]]]
+};
 function toggleOfrendas(){
   const p=document.getElementById("ofr-picker");
   if(p.classList.contains("hide")){ pintarPicker(); p.classList.remove("hide"); }
@@ -2056,10 +2091,12 @@ function toggleOfrendas(){
 }
 function pintarPicker(){
   const p=document.getElementById("ofr-picker");
-  const cat=(miembroActual&&miembroActual.clase==='mascota')?OFR_MASCOTA:OFR_PERSONA;
+  let cat;
+  if(miembroActual&&miembroActual.clase==='mascota') cat=OFR_MASCOTA;
+  else cat=REL_OFR[miembroActual&&miembroActual.religion]||OFR_PERSONA;
   p.innerHTML=cat.map(([g,keys])=>
     `<div class="ofr-grupo">${g}</div>`+
-    keys.map(k=>`<button class="ofr-op" onclick="dejarOfrenda('${k}')"><img src="${OFR_DIR}${k}.png" alt=""><b>${OFR_NOM[k]||k}</b></button>`).join("")
+    keys.map(k=>`<button class="ofr-op" onclick="dejarOfrenda('${k}')">${ofrVisual(k)}<b>${escapar(ofrNom(k))}</b></button>`).join("")
   ).join("");
 }
 let _ofrCache={};
@@ -2088,13 +2125,13 @@ async function cargarOfrendas(){
     _ofrCache[r.id]=r;
     const pie = r.titulo ? "💬 "+escapar(r.autor||"") : escapar(r.autor||"");
     return `<div class="ofr-item" onclick="verOfrenda('${r.id}')"><button class="x" onclick="event.stopPropagation();borrarOfrenda('${r.id}')">×</button>`+
-      `<img src="${OFR_DIR}${escapar(r.texto)}.png" alt="${escapar(OFR_NOM[r.texto]||r.texto)}">`+
+      ofrVisual(r.texto)+
       `<div class="q">${pie}</div></div>`;
   }).join("");
 }
 function verOfrenda(id){
   const r=_ofrCache[id]; if(!r) return;
-  document.getElementById("ofr-pop-img").src=OFR_DIR+r.texto+".png";
+  document.getElementById("ofr-pop-vis").innerHTML=ofrVisual(r.texto);
   document.getElementById("ofr-pop-de").textContent = r.autor ? ("De "+r.autor) : "Una ofrenda";
   const t=document.getElementById("ofr-pop-txt"); t.textContent=r.titulo||"(sin mensaje)"; t.style.opacity=r.titulo?"1":".5";
   document.getElementById("ofr-pop-fecha").textContent = r.creado ? new Date(r.creado).toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"}) : "";
