@@ -391,6 +391,9 @@
   .ped-node .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px;
     text-shadow:0 1px 2px rgba(255,250,235,.9)}
   .ped-heart{position:absolute;transform:translate(-50%,-50%);font-size:13px;z-index:3}
+  .ped-node.dueno .lauro{width:58px;height:62px}
+  .ped-node.dueno .foto{width:34px;height:34px;font-size:14px}
+  .ped-node.dueno .pn{font-size:11.5px;font-weight:800}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -1682,21 +1685,123 @@ function mascotasHTML(mini, clase, grupo){
   const arr=(window._arr||[]).filter(m=>m.clase===clase && (!gf || _normG(m.grupo).toLowerCase()===gf)).slice();
   if(!arr.length) return "";
   arr.sort((a,b)=>{ const x=a.nacimiento||'9999-99-99', y=b.nacimiento||'9999-99-99'; return x<y?-1:(x>y?1:0); });
-  // agrupar parejas (pareja_id) en la misma fila con corazón; el resto, una debajo de otra
-  const done=new Set(), rows=[];
-  arr.forEach(m=>{ if(done.has(m.id)) return; done.add(m.id);
-    const par = m.pareja_id && arr.find(x=>x.id===m.pareja_id && !done.has(x.id));
-    if(par){ done.add(par.id); rows.push([m,par]); } else rows.push([m]);
+  // --- panel mini (al lado del árbol familiar): columna compacta ---
+  if(mini){
+    const done=new Set(), rows=[];
+    arr.forEach(m=>{ if(done.has(m.id)) return; done.add(m.id);
+      const par = m.pareja_id && arr.find(x=>x.id===m.pareja_id && !done.has(x.id));
+      if(par){ done.add(par.id); rows.push([m,par]); } else rows.push([m]);
+    });
+    let h='<div class="masc-col mini">';
+    rows.forEach((row,i)=>{
+      if(i>0) h+='<div class="masc-link"></div>';
+      if(row.length===2){
+        const tipo=row[0].tipo_pareja||row[1].tipo_pareja||'pareja';
+        h+='<div class="masc-pair">'+_mascNode(row[0])+'<span class="corazon">'+_simboloRel(tipo)+'</span>'+_mascNode(row[1])+'</div>';
+      } else h+=_mascNode(row[0]);
+    });
+    return h+'</div>';
+  }
+  // --- vista completa: árbol genealógico en abanico (como la familia) ---
+  return _subPedHTML(arr, clase, grupo);
+}
+// Árbol genealógico de amigos/mascotas en abanico: más antiguos arriba, mismo año en la
+// misma línea, parejas juntas con su corazón, hijos/cachorros debajo, y el dueño arriba.
+function _subPedHTML(arr, clase, grupo){
+  const byId={}; arr.forEach(m=>byId[m.id]=m);
+  const yr=m=>{ const s=(m.nacimiento||'').slice(0,4); return s?parseInt(s):9999; };
+  const parejasVis=m=>{ const o=[]; if(m.pareja_id&&byId[m.pareja_id]) o.push(byId[m.pareja_id]); return o; };
+  // dueño/a del grupo (p.ej. "Amigos de Luis" -> persona Luis)
+  let owner=null;
+  if(grupo && _normG(grupo).toLowerCase()!=='familia')
+    owner=(window._arr||[]).find(x=>(!x.clase||x.clase==='persona') && (x.nombre||'').trim().toLowerCase()===grupo.trim().toLowerCase());
+  // unidades (pareja junta), de más antiguo a más nuevo
+  const used=new Set(), units=[];
+  arr.slice().sort((a,b)=>yr(a)-yr(b)).forEach(m=>{
+    if(used.has(m.id)) return;
+    const par=parejasVis(m).filter(p=>!used.has(p.id));
+    used.add(m.id); par.forEach(p=>used.add(p.id));
+    const members=[m,...par];
+    units.push({members, y:Math.min.apply(null,members.map(yr)),
+      hasParent:members.some(x=>(x.padre_id&&byId[x.padre_id])||(x.madre_id&&byId[x.madre_id]))});
   });
-  let h='<div class="masc-col'+(mini?' mini':'')+'">';
-  rows.forEach((row,i)=>{
-    if(i>0) h+='<div class="masc-link"></div>';
-    if(row.length===2){
-      const tipo=row[0].tipo_pareja||row[1].tipo_pareja||'pareja';
-      h+='<div class="masc-pair">'+_mascNode(row[0])+'<span class="corazon">'+_simboloRel(tipo)+'</span>'+_mascNode(row[1])+'</div>';
-    } else h+=_mascNode(row[0]);
+  const roots=units.filter(u=>!u.hasParent).sort((a,b)=>a.y-b.y);
+  // repartir raíces en filas que se abren (1,2,3…); el MISMO AÑO va siempre en la misma línea
+  const rows=[]; { let i=0, ri=0; const tgt=[1,2,3];
+    while(i<roots.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
+      while(i<roots.length){ const u=roots[i];
+        const mismoAno = row.length && u.y===row[row.length-1].y;
+        if(c>0 && c>=T && !mismoAno) break;
+        row.push(u); c+=u.members.length; i++; }
+      rows.push(row); ri++; }
+  }
+  const NW=58, PAIRW=62, COLW=34, GENH=104, DROP=26;
+  const pos={}, hearts=[];
+  const anchoUnit=u=>(u.members.length-1)*PAIRW;
+  const base = owner?1:0;
+  // niveles: raíces por fila de abanico; hijos/cachorros = nivel del padre + 1
+  rows.forEach((fila,ri)=>fila.forEach(u=>u.level=base+ri));
+  units.forEach(u=>{ if(u.level===undefined) u.level=null; });
+  let ch=true, gg=0;
+  while(ch && gg++<60){ ch=false;
+    units.forEach(u=>{ if(u.level!=null) return; let pLv=null;
+      u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&byId[pid]){ const pu=units.find(z=>z.members.some(mm=>mm.id===pid)); if(pu&&pu.level!=null) pLv=Math.max(pLv==null?-1:pLv,pu.level); } }));
+      if(pLv!=null){ u.level=pLv+1; ch=true; } });
+  }
+  units.forEach(u=>{ if(u.level==null) u.level=base+rows.length; });
+  // colocar por nivel (arriba->abajo), centrado; raíces por año, hijos cerca de su padre (sin solaparse)
+  const byLevel={}; units.forEach(u=>{ (byLevel[u.level]=byLevel[u.level]||[]).push(u); });
+  Object.keys(byLevel).map(Number).sort((a,b)=>a-b).forEach(L=>{
+    const us=byLevel[L];
+    us.forEach(u=>{ let px=0,c=0; u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&pos[pid]){ px+=pos[pid].x; c++; } })); u._px=c?px/c:null; });
+    const rootU=us.filter(u=>u._px==null).sort((a,b)=>a.y-b.y);
+    const kidU =us.filter(u=>u._px!=null).sort((a,b)=>a._px-b._px);
+    const ordered=rootU.concat(kidU);
+    let total=0; ordered.forEach((u,ui)=>{ total+=anchoUnit(u); if(ui<ordered.length-1) total+=COLW+NW; });
+    let cur=-total/2; const y=L*GENH;
+    ordered.forEach(u=>{ const k=u.members.length;
+      u.members.forEach((mm,j)=>{ pos[mm.id]={x:cur+j*PAIRW, y}; });
+      if(k===2) hearts.push({x:cur+PAIRW/2, y, s:_simboloRel(u.members[0].tipo_pareja||u.members[1].tipo_pareja||'pareja')});
+      cur += anchoUnit(u)+COLW+NW;
+    });
   });
-  return h+'</div>';
+  // líneas
+  const links=[];
+  const cxDe=fila=>{ const xs=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) xs.push(pos[mm.id].x); })); return xs.length?(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2:0; };
+  const bajaA=(trunkX, yTopEdge, fila, yBot)=>{ const my=(yTopEdge+yBot)/2;
+    const flat=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) flat.push(pos[mm.id].x); }));
+    if(!flat.length) return;
+    links.push([trunkX, yTopEdge, trunkX, my]);
+    const lo=Math.min.apply(null,flat.concat([trunkX])), hi=Math.max.apply(null,flat.concat([trunkX]));
+    links.push([lo, my, hi, my]);
+    flat.forEach(x=>links.push([x, my, x, yBot-DROP]));
+  };
+  if(owner && rows.length) bajaA(0, DROP, rows[0], base*GENH);
+  for(let i=0;i<rows.length-1;i++) bajaA(cxDe(rows[i]), (base+i)*GENH+DROP, rows[i+1], (base+i+1)*GENH);
+  // padres -> hijos/cachorros
+  arr.forEach(m=>{ if(!pos[m.id]) return; [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&pos[pid]) links.push([pos[pid].x, pos[pid].y+DROP, pos[m.id].x, pos[m.id].y-DROP]); }); });
+  // nodos
+  const nodes=[];
+  if(owner) nodes.push({id:owner.id, x:0, y:0, owner:true});
+  arr.forEach(m=>{ if(pos[m.id]) nodes.push({id:m.id, x:pos[m.id].x, y:pos[m.id].y}); });
+  if(!nodes.length) return "";
+  const allX=nodes.map(n=>n.x).concat(hearts.map(h=>h.x)), allY=nodes.map(n=>n.y).concat(hearts.map(h=>h.y));
+  const PADX=52, PADY=56;
+  const minX=Math.min.apply(null,allX), maxX=Math.max.apply(null,allX), minY=Math.min.apply(null,allY), maxY=Math.max.apply(null,allY);
+  const W=(maxX-minX)+PADX*2, H=(maxY-minY)+PADY*2, ox=PADX-minX, oy=PADY-minY;
+  let svg=''; links.forEach(l=>svg+='<path d="M'+(l[0]+ox).toFixed(1)+' '+(l[1]+oy).toFixed(1)+' L'+(l[2]+ox).toFixed(1)+' '+(l[3]+oy).toFixed(1)+'"/>');
+  let nod='';
+  nodes.forEach(n=>{ const m = n.owner?owner:byId[n.id]; if(!m) return;
+    const esYo = n.owner && usuario && owner.creado_por===usuario.id;
+    const nm = escapar((m.nombre||'').split(' ')[0]) + (esYo?' <span style="color:#8a6d3b">(tú)</span>':'');
+    nod+='<div class="ped-node'+(n.owner?' dueno':'')+'" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
+      +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
+      +'<div class="pn">'+nm+'</div></div>';
+  });
+  hearts.forEach(h=>nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>');
+  return '<div class="ped" style="width:'+W+'px;height:'+H+'px">'
+    +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><g stroke="#6b4f2a" stroke-width="2" fill="none" opacity=".8">'+svg+'</g></svg>'
+    +nod+'</div>';
 }
 function familiaHTML(focalId){
   const M=window._miembros||{};
