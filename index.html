@@ -1320,9 +1320,16 @@ function pintarSub(){
   // Raíces (sin padres dentro del grupo), de más antiguo a más nuevo
   const roots=units.filter(u=>!u.hasParent).sort((a,b)=>a.y-b.y);
   // UNA fila por año (más antiguo arriba); el dueño sale en SU año, no de cabecilla
-  const rootYears=[]; roots.forEach(u=>{ if(!rootYears.includes(u.y)) rootYears.push(u.y); });
-  rootYears.sort((a,b)=>a-b);
-  const rows=rootYears.map(y=>roots.filter(u=>u.y===y));
+  // Años conocidos -> una fila por año (más antiguo arriba). Sin año puesto -> abanico abajo (filas de 1,2,3)
+  const conAno = roots.filter(u=>u.y!==9999);
+  const sinAno = roots.filter(u=>u.y===9999);
+  const anos=[]; conAno.forEach(u=>{ if(!anos.includes(u.y)) anos.push(u.y); }); anos.sort((a,b)=>a-b);
+  const rows=anos.map(y=>conAno.filter(u=>u.y===y));
+  if(sinAno.length){ const tgt=[1,2,3]; let i=0,ri=0;
+    while(i<sinAno.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
+      while(i<sinAno.length && c<T){ row.push(sinAno[i]); c+=sinAno[i].members.length; i++; }
+      rows.push(row); ri++; }
+  }
   rows.forEach((row,ri)=>row.forEach(u=>u.level=ri));
   // Hijos/cachorros: siempre un nivel por debajo de sus padres
   let ch=true,gg=0;
@@ -1739,9 +1746,16 @@ function _subPedHTML(arr, clase, grupo){
   });
   const roots=units.filter(u=>!u.hasParent).sort((a,b)=>a.y-b.y);
   // UNA fila por año: más antiguo arriba, mismo año en la misma línea, bajando por antigüedad
-  const rootYears=[]; roots.forEach(u=>{ if(!rootYears.includes(u.y)) rootYears.push(u.y); });
-  rootYears.sort((a,b)=>a-b);
-  const rows=rootYears.map(y=>roots.filter(u=>u.y===y));
+  // Años conocidos -> una fila por año (más antiguo arriba). Sin año puesto -> abanico abajo (filas de 1,2,3)
+  const conAno = roots.filter(u=>u.y!==9999);
+  const sinAno = roots.filter(u=>u.y===9999);
+  const anos=[]; conAno.forEach(u=>{ if(!anos.includes(u.y)) anos.push(u.y); }); anos.sort((a,b)=>a-b);
+  const rows=anos.map(y=>conAno.filter(u=>u.y===y));
+  if(sinAno.length){ const tgt=[1,2,3]; let i=0,ri=0;
+    while(i<sinAno.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
+      while(i<sinAno.length && c<T){ row.push(sinAno[i]); c+=sinAno[i].members.length; i++; }
+      rows.push(row); ri++; }
+  }
   const NW=58, PAIRW=62, COLW=34, GENH=104, DROP=26, DROP_PAIR=34;
   const pos={}, hearts=[];
   const anchoUnit=u=>(u.members.length-1)*PAIRW;
