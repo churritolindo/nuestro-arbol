@@ -1336,7 +1336,7 @@ function pintarSub(){
   const byLevel={}; units.forEach(u=>{ (byLevel[u.level]=byLevel[u.level]||[]).push(u); });
   const topY=13, botY=86;
   const stepY = maxL>0 ? Math.min(20,(botY-topY)/maxL) : 0;
-  const pos={};
+  const pos={}; const dyPair=5.5;   // cuánto baja una pareja de su línea de año (en %)
   Object.keys(byLevel).map(Number).sort((a,b)=>a-b).forEach(L=>{
     const us=byLevel[L].slice();
     us.forEach(u=>{ let px=0,c=0; u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&pos[pid]){ px+=pos[pid].x; c++; } })); u._px=c?px/c:null; });
@@ -1347,22 +1347,28 @@ function pintarSub(){
     ordered.forEach((u,ui)=>{
       const cx = nU===1?50:(18+(ui/(nU-1))*64);   // centro de la unidad (abanico)
       const k=u.members.length;
-      u.members.forEach((mm,j)=>{ const off=k===1?0:((j-(k-1)/2)*11); pos[mm.id]={x:cx+off,y}; });  // pareja pegada
+      const uy = k===2 ? y+dyPair : y;            // los casados bajan un poco de su línea de año
+      u.members.forEach((mm,j)=>{ const off=k===1?0:((j-(k-1)/2)*11); pos[mm.id]={x:cx+off,y:uy}; });  // pareja pegada
     });
   });
   // Líneas: tronco que baja de una fila de años a la siguiente + padres->hijos
   let lines="";
   const cxDe=fila=>{ const xs=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) xs.push(pos[mm.id].x); })); return xs.length?(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2:50; };
-  const bracket=(trunkX,yTopEdge,fila,yBot)=>{ const my=(yTopEdge+yBot)/2; let s='';
-    const flat=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) flat.push(pos[mm.id].x); }));
-    if(!flat.length) return '';
+  const bracket=(trunkX,yTopEdge,fila)=>{ let s='';
+    const mem=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) mem.push(pos[mm.id]); }));
+    if(!mem.length) return '';
+    const yLine=Math.min.apply(null,mem.map(p=>p.y)), my=(yTopEdge+yLine)/2;
     s+='<path d="M'+trunkX.toFixed(1)+' '+yTopEdge.toFixed(1)+' V'+my.toFixed(1)+'"/>';
-    const lo=Math.min.apply(null,flat.concat([trunkX])), hi=Math.max.apply(null,flat.concat([trunkX]));
+    const xs=mem.map(p=>p.x), lo=Math.min.apply(null,xs.concat([trunkX])), hi=Math.max.apply(null,xs.concat([trunkX]));
     s+='<path d="M'+lo.toFixed(1)+' '+my.toFixed(1)+' H'+hi.toFixed(1)+'"/>';
-    flat.forEach(x=>{ s+='<path d="M'+x.toFixed(1)+' '+my.toFixed(1)+' V'+(yBot-6).toFixed(1)+'"/>'; });
+    mem.forEach(p=>{ s+='<path d="M'+p.x.toFixed(1)+' '+my.toFixed(1)+' V'+(p.y-6).toFixed(1)+'"/>'; });
     return s;
   };
-  for(let i=0;i<rows.length-1;i++) lines+=bracket(cxDe(rows[i]), topY+i*stepY+6, rows[i+1], topY+(i+1)*stepY);
+  for(let i=0;i<rows.length-1;i++){
+    const memI=[]; rows[i].forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) memI.push(pos[mm.id]); }));
+    if(!memI.length) continue;
+    lines+=bracket(cxDe(rows[i]), Math.max.apply(null,memI.map(p=>p.y))+6, rows[i+1]);
+  }
   allB.forEach(m=>{ if(!pos[m.id]) return; [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&pos[pid]) lines+='<path d="M'+pos[pid].x.toFixed(1)+' '+(pos[pid].y+6).toFixed(1)+' L'+pos[m.id].x.toFixed(1)+' '+(pos[m.id].y-6).toFixed(1)+'"/>'; }); });
   let ov='<div class="placas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><g stroke="#5a4326" stroke-width="0.5" fill="none" opacity="0.75">'+lines+'</g></svg>';
   // nodos (incluido el dueño, por su año; con "(tú)" si es tu cuenta)
@@ -1736,7 +1742,7 @@ function _subPedHTML(arr, clase, grupo){
   const rootYears=[]; roots.forEach(u=>{ if(!rootYears.includes(u.y)) rootYears.push(u.y); });
   rootYears.sort((a,b)=>a-b);
   const rows=rootYears.map(y=>roots.filter(u=>u.y===y));
-  const NW=58, PAIRW=62, COLW=34, GENH=104, DROP=26;
+  const NW=58, PAIRW=62, COLW=34, GENH=104, DROP=26, DROP_PAIR=34;
   const pos={}, hearts=[];
   const anchoUnit=u=>(u.members.length-1)*PAIRW;
   // niveles: raíz = su año; hijos/cachorros = nivel del padre + 1
@@ -1760,23 +1766,30 @@ function _subPedHTML(arr, clase, grupo){
     let total=0; ordered.forEach((u,ui)=>{ total+=anchoUnit(u); if(ui<ordered.length-1) total+=COLW+NW; });
     let cur=-total/2; const y=L*GENH;
     ordered.forEach(u=>{ const k=u.members.length;
-      u.members.forEach((mm,j)=>{ pos[mm.id]={x:cur+j*PAIRW, y}; });
-      if(k===2) hearts.push({x:cur+PAIRW/2, y, s:_simboloRel(u.members[0].tipo_pareja||u.members[1].tipo_pareja||'pareja')});
+      const uy = k===2 ? y+DROP_PAIR : y;   // los casados bajan un poco de la línea del año (con su pareja al lado)
+      u.members.forEach((mm,j)=>{ pos[mm.id]={x:cur+j*PAIRW, y:uy}; });
+      if(k===2) hearts.push({x:cur+PAIRW/2, y:uy, s:_simboloRel(u.members[0].tipo_pareja||u.members[1].tipo_pareja||'pareja')});
       cur += anchoUnit(u)+COLW+NW;
     });
   });
   // líneas
   const links=[];
   const cxDe=fila=>{ const xs=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) xs.push(pos[mm.id].x); })); return xs.length?(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2:0; };
-  const bajaA=(trunkX, yTopEdge, fila, yBot)=>{ const my=(yTopEdge+yBot)/2;
-    const flat=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) flat.push(pos[mm.id].x); }));
-    if(!flat.length) return;
+  const bajaA=(trunkX, yTopEdge, fila, yLine)=>{
+    const mem=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) mem.push(pos[mm.id]); }));
+    if(!mem.length) return;
+    const my=(yTopEdge+yLine)/2;
     links.push([trunkX, yTopEdge, trunkX, my]);
-    const lo=Math.min.apply(null,flat.concat([trunkX])), hi=Math.max.apply(null,flat.concat([trunkX]));
+    const xs=mem.map(p=>p.x), lo=Math.min.apply(null,xs.concat([trunkX])), hi=Math.max.apply(null,xs.concat([trunkX]));
     links.push([lo, my, hi, my]);
-    flat.forEach(x=>links.push([x, my, x, yBot-DROP]));
+    mem.forEach(p=>links.push([p.x, my, p.x, p.y-DROP]));
   };
-  for(let i=0;i<rows.length-1;i++) bajaA(cxDe(rows[i]), i*GENH+DROP, rows[i+1], (i+1)*GENH);
+  for(let i=0;i<rows.length-1;i++){
+    const memI=[]; rows[i].forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) memI.push(pos[mm.id]); }));
+    if(!memI.length) continue;
+    const yTopEdge=Math.max.apply(null,memI.map(p=>p.y))+DROP;
+    bajaA(cxDe(rows[i]), yTopEdge, rows[i+1], (i+1)*GENH);
+  }
   // padres -> hijos/cachorros
   all.forEach(m=>{ if(!pos[m.id]) return; [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&pos[pid]) links.push([pos[pid].x, pos[pid].y+DROP, pos[m.id].x, pos[m.id].y-DROP]); }); });
   // nodos
