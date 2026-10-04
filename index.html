@@ -1288,10 +1288,16 @@ function pintarSub(){
   if(pl) pl.textContent = esAmigo?"Pareja de… (otro amigo)":"Pareja de… (otra mascota)";
   if(pd) pd.textContent = esAmigo?"Hijo/a de… (opcional)":"Cachorro de… (opcional)";
   if(md) md.textContent = "…y de (opcional)";
-  // === organigrama por antigüedad (más antiguos arriba, parejas juntas, cachorros/hijos debajo) ===
+  // === árbol en abanico (como la familia): el/la dueña arriba, los más antiguos primero,
+  //     filas que se van abriendo (1, 2, 3…), parejas juntas con su corazón e hijos debajo ===
+  // Dueño/a del grupo: la persona cuyo nombre da nombre al grupo ("Amigos de Luis" -> Luis)
+  let owner=null;
+  if(subGrupo && subGrupo.toLowerCase()!=='familia')
+    owner=arr.find(x=>(!x.clase||x.clase==='persona') && (x.nombre||'').trim().toLowerCase()===subGrupo.trim().toLowerCase());
   const byId={}; vis.forEach(m=>byId[m.id]=m);
   const yr=m=>{ const s=(m.nacimiento||'').slice(0,4); return s?parseInt(s):9999; };
   const parejasVis=m=>_parejasDe(m).filter(p=>byId[p.id]);
+  // Unidades: cada amigo/mascota, con su pareja al lado si también está en el grupo
   const used=new Set(), units=[];
   vis.slice().sort((a,b)=>yr(a)-yr(b)).forEach(m=>{
     if(used.has(m.id)) return;
@@ -1301,33 +1307,66 @@ function pintarSub(){
     units.push({members, y:Math.min.apply(null,members.map(yr)),
       hasParent:members.some(x=>(x.padre_id&&byId[x.padre_id])||(x.madre_id&&byId[x.madre_id])), level:null});
   });
-  const roots=units.filter(u=>!u.hasParent);
-  const years=[...new Set(roots.map(u=>u.y))].sort((a,b)=>a-b);
-  const ylvl={}; years.forEach((y,i)=>ylvl[y]=i);
-  roots.forEach(u=>u.level=ylvl[u.y]);
+  // Raíces (sin padres dentro del grupo), de más antiguo a más nuevo
+  const roots=units.filter(u=>!u.hasParent).sort((a,b)=>a.y-b.y);
+  // Repartir las raíces en filas que se abren en abanico: 1, luego 2, luego 3, 3, 3…
+  const rows=[]; { let i=0, ri=0; const tgt=[1,2,3];
+    while(i<roots.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
+      while(i<roots.length && c<T){ row.push(roots[i]); c+=roots[i].members.length; i++; }
+      rows.push(row); ri++; }
+  }
+  const base = owner?1:0;                       // nivel 0 lo ocupa el dueño si existe
+  rows.forEach((row,ri)=>row.forEach(u=>u.level=base+ri));
+  // Hijos/cachorros: siempre un nivel por debajo de sus padres
   let ch=true,gg=0;
   while(ch && gg<30){ ch=false; gg++;
     units.forEach(u=>{ if(u.level!=null) return; let pLv=null;
       u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&byId[pid]){ const pu=units.find(z=>z.members.some(mm=>mm.id===pid)); if(pu&&pu.level!=null) pLv=Math.max(pLv==null?-1:pLv,pu.level);} }));
       if(pLv!=null){ u.level=pLv+1; ch=true; } });
   }
-  const mx0=Math.max(0,...units.filter(u=>u.level!=null).map(u=>u.level));
-  units.forEach(u=>{ if(u.level==null) u.level=mx0+1; });
+  units.forEach(u=>{ if(u.level==null) u.level=base+rows.length; });
   const maxL=Math.max(0,...units.map(u=>u.level));
   const byLevel={}; units.forEach(u=>{ (byLevel[u.level]=byLevel[u.level]||[]).push(u); });
-  const stepY = maxL>0 ? Math.min(23, 70/maxL) : 0;
+  const topY=owner?11:13, botY=86;
+  const stepY = maxL>0 ? Math.min(22,(botY-topY)/maxL) : 0;
   const pos={};
-  Object.keys(byLevel).forEach(L=>{
-    const us=byLevel[L].sort((a,b)=>a.y-b.y); const flat=[];
-    us.forEach(u=>u.members.forEach(mm=>flat.push(mm)));
-    const nF=flat.length;
-    flat.forEach((mm,i)=>{ const x=nF===1?50:(14+(i/(nF-1))*72); const y=12+(+L)*stepY; pos[mm.id]={x,y}; });
+  Object.keys(byLevel).map(Number).forEach(L=>{
+    const us=byLevel[L].slice().sort((a,b)=>a.y-b.y);
+    const nU=us.length, y=topY+L*stepY;
+    us.forEach((u,ui)=>{
+      const cx = nU===1?50:(18+(ui/(nU-1))*64);   // centro de la unidad (abanico)
+      const k=u.members.length;
+      u.members.forEach((mm,j)=>{ const off=k===1?0:((j-(k-1)/2)*11); pos[mm.id]={x:cx+off,y}; });  // pareja pegada
+    });
   });
+  const ownerPos = owner?{x:50,y:topY}:null;
+  // Líneas
   let lines="";
-  const Lk=Object.keys(byLevel).map(Number).sort((a,b)=>a-b);
-  for(let i=0;i<Lk.length-1;i++){ const y1=12+Lk[i]*stepY, y2=12+Lk[i+1]*stepY; lines+='<path d="M50 '+(y1+6).toFixed(1)+' V'+(y2-6).toFixed(1)+'"/>'; }
+  const bracket=(yTop,lowerMembers,yBot)=>{ let s='';
+    s+='<path d="M50 '+(yTop+6).toFixed(1)+' V'+(yBot-6).toFixed(1)+'"/>';
+    lowerMembers.forEach(mm=>{ const p=pos[mm.id]; if(!p) return;
+      if(Math.abs(p.x-50)>0.4) s+='<path d="M50 '+(yBot-6).toFixed(1)+' L'+p.x.toFixed(1)+' '+(yBot-6).toFixed(1)+'"/>';
+    }); return s; };
+  // del dueño a la primera fila de amigos; luego fila a fila
+  let prevY = owner?topY:null;
+  rows.forEach((row,ri)=>{ const yB=topY+(base+ri)*stepY;
+    const flat=[]; row.forEach(u=>u.members.forEach(mm=>flat.push(mm)));
+    if(prevY!=null) lines+=bracket(prevY,flat,yB);
+    prevY=yB;
+  });
+  // padres -> hijos (cachorros)
   vis.forEach(m=>{ if(!pos[m.id]) return; [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&pos[pid]) lines+='<path d="M'+pos[pid].x.toFixed(1)+' '+(pos[pid].y+6).toFixed(1)+' L'+pos[m.id].x.toFixed(1)+' '+(pos[m.id].y-6).toFixed(1)+'"/>'; }); });
   let ov='<div class="placas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><g stroke="#5a4326" stroke-width="0.5" fill="none" opacity="0.75">'+lines+'</g></svg>';
+  // nodo del dueño/a (tú, o la persona del grupo), arriba del todo
+  if(owner && ownerPos){
+    const caraO=owner._url?'<img src="'+owner._url+'">':inicial(owner.nombre);
+    const esYo = usuario && owner.creado_por===usuario.id;
+    ov+='<div class="placa-wrap" style="left:'+ownerPos.x+'%;top:'+ownerPos.y+'%">'
+      +'<button class="placa2" onclick="abrirFicha(\''+owner.id+'\')" title="'+escapar(owner.nombre||"")+'">'
+      +'<div class="lauro" style="width:50px;height:52px"><img class="lau" src="corona.png">'
+      +'<div class="foto" style="width:30px;height:30px;font-size:13px">'+caraO+'</div></div>'
+      +'<div style="font-size:10px;font-weight:800;color:#3a2c12;margin-top:-2px;line-height:1;white-space:nowrap;text-shadow:0 1px 2px rgba(255,250,235,.9)">'+escapar((owner.nombre||"").split(" ")[0])+(esYo?' <span style="font-weight:700;color:#8a6d3b">(tú)</span>':'')+'</div></button></div>';
+  }
   vis.forEach(m=>{ const p=pos[m.id]; if(!p) return;
     const cara=m._url?'<img src="'+m._url+'">':(m.clase==='mascota'?'🐾':inicial(m.nombre));
     ov+='<div class="placa-wrap" style="left:'+p.x+'%;top:'+p.y+'%">'
@@ -1336,6 +1375,7 @@ function pintarSub(){
       +'<div class="foto" style="width:24px;height:24px;font-size:11px">'+cara+'</div></div>'
       +'<div style="font-size:9.5px;font-weight:700;color:#3a2c12;margin-top:-2px;line-height:1;white-space:nowrap;text-shadow:0 1px 2px rgba(255,250,235,.9)">'+escapar((m.nombre||"").split(" ")[0])+'</div></button></div>';
   });
+  // corazoncitos entre parejas (misma línea)
   const doneP=new Set();
   vis.forEach(m=>{ if(!pos[m.id]) return;
     parejasVis(m).forEach(par=>{ if(!pos[par.id]||Math.abs(pos[m.id].y-pos[par.id].y)>1) return;
