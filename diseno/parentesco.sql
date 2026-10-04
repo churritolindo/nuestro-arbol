@@ -29,6 +29,12 @@ alter table miembros add column if not exists fecha_boda date;
 -- Religión / cultura (adapta los gestos de ofrenda). Valores: cristiana/judia/musulmana/budista/hindu/otra/ninguna
 alter table miembros add column if not exists religion text;
 
+-- Ocultar del árbol principal (ej. ex-pareja que no es de la familia); sigue visible en la rama de sus hijos
+alter table miembros add column if not exists oculto boolean default false;
+
+-- Religión por defecto de la familia (se elige al crear el árbol; cada persona puede cambiarla en su perfil)
+alter table arboles add column if not exists religion text;
+
 -- Zona privada (diario + mensajes con destinatario y temporizador)
 alter table miembros  add column if not exists zona_codigo text;   -- código de la zona privada (huella, no el código en claro)
 alter table miembros  add column if not exists responsable text;   -- quién podrá abrir la zona privada el día de mañana

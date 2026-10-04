@@ -175,6 +175,22 @@
   .priv-chk{display:flex;align-items:center;gap:9px;background:rgba(255,253,247,.55);border-radius:12px;
     padding:9px 12px;font-size:14.5px;color:var(--verde,#4e6b3a);cursor:pointer;box-shadow:0 0 0 1px var(--oroO,#d9b96a)}
   .priv-chk input{width:19px;height:19px;accent-color:#4e6b3a;flex:none}
+  /* textos sueltos sobre el fondo (no dentro de ventanas): pastilla oscura para que se lean */
+  #especies-cap, #sub-cap, #sub-especie-cap, #sub-vacio{
+    width:fit-content; max-width:92%; margin-left:auto!important; margin-right:auto!important;
+    background:rgba(26,18,9,.58); border-radius:15px; padding:6px 14px!important;
+    color:#fff!important; text-shadow:0 1px 2px rgba(0,0,0,.7)!important;}
+  .chk-row{display:flex;align-items:flex-start;gap:9px;margin-top:10px;font-size:13.5px;color:var(--texto,#3b3320);cursor:pointer;line-height:1.4}
+  /* visor a pantalla completa */
+  .marco-f{position:relative}
+  .marco-f img{cursor:zoom-in}
+  .play-ov{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;
+    background:rgba(0,0,0,.55);color:#fff;border:2px solid rgba(255,255,255,.8);font-size:20px;cursor:pointer;z-index:4}
+  .visor{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:14px}
+  .visor.hide{display:none}
+  .visor-x{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:46px;height:46px;font-size:22px;cursor:pointer;z-index:2}
+  #visor-cont img,#visor-cont video{max-width:100%;max-height:92vh;border-radius:10px;display:block}
+  .chk-row input{width:19px;height:19px;accent-color:#4e6b3a;flex:none;margin-top:1px}
   /* ofrendas */
   .ofr-altar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 2px;min-height:4px}
   .ofr-item{position:relative;display:flex;flex-direction:column;align-items:center;width:62px}
@@ -420,7 +436,19 @@
           <option value="familia">Familia</option>
           <option value="amigos">Amigos</option>
         </select>
-        <label>Elige el árbol de tu familia</label>
+        <label>🕊️ Religión / cultura de la familia (opcional)</label>
+        <p class="sub" style="margin:-2px 0 6px">Será la de la familia por defecto · cada persona puede cambiarla en su perfil</p>
+        <select id="t-religion">
+          <option value="">— Sin especificar —</option>
+          <option value="cristiana">✝️ Cristiana</option>
+          <option value="judia">✡️ Judía</option>
+          <option value="musulmana">☪️ Musulmana</option>
+          <option value="budista">☸️ Budista</option>
+          <option value="hindu">🕉️ Hindú</option>
+          <option value="otra">🕊️ Otra</option>
+          <option value="ninguna">· Sin religión</option>
+        </select>
+        <label style="margin-top:10px">Elige el árbol de tu familia</label>
         <p class="sub" style="margin:-2px 0 6px">Cada árbol representa algo · toca el que sientas más tuyo</p>
         <div id="sel-arbol" class="arbsel"></div>
         <button class="btn" onclick="guardarArbol()" style="margin-top:12px">Crear árbol</button>
@@ -559,6 +587,12 @@
       </div>
     </div>
 
+    <!-- VISOR de fotos/vídeos a pantalla completa -->
+    <div id="visor" class="visor hide" onclick="cerrarMedia(event)">
+      <button class="visor-x" onclick="cerrarMedia()">✕</button>
+      <div id="visor-cont" onclick="event.stopPropagation()"></div>
+    </div>
+
     <!-- EDITAR -->
     <div id="v-editar" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cancelarEditar()">‹ Volver</button>
@@ -566,16 +600,22 @@
         <h2>Editar familiar</h2>
         <label>Nombre</label>
         <input id="e-nombre">
-        <label>Mote / apodo (opcional)</label>
-        <input id="e-apodo" placeholder="Ej. El guapo, la abuela, el gordi…">
+        <div id="e-mote-wrap" style="display:none">
+          <label>Mote / apodo (opcional)</label>
+          <input id="e-apodo" placeholder="Ej. El guapo, el gordi…">
+        </div>
         <div class="fila">
           <div><label>Hijo/a de… (padre)</label><select id="e-padre"></select></div>
           <div><label>…y de (madre)</label><select id="e-madre"></select></div>
         </div>
         <div class="fila">
           <div><label>Pareja de… (opcional)</label><select id="e-pareja"></select></div>
-          <div><label>¿Qué relación?</label><select id="e-tipopareja"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select></div>
+          <div><label>¿Qué relación?</label><select id="e-tipopareja" onchange="editTipoCambia()"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select></div>
         </div>
+        <label id="e-oculto-wrap" class="chk-row" style="display:none">
+          <input type="checkbox" id="e-oculto">
+          <span>Ocultar del árbol principal (ex que no es de la familia). Seguirá visible en la rama de sus hijos.</span>
+        </label>
         <div class="fila">
           <div><label>Apellidos (opcional)</label><input id="e-apellidos" placeholder="Rodríguez Barbero"></div>
           <div><label>Tipo</label>
@@ -754,12 +794,20 @@
         <label id="sub-addlbl">Añadir</label>
         <input id="sub-nombre" placeholder="Nombre">
         <label id="sub-grupolbl" style="margin-top:8px">¿De quién es?</label>
-        <div class="fila" style="align-items:flex-end;gap:8px">
-          <div style="flex:1"><select id="sub-grupo"></select></div>
-          <button class="btn" style="width:auto;padding:12px 18px;margin:0" onclick="anadirSub()">＋ Añadir</button>
+        <select id="sub-grupo"></select>
+        <div class="fila" style="margin-top:8px">
+          <div><label id="sub-naclbl">Nació (para ordenar por antigüedad)</label><input type="date" id="sub-nac"></div>
+          <div><label id="sub-parejalbl">Pareja de… (opcional)</label><select id="sub-pareja"></select></div>
         </div>
+        <div class="fila">
+          <div><label>¿Qué relación?</label><select id="sub-tipopareja"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select></div>
+          <div><label id="sub-padrelbl">Hijo/a de… (opcional)</label><select id="sub-padre"></select></div>
+        </div>
+        <label id="sub-madrelbl">…y de (opcional)</label>
+        <select id="sub-madre"></select>
+        <button class="btn" style="margin-top:10px" onclick="anadirSub()">＋ Añadir</button>
         <div id="sub-msg" class="msg"></div>
-        <p style="font-size:12.5px;color:var(--suave,#6b5b3a);margin:8px 0 0;line-height:1.5">Toca cualquier corona para abrir su ficha y colgarle fotos, vídeos, audios y su historia.</p>
+        <p style="font-size:12.5px;color:var(--suave,#6b5b3a);margin:8px 0 0;line-height:1.5">Toca cualquier corona para abrir su ficha. Las parejas salen juntas con su corazón y los más antiguos arriba.</p>
       </div>
     </div>
 
@@ -910,7 +958,8 @@ async function guardarArbol(){
   limpiar("crear-msg");
   const nombre=document.getElementById("t-nombre").value.trim(), tipo=document.getElementById("t-tipo").value;
   if(!nombre){ msg("crear-msg","Ponle un nombre al árbol."); return; }
-  const { data,error }=await sb.from("arboles").insert({dueno:usuario.id,nombre,tipo,especie:especieElegida,mascota:mascotaOn}).select().single();
+  const relFam=document.getElementById("t-religion").value||null;
+  const { data,error }=await sb.from("arboles").insert({dueno:usuario.id,nombre,tipo,especie:especieElegida,mascota:mascotaOn,religion:relFam}).select().single();
   if(error){ msg("crear-msg","No se pudo crear: "+error.message); return; }
   arbolActual=data; mostrarArbol();
 }
@@ -985,7 +1034,7 @@ function _simboloRel(tipo){
 }
 function pintarPlacas(){
   const M=window._miembros||{};
-  const arr=(window._arr||[]).filter(m=>m.clase!=='mascota'&&m.clase!=='amigo');
+  const arr=(window._arr||[]).filter(m=>m.clase!=='mascota'&&m.clase!=='amigo'&&!m.oculto);
   const banner=document.querySelector("#arbol-visual .banner-arb");
   if(!banner) return;
   const vieja=banner.querySelector(".placas"); if(vieja) vieja.remove();
@@ -1088,8 +1137,9 @@ async function anadirMiembro(){
         pareja=document.getElementById("m-pareja").value||null,
         tipoP=document.getElementById("m-tipopareja").value,
         apellidos=document.getElementById("m-apellidos").value.trim()||null;
+  const relDef=(clase==='persona' && arbolActual && arbolActual.religion) ? arbolActual.religion : null;
   const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase,
-        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,apellidos}).select().single();
+        nacimiento:nac||null,fallecimiento:fall||null,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,apellidos,religion:relDef}).select().single();
   if(error){ msg("add-msg","No se pudo guardar: "+error.message); return; }
   if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   ["m-nombre","m-nac","m-fall","m-apellidos"].forEach(id=>document.getElementById(id).value="");
@@ -1231,17 +1281,69 @@ function pintarSub(){
   const n=vis.length, vac=document.getElementById("sub-vacio");
   if(!n){ vac.textContent=esAmigo?"Aún no hay amigos en este grupo. Añade abajo. 👇":"Aún no hay mascotas en este grupo. Añade abajo. 👇"; vac.classList.remove("hide"); }
   else vac.classList.add("hide");
-  let ov='<div class="placas">';
-  vis.forEach((m,i)=>{
-    const perRow=4, row=Math.floor(i/perRow), inRow=Math.min(perRow, n-row*perRow), col=i%perRow;
-    const x=inRow===1?50:(17+(col/(inRow-1))*66);
-    const y=44+row*24;
+  // selects de relación (de los miembros de este grupo) + etiquetas
+  const rellenaSel=(id,ph)=>{ const e=document.getElementById(id); if(!e) return; e.innerHTML='<option value="">'+ph+'</option>'+vis.map(x=>'<option value="'+x.id+'">'+escapar(x.nombre||'')+'</option>').join(''); };
+  rellenaSel("sub-pareja","— sin pareja —"); rellenaSel("sub-padre","—"); rellenaSel("sub-madre","—");
+  const pl=document.getElementById("sub-parejalbl"), pd=document.getElementById("sub-padrelbl"), md=document.getElementById("sub-madrelbl");
+  if(pl) pl.textContent = esAmigo?"Pareja de… (otro amigo)":"Pareja de… (otra mascota)";
+  if(pd) pd.textContent = esAmigo?"Hijo/a de… (opcional)":"Cachorro de… (opcional)";
+  if(md) md.textContent = "…y de (opcional)";
+  // === organigrama por antigüedad (más antiguos arriba, parejas juntas, cachorros/hijos debajo) ===
+  const byId={}; vis.forEach(m=>byId[m.id]=m);
+  const yr=m=>{ const s=(m.nacimiento||'').slice(0,4); return s?parseInt(s):9999; };
+  const parejasVis=m=>_parejasDe(m).filter(p=>byId[p.id]);
+  const used=new Set(), units=[];
+  vis.slice().sort((a,b)=>yr(a)-yr(b)).forEach(m=>{
+    if(used.has(m.id)) return;
+    const par=parejasVis(m).filter(p=>!used.has(p.id));
+    used.add(m.id); par.forEach(p=>used.add(p.id));
+    const members=[m,...par];
+    units.push({members, y:Math.min.apply(null,members.map(yr)),
+      hasParent:members.some(x=>(x.padre_id&&byId[x.padre_id])||(x.madre_id&&byId[x.madre_id])), level:null});
+  });
+  const roots=units.filter(u=>!u.hasParent);
+  const years=[...new Set(roots.map(u=>u.y))].sort((a,b)=>a-b);
+  const ylvl={}; years.forEach((y,i)=>ylvl[y]=i);
+  roots.forEach(u=>u.level=ylvl[u.y]);
+  let ch=true,gg=0;
+  while(ch && gg<30){ ch=false; gg++;
+    units.forEach(u=>{ if(u.level!=null) return; let pLv=null;
+      u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&byId[pid]){ const pu=units.find(z=>z.members.some(mm=>mm.id===pid)); if(pu&&pu.level!=null) pLv=Math.max(pLv==null?-1:pLv,pu.level);} }));
+      if(pLv!=null){ u.level=pLv+1; ch=true; } });
+  }
+  const mx0=Math.max(0,...units.filter(u=>u.level!=null).map(u=>u.level));
+  units.forEach(u=>{ if(u.level==null) u.level=mx0+1; });
+  const maxL=Math.max(0,...units.map(u=>u.level));
+  const byLevel={}; units.forEach(u=>{ (byLevel[u.level]=byLevel[u.level]||[]).push(u); });
+  const stepY = maxL>0 ? Math.min(23, 70/maxL) : 0;
+  const pos={};
+  Object.keys(byLevel).forEach(L=>{
+    const us=byLevel[L].sort((a,b)=>a.y-b.y); const flat=[];
+    us.forEach(u=>u.members.forEach(mm=>flat.push(mm)));
+    const nF=flat.length;
+    flat.forEach((mm,i)=>{ const x=nF===1?50:(14+(i/(nF-1))*72); const y=12+(+L)*stepY; pos[mm.id]={x,y}; });
+  });
+  let lines="";
+  const Lk=Object.keys(byLevel).map(Number).sort((a,b)=>a-b);
+  for(let i=0;i<Lk.length-1;i++){ const y1=12+Lk[i]*stepY, y2=12+Lk[i+1]*stepY; lines+='<path d="M50 '+(y1+6).toFixed(1)+' V'+(y2-6).toFixed(1)+'"/>'; }
+  vis.forEach(m=>{ if(!pos[m.id]) return; [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&pos[pid]) lines+='<path d="M'+pos[pid].x.toFixed(1)+' '+(pos[pid].y+6).toFixed(1)+' L'+pos[m.id].x.toFixed(1)+' '+(pos[m.id].y-6).toFixed(1)+'"/>'; }); });
+  let ov='<div class="placas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><g stroke="#5a4326" stroke-width="0.5" fill="none" opacity="0.75">'+lines+'</g></svg>';
+  vis.forEach(m=>{ const p=pos[m.id]; if(!p) return;
     const cara=m._url?'<img src="'+m._url+'">':(m.clase==='mascota'?'🐾':inicial(m.nombre));
-    ov+='<div class="placa-wrap" style="left:'+x+'%;top:'+y+'%">'
+    ov+='<div class="placa-wrap" style="left:'+p.x+'%;top:'+p.y+'%">'
       +'<button class="placa2" onclick="abrirFicha(\''+m.id+'\')" title="'+escapar(m.nombre||"")+'">'
       +'<div class="lauro" style="width:42px;height:44px"><img class="lau" src="corona.png">'
       +'<div class="foto" style="width:24px;height:24px;font-size:11px">'+cara+'</div></div>'
       +'<div style="font-size:9.5px;font-weight:700;color:#3a2c12;margin-top:-2px;line-height:1;white-space:nowrap;text-shadow:0 1px 2px rgba(255,250,235,.9)">'+escapar((m.nombre||"").split(" ")[0])+'</div></button></div>';
+  });
+  const doneP=new Set();
+  vis.forEach(m=>{ if(!pos[m.id]) return;
+    parejasVis(m).forEach(par=>{ if(!pos[par.id]||Math.abs(pos[m.id].y-pos[par.id].y)>1) return;
+      const key=[m.id,par.id].sort().join('-'); if(doneP.has(key)) return; doneP.add(key);
+      const tipo=par.tipo_pareja||m.tipo_pareja||'pareja';
+      const midx=(pos[m.id].x+pos[par.id].x)/2, y=pos[m.id].y;
+      ov+='<div style="position:absolute;left:'+midx+'%;top:'+y+'%;transform:translate(-50%,-50%);z-index:3;font-size:15px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))">'+_simboloRel(tipo)+'</div>';
+    });
   });
   ov+='</div>';
   document.getElementById("sub-visual").innerHTML='<div class="banner-arb sub"><img class="main" src="'+mini+'">'+ov+'</div>';
@@ -1292,9 +1394,18 @@ async function anadirSub(){
   const nombre=document.getElementById("sub-nombre").value.trim();
   if(!nombre){ msg("sub-msg","Escribe un nombre."); return; }
   const grupo=_normG(document.getElementById("sub-grupo").value);
-  const { error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:subClase,grupo});
+  const nac=document.getElementById("sub-nac").value.trim()||null;
+  const pareja=document.getElementById("sub-pareja").value||null;
+  const tipoP=document.getElementById("sub-tipopareja").value;
+  const padre=document.getElementById("sub-padre").value||null;
+  const madre=document.getElementById("sub-madre").value||null;
+  const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:subClase,grupo,
+    nacimiento:nac,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP}).select().single();
   if(error){ msg("sub-msg","No se pudo guardar: "+error.message); return; }
-  document.getElementById("sub-nombre").value="";
+  if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
+  ["sub-nombre","sub-nac"].forEach(id=>document.getElementById(id).value="");
+  ["sub-pareja","sub-padre","sub-madre"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
+  document.getElementById("sub-tipopareja").value="pareja";
   subGrupo=grupo;
   msg("sub-msg","Añadido ✔","ok"); setTimeout(()=>limpiar("sub-msg"),1200);
   await cargarMiembros(); ver("v-sub"); pintarSub();
@@ -1377,10 +1488,18 @@ function abrirEditar(){
   document.getElementById("e-religion").value=m.religion||"";
   document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
+  document.getElementById("e-oculto").checked=!!m.oculto;
+  // mote solo para amigos; ocultar solo si es ex-pareja
+  document.getElementById("e-mote-wrap").style.display = (m.clase==='amigo') ? "block":"none";
+  editTipoCambia();
   pintaSelect("e-padre",m.padre_id,m.id);
   pintaSelect("e-madre",m.madre_id,m.id);
   pintaSelect("e-pareja",m.pareja_id,m.id);
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
+}
+function editTipoCambia(){
+  const esEx=document.getElementById("e-tipopareja").value==="ex";
+  document.getElementById("e-oculto-wrap").style.display = esEx ? "flex":"none";
 }
 function cancelarEditar(){ if(miembroActual) abrirFicha(miembroActual.id); else { fondo("bgL"); ver("v-arbol"); } }
 function abrirHistoria(){
@@ -1463,7 +1582,8 @@ async function guardarEdicion(){
     apellidos:document.getElementById("e-apellidos").value.trim()||null,
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
-    pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP };
+    pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP,
+    oculto:(tipoP==="ex" && document.getElementById("e-oculto").checked) };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
   if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
@@ -2035,8 +2155,8 @@ async function cargarRecuerdos(){
       url=sig?sig.signedUrl:"";
     }
     const del=`<button class="borrar" onclick="borrar('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
-    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy"></div><div class="tit">${escapar(r.titulo||"Foto")}</div></div>`;
-    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" controls></video></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div></div>`;
+    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div><div class="tit">${escapar(r.titulo||"Foto")}</div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" preload="metadata"></video><button class="play-ov" onclick="verMedia('${url}','video')">▶</button></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div></div>`;
     if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio></div>`;
     return "";
   }));
@@ -2140,6 +2260,19 @@ function verOfrenda(id){
   document.getElementById("ofr-pop").classList.remove("hide");
 }
 function cerrarOfrenda(e){ document.getElementById("ofr-pop").classList.add("hide"); }
+/* ===== Visor de fotos/vídeos a pantalla completa ===== */
+function verMedia(url, tipo){
+  if(!url) return;
+  const c=document.getElementById("visor-cont");
+  c.innerHTML = tipo==="video"
+    ? '<video src="'+url+'" controls autoplay playsinline></video>'
+    : '<img src="'+url+'">';
+  document.getElementById("visor").classList.remove("hide");
+}
+function cerrarMedia(e){
+  const c=document.getElementById("visor-cont"); c.innerHTML="";
+  document.getElementById("visor").classList.add("hide");
+}
 async function borrarOfrenda(id){
   const { error }=await sb.from("contenido").delete().eq("id",id);
   if(error){ msg("ofr-msg","No se pudo quitar: "+error.message); return; }
@@ -2250,8 +2383,8 @@ async function cargarPrivado(){
     const del=`<button class="borrar" onclick="borrarPriv('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
     if(r.tipo==="texto") return `<div class="rec texto">${del}${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
     let url=""; if(r.archivo_path){ const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(r.archivo_path,3600); url=sig?sig.signedUrl:""; }
-    if(r.tipo==="foto")  return `<div class="rec">${del}${cab}<div class="marco-f"><img src="${url}" loading="lazy"></div></div>`;
-    if(r.tipo==="video") return `<div class="rec">${del}${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
+    if(r.tipo==="foto")  return `<div class="rec">${del}${cab}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}${cab}<div class="marco-f"><video src="${url}" preload="metadata"></video><button class="play-ov" onclick="verMedia('${url}','video')">▶</button></div></div>`;
     if(r.tipo==="audio") return `<div class="rec audio">${del}${cab}<audio src="${url}" controls></audio></div>`;
     return "";
   }));
@@ -2351,12 +2484,13 @@ async function renderBuzon(){
   const M=window._miembros||{};
   const piezas=await Promise.all(_avisosLista.map(async r=>{
     const autor=M[r.miembro_id]; const nom=autor?escapar(autor.nombre||""):"";
+    const del=`<button class="borrar" onclick="borrarMsgRec(this,'${r.id}','${escapar(r.archivo_path||'')}')" title="Borrar">🗑️</button>`;
     const cab=`<div style="font-size:12px;color:#4e6b3a;background:rgba(78,107,58,.12);border-radius:10px;padding:6px 8px;margin-bottom:6px;text-align:center;line-height:1.35">💌 De <b style="color:#3b3320">${nom}</b> · para ${escapar(r.para_quien||"—")}</div>`;
-    if(r.tipo==="texto") return `<div class="rec texto">${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
+    if(r.tipo==="texto") return `<div class="rec texto">${del}${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
     let url=""; if(r.archivo_path){ const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(r.archivo_path,3600); url=sig?sig.signedUrl:""; }
-    if(r.tipo==="foto")  return `<div class="rec">${cab}<div class="marco-f"><img src="${url}" loading="lazy"></div></div>`;
-    if(r.tipo==="video") return `<div class="rec">${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
-    if(r.tipo==="audio") return `<div class="rec audio">${cab}<audio src="${url}" controls></audio></div>`;
+    if(r.tipo==="foto")  return `<div class="rec">${del}${cab}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${del}${cab}<audio src="${url}" controls></audio></div>`;
     return "";
   }));
   g.innerHTML=piezas.join("");
@@ -2383,15 +2517,23 @@ async function renderRecibidos(){
   const M=window._miembros||{};
   const piezas=await Promise.all(data.map(async r=>{
     const autor=M[r.miembro_id]; const nom=autor?escapar(autor.nombre||""):"";
+    const del=`<button class="borrar" onclick="borrarMsgRec(this,'${r.id}','${escapar(r.archivo_path||'')}')" title="Borrar">🗑️</button>`;
     const cab=`<div style="font-size:12px;color:#4e6b3a;background:rgba(78,107,58,.12);border-radius:10px;padding:6px 8px;margin-bottom:6px;text-align:center;line-height:1.35">💌 De <b style="color:#3b3320">${nom}</b> · para ${escapar(r.para_quien||"—")}</div>`;
-    if(r.tipo==="texto") return `<div class="rec texto">${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
+    if(r.tipo==="texto") return `<div class="rec texto">${del}${cab}${r.titulo?`<div class="tit" style="font-weight:700;text-align:center;padding:2px 0 6px">${escapar(r.titulo)}</div>`:""}<div class="cuerpo">${escapar(r.texto)}</div></div>`;
     let url=""; if(r.archivo_path){ const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(r.archivo_path,3600); url=sig?sig.signedUrl:""; }
-    if(r.tipo==="foto")  return `<div class="rec">${cab}<div class="marco-f"><img src="${url}" loading="lazy"></div></div>`;
-    if(r.tipo==="video") return `<div class="rec">${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
-    if(r.tipo==="audio") return `<div class="rec audio">${cab}<audio src="${url}" controls></audio></div>`;
+    if(r.tipo==="foto")  return `<div class="rec">${del}${cab}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div></div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}${cab}<div class="marco-f"><video src="${url}" controls></video></div></div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${del}${cab}<audio src="${url}" controls></audio></div>`;
     return "";
   }));
   g.innerHTML=piezas.join("");
+}
+async function borrarMsgRec(btn,id,ruta){
+  if(!confirm("¿Borrar este mensaje? No se puede deshacer.")) return;
+  try{ if(ruta) await sb.storage.from(BUCKET).remove([ruta]); }catch(e){}
+  const { error }=await sb.from("contenido").delete().eq("id",id);
+  if(error){ alert("No se pudo borrar: "+error.message); return; }
+  const card=btn.closest(".rec"); if(card) card.remove();
 }
 
 document.getElementById("pass").addEventListener("keydown",e=>{ if(e.key==="Enter") entrar(); });
