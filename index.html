@@ -552,13 +552,17 @@
         <div class="subir-fila">
           <button onclick="elegir('foto')"><span class="ic">📷</span><b>Foto</b></button>
           <button onclick="elegir('video')"><span class="ic">🎬</span><b>Vídeo</b></button>
-          <button onclick="elegir('audio')"><span class="ic">🎤</span><b>Audio</b></button>
+          <button onclick="micOpciones()"><span class="ic">🎤</span><b>Voz</b></button>
           <button onclick="abrirTexto()"><span class="ic">✍️</span><b>Texto</b></button>
+        </div>
+        <div id="mic-box" class="hide" style="display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+          <button class="btn" style="max-width:200px" onclick="micAudio()">🎙️ Grabar en audio</button>
+          <button class="btn sec" style="max-width:200px" onclick="micTexto()">📝 Grabar en texto (dictar)</button>
         </div>
         <div id="contadores" class="contadores"></div>
         <input type="file" id="file-input" class="hide" onchange="archivoElegido()">
         <div id="texto-box" class="hide">
-          <label>Escribe el recuerdo <button type="button" class="mic-btn" onclick="dictar('texto-cuerpo',this)">🎤 Dictar</button></label>
+          <label>Escribe el recuerdo <button type="button" id="texto-dictar-btn" class="mic-btn" onclick="dictar('texto-cuerpo',this)">🎤 Dictar</button></label>
           <textarea id="texto-cuerpo" placeholder="Una anécdota, una carta, lo que quieras contar…"></textarea>
           <input id="texto-titulo" placeholder="Título (opcional)" style="margin-top:8px">
           <button class="btn" onclick="guardarTexto()">Guardar texto</button>
@@ -668,7 +672,7 @@
         <input id="h-lugar" placeholder="Ej. Jaén">
         <label>¿Dónde trabajó? (oficio, empresa…)</label>
         <input id="h-trabajo" placeholder="Ej. Maestro en la escuela del pueblo">
-        <label>Su historia (biografía) <button type="button" class="mic-btn" onclick="dictar('h-historia',this)">🎤 Dictar</button></label>
+        <label>Su historia (biografía)</label>
         <textarea id="h-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, hermanos, anécdotas…"></textarea>
         <label id="h-nicho-lbl">¿Dónde descansa? (nicho / lugar) — si ha fallecido</label>
         <input id="h-nicho" placeholder="Ej. Cementerio de San José, nicho 124">
@@ -683,7 +687,7 @@
           Cada miembro de la familia puede dejar su recuerdo <b>firmado</b>. Cuenta algo que viviste con él o ella.</p>
         <label>Título</label>
         <input id="a-titulo" placeholder="Ej. Las tardes de pesca">
-        <label>La anécdota <button type="button" class="mic-btn" onclick="dictar('a-texto',this)">🎤 Dictar</button></label>
+        <label>La anécdota</label>
         <textarea id="a-texto" placeholder="Cuéntala con tus palabras…"></textarea>
         <label>¿Quién eres? (para que quede firmado)</label>
         <input id="a-autor" placeholder="Ej. su nieto Luis">
@@ -753,7 +757,7 @@
             <button onclick="abrirTextoPriv()"><span class="ic">✍️</span><b>Texto</b></button>
           </div>
           <div id="priv-texto-box" class="hide">
-            <label>Escribe tu mensaje <button type="button" class="mic-btn" onclick="dictar('priv-texto-cuerpo',this)">🎤 Dictar</button></label>
+            <label>Escribe tu mensaje</label>
             <textarea id="priv-texto-cuerpo" placeholder="Lo que quieras dejarle…"></textarea>
             <input id="priv-texto-titulo" placeholder="Título (opcional)" style="margin-top:8px">
             <button class="btn" onclick="guardarTextoPriv()">Guardar mensaje</button>
@@ -1486,32 +1490,53 @@ async function anadirSub(){
   await cargarMiembros(); ver("v-sub"); pintarSub();
 }
 
+/* ====== Micrófono del panel: elegir audio o texto ====== */
+function micOpciones(){
+  const box=document.getElementById("mic-box"); if(!box) return;
+  const tb=document.getElementById("texto-box"); if(tb) tb.classList.add("hide");
+  box.classList.toggle("hide");
+}
+function micAudio(){ document.getElementById("mic-box").classList.add("hide"); elegir('audio'); }
+function micTexto(){
+  document.getElementById("mic-box").classList.add("hide");
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  abrirTexto();   // abre el cuadro de texto del recuerdo
+  const btn=document.getElementById("texto-dictar-btn");
+  if(!SR){ if(btn) btn.style.display="none"; msg("rec-msg","Tu navegador no transcribe voz. Puedes escribir aquí, o usar 🎙️ Grabar en audio."); return; }
+  setTimeout(()=>{ if(btn) dictar('texto-cuerpo', btn); }, 150);   // arranca a dictar solo
+}
 /* ====== Dictado por voz (hablar -> texto), gratis con el navegador ====== */
-let _dic=null, _dicBtn=null;
+let _dic=null,_dicBtn=null,_dicEl=null,_dicBase='',_dicFinal='',_dicManual=false;
 function _pararDictado(){
   if(_dicBtn){ _dicBtn.classList.remove('rec-on'); _dicBtn.textContent='🎤 Dictar'; }
-  if(_dic){ try{_dic.onend=null; _dic.stop();}catch(e){} }
-  _dic=null; _dicBtn=null;
+  if(_dic){ try{_dic.onend=null; _dic.onresult=null; _dic.stop();}catch(e){} }
+  _dic=null; _dicBtn=null; _dicEl=null;
 }
 function dictar(targetId, btn){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ alert("Tu navegador no permite dictar por voz. Prueba con Google Chrome (en el móvil o en el ordenador)."); return; }
-  if(_dic && _dicBtn===btn){ _pararDictado(); return; }   // si ya estaba grabando aquí, parar
-  if(_dic){ _pararDictado(); }
+  if(!SR){ alert("Tu navegador no permite dictar por voz. Prueba con Google Chrome."); return; }
+  if(_dic && _dicBtn===btn){ _dicManual=true; _pararDictado(); return; }   // parar si ya estaba
+  if(_dic){ _dicManual=true; _pararDictado(); }
   const el=document.getElementById(targetId); if(!el) return;
+  _dicManual=false; _dicEl=el;
   const rec=new SR(); rec.lang='es-ES'; rec.interimResults=true; rec.continuous=true;
   _dic=rec; _dicBtn=btn;
-  const base = el.value ? el.value.replace(/\s*$/,'')+' ' : '';
-  let finalTxt='';
+  _dicBase = el.value ? el.value.replace(/\s*$/,'')+' ' : '';
+  _dicFinal='';
   btn.classList.add('rec-on'); btn.textContent='⏹️ Parar';
   rec.onresult=(e)=>{ let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal) finalTxt+=t+' '; else interim+=t; }
-    el.value = base + finalTxt + interim;
-    el.dispatchEvent(new Event('input'));
+      if(e.results[i].isFinal) _dicFinal+=t+' '; else interim+=t; }
+    el.value=_dicBase+_dicFinal+interim; el.dispatchEvent(new Event('input'));
   };
-  rec.onerror=(e)=>{ if(e && e.error==='not-allowed') alert("Para dictar, permite el micrófono en el navegador."); _pararDictado(); };
-  rec.onend=()=>{ _pararDictado(); };
+  rec.onerror=(e)=>{ if(e && e.error==='not-allowed'){ _dicManual=true; alert("Para dictar, permite el micrófono en el navegador."); } };
+  rec.onend=()=>{
+    if(!_dicManual && _dic===rec){   // Chrome corta tras un silencio: reanudar solo
+      _dicBase = el.value ? el.value.replace(/\s*$/,'')+' ' : ''; _dicFinal='';
+      try{ rec.start(); return; }catch(e){}
+    }
+    _pararDictado();
+  };
   try{ rec.start(); }catch(e){ _pararDictado(); }
 }
 /* ====== FICHA ====== */
