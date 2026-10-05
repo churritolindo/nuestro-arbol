@@ -540,7 +540,7 @@
         <p class="sub" id="ofr-sub">Deja un gesto de cariño: una vela, flores, una piedra…</p>
         <div id="ofr-altar" class="ofr-altar"></div>
         <input id="ofr-autor" placeholder="Tu nombre (ej. su nieto Luis)" style="margin-top:8px">
-        <input id="ofr-mensaje" placeholder="Un mensajito (opcional)" style="margin-top:8px">
+        <textarea id="ofr-mensaje" placeholder="Escribe aquí tu frase, dedicatoria u oración (opcional). Luego elige la ofrenda que quieras dejarle." style="margin-top:8px;min-height:70px"></textarea>
         <button class="btn sec" style="margin-top:8px" onclick="toggleOfrendas()">🤍 Dejar una ofrenda</button>
         <div id="ofr-picker" class="ofr-picker hide"></div>
         <div id="ofr-msg" class="msg"></div>
@@ -2442,7 +2442,8 @@ const OFR_NOM={
 const OFR_PERSONA=[
  ["Velas y flores", ["vela_doble","vela_vaso","vela_rosa","flores_rojas","flores_colores","flores_girasoles","rosa_playa"]],
  ["Recuerdo", ["piedra_corazon","piedra_memoria","estrella"]],
- ["Cumpleaños", ["tarta","cupcake"]]
+ ["Cumpleaños", ["tarta","cupcake"]],
+ ["Fe y oración (elige la que sientas)", ["frase","oracion","caridad","estrella_david","coran","buda","loto","ganesha","diya"]]
 ];
 const OFR_MASCOTA=[
  ["Para jugar", ["hueso","pelota_tenis","pelota_futbol","pelota_baloncesto","pelota_beisbol","juguete_varita","raton_rojo","raton_marron","raton_muelle"]],
@@ -2451,8 +2452,8 @@ const OFR_MASCOTA=[
 const REL_INFO={ cristiana:{img:"cristiana",n:"Cristiana"}, judia:{img:"judia",n:"Judía"}, musulmana:{img:"musulmana",n:"Musulmana"},
  budista:{img:"budista",n:"Budista"}, hindu:{img:"hindu",n:"Hindú"}, otra:{s:"🕊️",n:"Otra"}, ninguna:{img:"ninguna",n:"Sin religión"} };
 // gestos hechos de emoji (para los que no son objeto-foto). Fácil de cambiar por imágenes de Luis.
-const OFR_EMOJI={ oracion:{e:"🤲",n:"Una oración"}, caridad:{e:"🤲",n:"Una caridad"},
- diya:{e:"🪔",n:"Una diya"}, estrella_david:{e:"✡️",n:"Estrella"} };
+const OFR_EMOJI={ frase:{e:"✍️",n:"Tu frase u oración"}, oracion:{e:"🤲",n:"Una oración"}, caridad:{e:"🫶",n:"Una caridad"},
+ diya:{e:"🪔",n:"Una diya"}, estrella_david:{e:"✡️",n:"Estrella de David"} };
 function ofrNom(k){ return (OFR_EMOJI[k]&&OFR_EMOJI[k].n) || OFR_NOM[k] || k; }
 function ofrVisual(k){ return OFR_EMOJI[k] ? `<span class="ofr-emoji">${OFR_EMOJI[k].e}</span>` : `<img src="${OFR_DIR}${k}.png" alt="${escapar(ofrNom(k))}">`; }
 // qué gestos se ofrecen según la religión (primera versión; Luis la ajusta)
@@ -2470,8 +2471,8 @@ function toggleOfrendas(){
 function pintarPicker(){
   const p=document.getElementById("ofr-picker");
   let cat;
-  if(miembroActual&&miembroActual.clase==='mascota') cat=OFR_MASCOTA;
-  else cat=REL_OFR[miembroActual&&miembroActual.religion]||OFR_PERSONA;
+  if(miembroActual&&miembroActual.clase==='mascota') cat=OFR_MASCOTA;  // mascotas: solo sus ofrendas (huesos, pelotas…)
+  else cat=OFR_PERSONA;  // personas (familia y amigos): TODAS juntas, cada uno elige (no se filtra por religión)
   p.innerHTML=cat.map(([g,keys])=>
     `<div class="ofr-grupo">${g}</div>`+
     keys.map(k=>`<button class="ofr-op" onclick="dejarOfrenda('${k}')">${ofrVisual(k)}<b>${escapar(ofrNom(k))}</b></button>`).join("")
@@ -2482,6 +2483,7 @@ async function dejarOfrenda(k){
   if(!miembroActual) return; limpiar("ofr-msg");
   const autor=document.getElementById("ofr-autor").value.trim()||null; _ultimoAutor=autor||_ultimoAutor;
   const mensaje=document.getElementById("ofr-mensaje").value.trim()||null;
+  if(k==='frase' && !mensaje){ msg("ofr-msg","Escribe arriba tu frase u oración antes de dejarla."); return; }
   const { error }=await sb.from("contenido").insert({ miembro_id:miembroActual.id, tipo:"ofrenda", texto:k, titulo:mensaje, autor, subido_por:usuario.id });
   if(error){ msg("ofr-msg","No se pudo dejar la ofrenda: "+error.message); return; }
   document.getElementById("ofr-picker").classList.add("hide");
