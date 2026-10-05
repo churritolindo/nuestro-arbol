@@ -394,6 +394,7 @@
   .ped-node.dueno .lauro{width:58px;height:62px}
   .ped-node.dueno .foto{width:34px;height:34px;font-size:14px}
   .ped-node.dueno .pn{font-size:11.5px;font-weight:800}
+  .ped-year{position:absolute;transform:translate(-50%,-50%);font-family:Georgia,serif;font-weight:800;font-size:15px;color:#8a5a1e;background:rgba(251,244,223,.85);border-radius:9px;padding:1px 6px;box-shadow:0 0 0 1.5px var(--oroC)}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -617,6 +618,7 @@
         </div>
         <div class="fila">
           <div><label>Hermano/a de… (opcional, solo sale en su ficha)</label><select id="e-hermano"></select></div>
+          <div><label>Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 1975"></div>
         </div>
         <label id="e-oculto-wrap" class="chk-row" style="display:none">
           <input type="checkbox" id="e-oculto">
@@ -811,6 +813,8 @@
         </div>
         <label id="sub-madrelbl">…y de (opcional)</label>
         <select id="sub-madre"></select>
+        <label id="sub-amigodesdewrap" style="margin-top:8px">Amigo desde (año) — opcional. En una pareja, el amigo más antiguo manda</label>
+        <input type="number" id="sub-amigodesde" min="1900" max="2100" placeholder="Ej. 1975">
         <label id="sub-hermanolbl" style="margin-top:8px">Hermano/a de… (opcional, solo sale en su ficha)</label>
         <select id="sub-hermano"></select>
         <button class="btn" style="margin-top:10px" onclick="anadirSub()">＋ Añadir</button>
@@ -1297,6 +1301,8 @@ function pintarSub(){
   if(pd) pd.textContent = esAmigo?"Hijo/a de… (opcional)":"Cachorro de… (opcional)";
   if(md) md.textContent = "…y de (opcional)";
   if(hb) hb.textContent = (esAmigo?"Hermano/a de… ":"Hermano/a de… ")+"(opcional, solo sale en su ficha)";
+  const adw=document.getElementById("sub-amigodesdewrap"), adi=document.getElementById("sub-amigodesde");
+  if(adw) adw.style.display=esAmigo?"block":"none"; if(adi) adi.style.display=esAmigo?"block":"none";
   // === árbol en abanico (como la familia): el/la dueña arriba, los más antiguos primero,
   //     filas que se van abriendo (1, 2, 3…), parejas juntas con su corazón e hijos debajo ===
   // Dueño/a del grupo: la persona cuyo nombre da nombre al grupo ("Amigos de Luis" -> Luis)
@@ -1314,7 +1320,10 @@ function pintarSub(){
     const par=parejasVis(m).filter(p=>!used.has(p.id));
     used.add(m.id); par.forEach(p=>used.add(p.id));
     const members=[m,...par];
-    units.push({members, y:Math.max.apply(null,members.map(yr)),
+    const _ad=x=>{ const v=parseInt(x.amigo_desde); return isNaN(v)?Infinity:v; };
+    let _prim=members[0],_best=Infinity; members.forEach(x=>{ const a=_ad(x); if(a<_best){_best=a;_prim=x;} });
+    if(_best===Infinity) _prim=members.reduce((p,x)=>yr(x)>=yr(p)?x:p, members[0]);  // sin "amigo desde": el más joven
+    units.push({members, y:yr(_prim),
       hasParent:members.some(x=>(x.padre_id&&byId[x.padre_id])||(x.madre_id&&byId[x.madre_id])), level:null});
   });
   // Raíces (sin padres dentro del grupo), de más antiguo a más nuevo
@@ -1325,10 +1334,11 @@ function pintarSub(){
   const sinAno = roots.filter(u=>u.y===9999);
   const anos=[]; conAno.forEach(u=>{ if(!anos.includes(u.y)) anos.push(u.y); }); anos.sort((a,b)=>a-b);
   const rows=anos.map(y=>conAno.filter(u=>u.y===y));
+  const rowYear=anos.slice();   // año de cada fila (para la etiqueta a la izquierda); null = "sin año"
   if(sinAno.length){ const tgt=[1,2,3]; let i=0,ri=0;
     while(i<sinAno.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
       while(i<sinAno.length && c<T){ row.push(sinAno[i]); c+=sinAno[i].members.length; i++; }
-      rows.push(row); ri++; }
+      rows.push(row); rowYear.push(null); ri++; }
   }
   rows.forEach((row,ri)=>row.forEach(u=>u.level=ri));
   // Hijos/cachorros: siempre un nivel por debajo de sus padres
@@ -1456,13 +1466,14 @@ async function anadirSub(){
   const padre=document.getElementById("sub-padre").value||null;
   const madre=document.getElementById("sub-madre").value||null;
   const hermano=document.getElementById("sub-hermano").value||null;
+  const amigodesde=parseInt(document.getElementById("sub-amigodesde").value)||null;
   const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:subClase,grupo,
-    nacimiento:nac,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,hermano_id:hermano}).select().single();
+    nacimiento:nac,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,hermano_id:hermano,amigo_desde:amigodesde}).select().single();
   if(error){ msg("sub-msg","No se pudo guardar: "+error.message); return; }
   if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   // el hermano/a queda enlazado por los dos lados (solo para la ficha, no para el árbol)
   if(hermano&&nuevo) await sb.from("miembros").update({hermano_id:nuevo.id}).eq("id",hermano);
-  ["sub-nombre","sub-nac"].forEach(id=>document.getElementById(id).value="");
+  ["sub-nombre","sub-nac","sub-amigodesde"].forEach(id=>document.getElementById(id).value="");
   ["sub-pareja","sub-padre","sub-madre","sub-hermano"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   document.getElementById("sub-tipopareja").value="pareja";
   subGrupo=grupo;
@@ -1482,9 +1493,10 @@ function abrirFicha(id){
   if(ri){ relg.innerHTML=(ri.img?`<img class="relig-med" src="diseno/religiones/${ri.img}.png" alt="">`:(ri.s?ri.s+" ":""))+escapar(ri.n); relg.style.display="flex"; } else relg.style.display="none";
   const herm = m.hermano_id && window._miembros[m.hermano_id];
   const hermTxt = herm ? " · 👫 Hermano/a de "+((herm.nombre||"").split(" ")[0]) : "";
+  const adTxt = (m.clase==="amigo" && m.amigo_desde) ? " · 🤝 Amigo desde "+m.amigo_desde : "";
   if(m.clase==="mascota"||m.clase==="amigo"){
     const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
-    document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ+hermTxt;
+    document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ+hermTxt+adTxt;
   } else document.getElementById("f-rel").textContent = (m.apellidos||"")+hermTxt;
   const rb=document.getElementById("f-rama-btn");
   if(rb) rb.textContent = m.clase==='mascota' ? '🐾 Ver el árbol de mascotas' : (m.clase==='amigo' ? '🧑‍🤝‍🧑 Ver el árbol de amigos' : '📜 Ver su rama');
@@ -1557,6 +1569,7 @@ function abrirEditar(){
   pintaSelect("e-madre",m.madre_id,m.id);
   pintaSelect("e-pareja",m.pareja_id,m.id);
   pintaSelect("e-hermano",m.hermano_id,m.id);
+  document.getElementById("e-amigodesde").value = m.amigo_desde||"";
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
 }
 function editTipoCambia(){
@@ -1646,6 +1659,7 @@ async function guardarEdicion(){
     padre_id:document.getElementById("e-padre").value||null,
     madre_id:document.getElementById("e-madre").value||null,
     pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP, hermano_id:hermano,
+    amigo_desde:(parseInt(document.getElementById("e-amigodesde").value)||null),
     oculto:(tipoP==="ex" && document.getElementById("e-oculto").checked) };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
@@ -1744,7 +1758,10 @@ function _subPedHTML(arr, clase, grupo){
     const par=parejasVis(m).filter(p=>!used.has(p.id));
     used.add(m.id); par.forEach(p=>used.add(p.id));
     const members=[m,...par];
-    units.push({members, y:Math.max.apply(null,members.map(yr)),
+    const _ad=x=>{ const v=parseInt(x.amigo_desde); return isNaN(v)?Infinity:v; };
+    let _prim=members[0],_best=Infinity; members.forEach(x=>{ const a=_ad(x); if(a<_best){_best=a;_prim=x;} });
+    if(_best===Infinity) _prim=members.reduce((p,x)=>yr(x)>=yr(p)?x:p, members[0]);  // sin "amigo desde": el más joven
+    units.push({members, y:yr(_prim),
       hasParent:members.some(x=>(x.padre_id&&byId[x.padre_id])||(x.madre_id&&byId[x.madre_id]))});
   });
   const roots=units.filter(u=>!u.hasParent).sort((a,b)=>a.y-b.y);
@@ -1754,10 +1771,11 @@ function _subPedHTML(arr, clase, grupo){
   const sinAno = roots.filter(u=>u.y===9999);
   const anos=[]; conAno.forEach(u=>{ if(!anos.includes(u.y)) anos.push(u.y); }); anos.sort((a,b)=>a-b);
   const rows=anos.map(y=>conAno.filter(u=>u.y===y));
+  const rowYear=anos.slice();   // año de cada fila (para la etiqueta a la izquierda); null = "sin año"
   if(sinAno.length){ const tgt=[1,2,3]; let i=0,ri=0;
     while(i<sinAno.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
       while(i<sinAno.length && c<T){ row.push(sinAno[i]); c+=sinAno[i].members.length; i++; }
-      rows.push(row); ri++; }
+      rows.push(row); rowYear.push(null); ri++; }
   }
   const NW=58, PAIRW=62, COLW=34, GENH=104, DROP=26, DROP_PAIR=34;
   const pos={}, hearts=[];
@@ -1817,7 +1835,14 @@ function _subPedHTML(arr, clase, grupo){
   const nodes=[];
   all.forEach(m=>{ if(pos[m.id]) nodes.push({id:m.id, x:pos[m.id].x, y:pos[m.id].y, owner:owner&&m.id===owner.id}); });
   if(!nodes.length) return "";
-  const allX=nodes.map(n=>n.x).concat(hearts.map(h=>h.x)), allY=nodes.map(n=>n.y).concat(hearts.map(h=>h.y));
+  // etiquetas de año a la izquierda de cada línea (como el croquis: '65, '73…)
+  const yearLabels=[];
+  rows.forEach((fila,i)=>{ if(rowYear[i]==null) return;
+    const xs=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) xs.push(pos[mm.id].x); }));
+    if(!xs.length) return;
+    yearLabels.push({x:Math.min.apply(null,xs)-58, y:i*GENH, txt:"'"+String(rowYear[i]).slice(-2)});
+  });
+  const allX=nodes.map(n=>n.x).concat(hearts.map(h=>h.x)).concat(yearLabels.map(l=>l.x)), allY=nodes.map(n=>n.y).concat(hearts.map(h=>h.y)).concat(yearLabels.map(l=>l.y));
   const PADX=52, PADY=56;
   const minX=Math.min.apply(null,allX), maxX=Math.max.apply(null,allX), minY=Math.min.apply(null,allY), maxY=Math.max.apply(null,allY);
   const W=(maxX-minX)+PADX*2, H=(maxY-minY)+PADY*2, ox=PADX-minX, oy=PADY-minY;
@@ -1831,6 +1856,7 @@ function _subPedHTML(arr, clase, grupo){
       +'<div class="pn">'+nm+'</div></div>';
   });
   hearts.forEach(h=>nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>');
+  yearLabels.forEach(l=>nod+='<div class="ped-year" style="left:'+(l.x+ox)+'px;top:'+(l.y+oy)+'px">'+l.txt+'</div>');
   return '<div class="ped" style="width:'+W+'px;height:'+H+'px">'
     +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><g stroke="#6b4f2a" stroke-width="2" fill="none" opacity=".8">'+svg+'</g></svg>'
     +nod+'</div>';

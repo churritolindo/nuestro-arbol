@@ -35,6 +35,10 @@ alter table miembros add column if not exists oculto boolean default false;
 -- Hermano/a de… (solo informativo para la ficha; NO cambia la colocación en el árbol)
 alter table miembros add column if not exists hermano_id uuid;
 
+-- Amigo desde (año): desde cuándo es amigo tuyo. En una pareja, el de "amigo desde" más
+-- antiguo es el "amigo de verdad" y la pareja se coloca en la línea de SU año de nacimiento.
+alter table miembros add column if not exists amigo_desde int;
+
 -- Religión por defecto de la familia (se elige al crear el árbol; cada persona puede cambiarla en su perfil)
 alter table arboles add column if not exists religion text;
 
