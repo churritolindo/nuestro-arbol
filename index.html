@@ -395,6 +395,11 @@
   .ped-node.dueno .foto{width:34px;height:34px;font-size:14px}
   .ped-node.dueno .pn{font-size:11.5px;font-weight:800}
   .ped-year{position:absolute;transform:translate(-50%,-50%);font-family:Georgia,serif;font-weight:800;font-size:15px;color:#8a5a1e;background:rgba(251,244,223,.85);border-radius:9px;padding:1px 6px;box-shadow:0 0 0 1.5px var(--oroC)}
+  .mic-btn{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 10px;font-size:12.5px;font-family:Georgia,serif;font-weight:700;
+    color:#fff;background:linear-gradient(160deg,#4a7a5e,#2f5340);border:none;border-radius:16px;cursor:pointer;vertical-align:middle;
+    box-shadow:0 0 0 1.5px var(--oroC),0 2px 5px rgba(60,40,10,.25)}
+  .mic-btn.rec-on{background:linear-gradient(160deg,#c0392b,#8e2b20);animation:micpulse 1s ease-in-out infinite}
+  @keyframes micpulse{0%,100%{box-shadow:0 0 0 1.5px var(--oroC),0 0 0 0 rgba(192,57,43,.5)}50%{box-shadow:0 0 0 1.5px var(--oroC),0 0 0 7px rgba(192,57,43,0)}}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
 </style>
 </head>
@@ -553,7 +558,7 @@
         <div id="contadores" class="contadores"></div>
         <input type="file" id="file-input" class="hide" onchange="archivoElegido()">
         <div id="texto-box" class="hide">
-          <label>Escribe el recuerdo</label>
+          <label>Escribe el recuerdo <button type="button" class="mic-btn" onclick="dictar('texto-cuerpo',this)">🎤 Dictar</button></label>
           <textarea id="texto-cuerpo" placeholder="Una anécdota, una carta, lo que quieras contar…"></textarea>
           <input id="texto-titulo" placeholder="Título (opcional)" style="margin-top:8px">
           <button class="btn" onclick="guardarTexto()">Guardar texto</button>
@@ -663,7 +668,7 @@
         <input id="h-lugar" placeholder="Ej. Jaén">
         <label>¿Dónde trabajó? (oficio, empresa…)</label>
         <input id="h-trabajo" placeholder="Ej. Maestro en la escuela del pueblo">
-        <label>Su historia (biografía)</label>
+        <label>Su historia (biografía) <button type="button" class="mic-btn" onclick="dictar('h-historia',this)">🎤 Dictar</button></label>
         <textarea id="h-historia" placeholder="Cuenta quién fue: de dónde era, a qué se dedicó, su carácter, hermanos, anécdotas…"></textarea>
         <label id="h-nicho-lbl">¿Dónde descansa? (nicho / lugar) — si ha fallecido</label>
         <input id="h-nicho" placeholder="Ej. Cementerio de San José, nicho 124">
@@ -678,7 +683,7 @@
           Cada miembro de la familia puede dejar su recuerdo <b>firmado</b>. Cuenta algo que viviste con él o ella.</p>
         <label>Título</label>
         <input id="a-titulo" placeholder="Ej. Las tardes de pesca">
-        <label>La anécdota</label>
+        <label>La anécdota <button type="button" class="mic-btn" onclick="dictar('a-texto',this)">🎤 Dictar</button></label>
         <textarea id="a-texto" placeholder="Cuéntala con tus palabras…"></textarea>
         <label>¿Quién eres? (para que quede firmado)</label>
         <input id="a-autor" placeholder="Ej. su nieto Luis">
@@ -748,7 +753,7 @@
             <button onclick="abrirTextoPriv()"><span class="ic">✍️</span><b>Texto</b></button>
           </div>
           <div id="priv-texto-box" class="hide">
-            <label>Escribe tu mensaje</label>
+            <label>Escribe tu mensaje <button type="button" class="mic-btn" onclick="dictar('priv-texto-cuerpo',this)">🎤 Dictar</button></label>
             <textarea id="priv-texto-cuerpo" placeholder="Lo que quieras dejarle…"></textarea>
             <input id="priv-texto-titulo" placeholder="Título (opcional)" style="margin-top:8px">
             <button class="btn" onclick="guardarTextoPriv()">Guardar mensaje</button>
@@ -1481,6 +1486,34 @@ async function anadirSub(){
   await cargarMiembros(); ver("v-sub"); pintarSub();
 }
 
+/* ====== Dictado por voz (hablar -> texto), gratis con el navegador ====== */
+let _dic=null, _dicBtn=null;
+function _pararDictado(){
+  if(_dicBtn){ _dicBtn.classList.remove('rec-on'); _dicBtn.textContent='🎤 Dictar'; }
+  if(_dic){ try{_dic.onend=null; _dic.stop();}catch(e){} }
+  _dic=null; _dicBtn=null;
+}
+function dictar(targetId, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ alert("Tu navegador no permite dictar por voz. Prueba con Google Chrome (en el móvil o en el ordenador)."); return; }
+  if(_dic && _dicBtn===btn){ _pararDictado(); return; }   // si ya estaba grabando aquí, parar
+  if(_dic){ _pararDictado(); }
+  const el=document.getElementById(targetId); if(!el) return;
+  const rec=new SR(); rec.lang='es-ES'; rec.interimResults=true; rec.continuous=true;
+  _dic=rec; _dicBtn=btn;
+  const base = el.value ? el.value.replace(/\s*$/,'')+' ' : '';
+  let finalTxt='';
+  btn.classList.add('rec-on'); btn.textContent='⏹️ Parar';
+  rec.onresult=(e)=>{ let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal) finalTxt+=t+' '; else interim+=t; }
+    el.value = base + finalTxt + interim;
+    el.dispatchEvent(new Event('input'));
+  };
+  rec.onerror=(e)=>{ if(e && e.error==='not-allowed') alert("Para dictar, permite el micrófono en el navegador."); _pararDictado(); };
+  rec.onend=()=>{ _pararDictado(); };
+  try{ rec.start(); }catch(e){ _pararDictado(); }
+}
 /* ====== FICHA ====== */
 function abrirFicha(id){
   miembroActual=window._miembros[id];
