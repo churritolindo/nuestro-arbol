@@ -475,6 +475,23 @@
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirRecibidos()">📁 Mensajes guardados</button>
+      <button class="btn sec" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
+      <div id="invitar-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">🔗 Invitar por WhatsApp</h2>
+        <p class="sub">Comparte un código para que tu familia o amigos entren a tu árbol. <b>Nota:</b> que el invitado pueda VERLO se activará en el siguiente paso (estamos montándolo).</p>
+        <label>¿Qué podrá hacer quien entre?</label>
+        <select id="inv-rol">
+          <option value="visitante">👀 Visitante — solo mirar y dejar recuerdos/ofrendas</option>
+          <option value="colaborador">✍️ Colaborador — también añadir fotos, vídeos y fichas</option>
+        </select>
+        <button class="btn" style="margin-top:10px" onclick="crearInvitacion()">Generar código</button>
+        <div id="inv-result" class="hide" style="margin-top:12px">
+          <div id="inv-codigo" style="text-align:center;font-size:26px;font-weight:800;letter-spacing:5px;color:var(--verde);background:#fffdf7;border-radius:12px;padding:12px;box-shadow:0 0 0 1.5px var(--oroC)"></div>
+          <a id="inv-wa" class="btn" style="margin-top:10px;display:block;text-align:center;text-decoration:none" target="_blank">📲 Compartir por WhatsApp</a>
+          <button class="btn sec" style="margin-top:8px" onclick="copiarInv()">📋 Copiar código</button>
+        </div>
+        <div id="inv-msg" class="msg"></div>
+      </div>
       <div id="lista"></div>
       <div class="vidrio" style="margin-top:16px">
         <h2>Añadir familiar</h2>
@@ -1539,6 +1556,30 @@ function dictar(targetId, btn){
   };
   try{ rec.start(); }catch(e){ _pararDictado(); }
 }
+/* ====== Fase 2: invitar por código (parte segura: generar y compartir) ====== */
+let _ultimaInvCod="";
+function toggleInvitar(){ const b=document.getElementById("invitar-box"); if(!b) return; b.classList.toggle("hide"); document.getElementById("inv-result").classList.add("hide"); limpiar("inv-msg"); }
+function _codigoAlea(){ const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
+async function crearInvitacion(){
+  if(!arbolActual||!usuario){ msg("inv-msg","Abre tu árbol primero."); return; }
+  limpiar("inv-msg");
+  const rol=document.getElementById("inv-rol").value;
+  const codigo=_codigoAlea();
+  const { error }=await sb.from("invitaciones").insert({arbol_id:arbolActual.id, codigo, rol, creado_por:usuario.id});
+  if(error){
+    const falta = error.code==="42P01" || /relation .* does not exist|could not find the table/i.test(error.message||"");
+    msg("inv-msg", falta ? "Aún falta crear la tabla de invitaciones en Supabase (te he dejado el SQL)." : "No se pudo crear: "+error.message);
+    return;
+  }
+  _ultimaInvCod=codigo;
+  const url=location.origin+location.pathname+"?invite="+codigo;
+  document.getElementById("inv-codigo").textContent=codigo;
+  const texto="Te invito a nuestro Árbol de recuerdos 🌳.\nEntra aquí: "+url+"\nY pon el código: "+codigo;
+  document.getElementById("inv-wa").href="https://wa.me/?text="+encodeURIComponent(texto);
+  document.getElementById("inv-result").classList.remove("hide");
+  msg("inv-msg","Código creado ✔","ok");
+}
+function copiarInv(){ if(_ultimaInvCod && navigator.clipboard){ navigator.clipboard.writeText(_ultimaInvCod).then(()=>msg("inv-msg","Código copiado ✔","ok")).catch(()=>{}); } }
 /* ====== FICHA ====== */
 function abrirFicha(id){
   miembroActual=window._miembros[id];
