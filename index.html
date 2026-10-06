@@ -401,6 +401,18 @@
   .mic-btn.rec-on{background:linear-gradient(160deg,#c0392b,#8e2b20);animation:micpulse 1s ease-in-out infinite}
   @keyframes micpulse{0%,100%{box-shadow:0 0 0 1.5px var(--oroC),0 0 0 0 rgba(192,57,43,.5)}50%{box-shadow:0 0 0 1.5px var(--oroC),0 0 0 7px rgba(192,57,43,0)}}
   .esq .hint{text-align:center;font-size:11px;color:#8a7340;margin-top:8px;font-style:italic}
+  .rama-panel{max-width:460px;margin:0 auto 14px;background:rgba(251,244,223,.92);border-radius:14px;padding:10px 12px;
+    box-shadow:0 0 0 1.5px var(--oroC),0 4px 12px rgba(60,40,10,.22)}
+  .rama-tit{font-family:Georgia,serif;font-weight:800;color:var(--verde);font-size:13px;text-align:center;margin-bottom:6px}
+  .rama-ctrl{display:flex;align-items:center;gap:8px;justify-content:space-between;margin:4px 0}
+  .rama-lbl{font-family:Georgia,serif;font-weight:700;color:var(--tinta);font-size:13px;flex:1}
+  .rama-niv{font-size:11px;color:#8a7340;min-width:92px;text-align:center}
+  .rama-b{width:34px;height:34px;border:none;border-radius:50%;font-size:16px;cursor:pointer;color:#fff;
+    background:linear-gradient(160deg,#4a7a5e,#2f5340);box-shadow:0 0 0 1.5px var(--oroC)}
+  .rama-b:disabled{opacity:.35;cursor:default}
+  .rama-ctrl2{display:flex;gap:8px;justify-content:center;margin-top:8px}
+  .rama-b2{flex:1;max-width:180px;padding:7px 10px;border:none;border-radius:16px;font-family:Georgia,serif;font-weight:700;font-size:12.5px;
+    cursor:pointer;color:var(--verde);background:#fffdf7;box-shadow:0 0 0 1.5px var(--oroC)}
 </style>
 </head>
 <body>
@@ -2010,8 +2022,8 @@ function familiaHTML(focalId){
   const rc=[]; rightSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) rc.push(c); });
   const Ax = B? cAB-NW/2 : cAB, Bx = cAB+NW/2;
   // ancestros en abanico (padre a la izq, madre a la der)
-  function up(pid, cx, gen){
-    const m=P(pid); if(!m || gen>6) return;
+  function up(pid, cx, gen, maxGen){
+    const m=P(pid); if(!m || gen>maxGen) return;
     const fa=P(m.padre_id), mo=P(m.madre_id);
     if(!persona(fa)&&!persona(mo)) return;
     const y=-gen*GENH, cyc=-(gen-1)*GENH, span=Math.max(58,130*Math.pow(0.6,gen-1));
@@ -2021,14 +2033,14 @@ function familiaHTML(focalId){
       if(!placed.has(mo.id)){ placed.add(mo.id); nodes.push({id:mo.id,x:mx,y}); }
       hearts.push({x:cx,y,s:_simboloRel(fa.tipo_pareja||mo.tipo_pareja||'casados')});
       links.push([cx,cyc-26,fx,y+26]); links.push([cx,cyc-26,mx,y+26]);
-      up(fa.id,fx,gen+1); up(mo.id,mx,gen+1);
+      up(fa.id,fx,gen+1,maxGen); up(mo.id,mx,gen+1,maxGen);
     } else { const o=persona(fa)?fa:mo;
       if(!placed.has(o.id)){ placed.add(o.id); nodes.push({id:o.id,x:cx,y}); }
-      links.push([cx,cyc-26,cx,y+26]); up(o.id,cx,gen+1);
+      links.push([cx,cyc-26,cx,y+26]); up(o.id,cx,gen+1,maxGen);
     }
   }
   // padres de A por encima del grupo [hermanos de A + A]; padres de B por encima de [B + hermanos de B]
-  function abuelosDe(person, groupX){
+  function abuelosDe(person, groupX, maxUp){
     const fa=P(person.padre_id), mo=P(person.madre_id);
     if(!persona(fa)&&!persona(mo)) return;
     const gmin=Math.min.apply(null,groupX), gmax=Math.max.apply(null,groupX), gc=(gmin+gmax)/2;
@@ -2039,15 +2051,27 @@ function familiaHTML(focalId){
       if(!placed.has(mo.id)){ placed.add(mo.id); nodes.push({id:mo.id,x:mx,y}); }
       hearts.push({x:gc,y,s:_simboloRel(fa.tipo_pareja||mo.tipo_pareja||'casados')});
       links.push([gc,y+26,gc,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
-      up(fa.id,fx,2); up(mo.id,mx,2);
+      if(maxUp>=1){ up(fa.id,fx,2,1+maxUp); up(mo.id,mx,2,1+maxUp); }
     } else { const o=persona(fa)?fa:mo;
       if(!placed.has(o.id)){ placed.add(o.id); nodes.push({id:o.id,x:gc,y}); }
       links.push([gc,y+26,gc,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
-      up(o.id,gc,2);
+      if(maxUp>=1) up(o.id,gc,2,1+maxUp);
     }
   }
-  abuelosDe(A, lc.concat([Ax]));
-  if(B) abuelosDe(B, rc.concat([Bx]));
+  // ¿cuántas generaciones hay por ENCIMA de los abuelos de `person`? (bisabuelos=1, tatarabuelos=2…)
+  function profAncestros(person){ let mx=0;
+    function rec(id,lvl){ const m=P(id); if(!m) return; const f=P(m.padre_id),o=P(m.madre_id);
+      if(persona(f)){ mx=Math.max(mx,lvl); rec(f.id,lvl+1); } if(persona(o)){ mx=Math.max(mx,lvl); rec(o.id,lvl+1); } }
+    const f=P(person.padre_id), o=P(person.madre_id);   // padres de person = abuelos; sus padres = bisabuelos (nivel 1)
+    if(persona(f)) rec(f.id,1); if(persona(o)) rec(o.id,1);
+    return mx;
+  }
+  esqMaxUpA=profAncestros(A); esqMaxUpB=B?profAncestros(B):0;
+  esqUpA=Math.max(0,Math.min(esqUpA,esqMaxUpA)); esqUpB=Math.max(0,Math.min(esqUpB,esqMaxUpB));
+  esqLabA = (A && focal && A.id===focal.madre_id) ? 'materna' : 'paterna';
+  esqLabB = (B && focal && B.id===focal.padre_id) ? 'paterna' : 'materna';
+  abuelosDe(A, lc.concat([Ax]), esqUpA);
+  if(B) abuelosDe(B, rc.concat([Bx]), esqUpB);
 
   if(!nodes.length) return "";
   const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y), PADX=46, PADY=50;
@@ -2109,6 +2133,38 @@ function esquemaHTML(rootId, clase){
   return lis.length ? '<ul>'+lis.join("")+'</ul>' : "";
 }
 let esqFocusId=null;
+let esqUpA=0, esqUpB=0, esqMaxUpA=0, esqMaxUpB=0, esqLabA='paterna', esqLabB='materna';
+function ramaUp(lado,d){
+  if(lado==='A') esqUpA=Math.max(0,Math.min(esqMaxUpA,esqUpA+d));
+  else            esqUpB=Math.max(0,Math.min(esqMaxUpB,esqUpB+d));
+  redibujaFamilia();
+}
+function ramaVerTodo(){ esqUpA=esqMaxUpA; esqUpB=esqMaxUpB; redibujaFamilia(); }
+function ramaDesdeAbuelos(){ esqUpA=0; esqUpB=0; redibujaFamilia(); }
+function controlesFamiliaHTML(){
+  const esc=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  const mk=(lado,lab,up,max)=>{
+    if(max<=0) return '';
+    const niv = up>0 ? ('bisabuelos'+(up>1?' +'+(up-1):'')) : 'solo abuelos';
+    return '<div class="rama-ctrl">'
+      +'<span class="rama-lbl">⬆️ Rama '+esc(lab)+'</span>'
+      +'<button class="rama-b" onclick="ramaUp(\''+lado+'\',-1)"'+(up<=0?' disabled':'')+'>➖</button>'
+      +'<span class="rama-niv">'+niv+'</span>'
+      +'<button class="rama-b" onclick="ramaUp(\''+lado+'\',1)"'+(up>=max?' disabled':'')+'>➕</button>'
+      +'</div>';
+  };
+  const pa=mk('A',esqLabA,esqUpA,esqMaxUpA), ma=mk('B',esqLabB,esqUpB,esqMaxUpB);
+  if(!pa && !ma) return '';   // no hay antepasados por encima de los abuelos: nada que desplegar
+  const extra='<div class="rama-ctrl2">'
+    +'<button class="rama-b2" onclick="ramaVerTodo()">👁️ Ver todo</button>'
+    +'<button class="rama-b2" onclick="ramaDesdeAbuelos()">🔽 Desde los abuelos</button></div>';
+  return '<div class="rama-panel"><div class="rama-tit">Mostrar antepasados</div>'+pa+ma+extra+'</div>';
+}
+function redibujaFamilia(){
+  const html=familiaHTML(esqFocusId);   // calcula esqMaxUpA/B y coloca según esqUpA/B
+  const ctrl=controlesFamiliaHTML();
+  document.getElementById("esq-tree").innerHTML = ctrl + (html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>');
+}
 function _topAncestro(id){
   const M=window._miembros||{}; let cur=M[id], seen=new Set(), guard=0;
   while(cur && (cur.padre_id||cur.madre_id) && guard++<30){
@@ -2147,8 +2203,8 @@ function abrirEsquema(rootId, clase, grupo){
     const mh=mascotasHTML(false, esqClase, esqGrupo);
     document.getElementById("esq-tree").innerHTML = chips + (mh || '<div class="hint" style="margin-top:30px">Aún no hay '+(esAmigo?'amigos':'mascotas')+' en este grupo.<br>Usa ➕ Añadir para empezar.</div>');
   } else {
-    const html=familiaHTML(esqFocusId);
-    document.getElementById("esq-tree").innerHTML = html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>';
+    esqUpA=0; esqUpB=0;   // por defecto: desde los abuelos (antepasados por encima, plegados)
+    redibujaFamilia();
   }
   // Las mascotas YA NO salen en el árbol de la familia: cada cosa en su árbol.
   // (Para ver las mascotas de alguien se abre el árbol de mascotas de su grupo.)
