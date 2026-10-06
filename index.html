@@ -1992,10 +1992,21 @@ function familiaHTML(focalId){
   if(persona(fa0)||persona(mo0)){ A=persona(fa0)?fa0:mo0; B=(persona(fa0)&&persona(mo0))?mo0:null; }
   else { A=focal; B=parejaDe(focal); }
 
-  // Por defecto: línea directa abierta (tú y tus descendientes); tíos y demás ramas plegadas
+  // etiqueta de cada lado (paterna/materna) y qué lado se muestra (aislar rama)
+  esqLabA = (A && focal && A.id===focal.madre_id) ? 'materna' : 'paterna';
+  esqLabB = (B && focal && B.id===focal.padre_id) ? 'paterna' : 'materna';
+  const verA = (esqRama==='ambas') || (esqRama===esqLabA);
+  const verB = (esqRama==='ambas') || (esqRama===esqLabB);
+
+  // Por defecto: línea directa COMPLETA abierta (padres, hermanos, sobrinos, hijos, nietos);
+  // los colaterales (tíos y primos) salen plegados con ➕
   if(!esqAbiertoInit){
-    esqAbierto=new Set(); if(A) esqAbierto.add(A.id); if(focal) esqAbierto.add(focal.id);
-    (function desc(id){ arr.forEach(c=>{ if((c.padre_id===id||c.madre_id===id)&&!esqAbierto.has(c.id)){ esqAbierto.add(c.id); desc(c.id); } }); })(focal.id);
+    esqBase=new Set();
+    const _seed=[]; if(A){ esqBase.add(A.id); _seed.push(A.id); } if(B){ esqBase.add(B.id); _seed.push(B.id); }
+    if(!_seed.length && focal){ esqBase.add(focal.id); _seed.push(focal.id); }
+    const _desc=id=>{ arr.forEach(c=>{ if((c.padre_id===id||c.madre_id===id)&&!esqBase.has(c.id)){ esqBase.add(c.id); _desc(c.id); } }); };
+    _seed.forEach(_desc);
+    esqAbierto=new Set(esqBase);     // la línea directa, abierta de serie
     esqAbiertoInit=true;
   }
 
@@ -2023,7 +2034,7 @@ function familiaHTML(focalId){
       links.push([cc[0],my,cc[cc.length-1],my]);
       cc.forEach(c=>links.push([c,my,c,by-26]));
     }
-    if(kidsAll.length) toggles.push({x:center, y:y+34, id, abierto});   // ➕/➖ si tiene descendientes
+    if(kidsAll.length) toggles.push({x:center, y:y+60, id, abierto});   // ➕/➖ si tiene descendientes (debajo del nombre)
     return center;
   }
   const sibsOf = m => {
@@ -2031,9 +2042,9 @@ function familiaHTML(focalId){
     return arr.filter(x=> x.id!==m.id && x.id!==(A&&A.id) && x.id!==(B&&B.id) && (ps.includes(x.padre_id)||ps.includes(x.madre_id)));
   };
   const leftSibs=sibsOf(A), rightSibs=B?sibsOf(B):[];
-  const lc=[]; leftSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) lc.push(c); });
+  const lc=[]; if(verA) leftSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) lc.push(c); });
   const cAB=down(A.id,0);
-  const rc=[]; rightSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) rc.push(c); });
+  const rc=[]; if(verB) rightSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) rc.push(c); });
   const Ax = B? cAB-NW/2 : cAB, Bx = cAB+NW/2;
   // ancestros en abanico (padre a la izq, madre a la der)
   function up(pid, cx, gen, maxGen){
@@ -2082,10 +2093,8 @@ function familiaHTML(focalId){
   }
   esqMaxUpA=profAncestros(A); esqMaxUpB=B?profAncestros(B):0;
   esqUpA=Math.max(0,Math.min(esqUpA,esqMaxUpA)); esqUpB=Math.max(0,Math.min(esqUpB,esqMaxUpB));
-  esqLabA = (A && focal && A.id===focal.madre_id) ? 'materna' : 'paterna';
-  esqLabB = (B && focal && B.id===focal.padre_id) ? 'paterna' : 'materna';
-  abuelosDe(A, lc.concat([Ax]), esqUpA);
-  if(B) abuelosDe(B, rc.concat([Bx]), esqUpB);
+  if(verA) abuelosDe(A, lc.concat([Ax]), esqUpA);
+  if(B && verB) abuelosDe(B, rc.concat([Bx]), esqUpB);
 
   if(!nodes.length) return "";
   const xs=nodes.map(n=>n.x).concat(toggles.map(t=>t.x)), ys=nodes.map(n=>n.y).concat(toggles.map(t=>t.y)), PADX=46, PADY=50;
@@ -2149,17 +2158,22 @@ function esquemaHTML(rootId, clase){
 }
 let esqFocusId=null;
 let esqUpA=0, esqUpB=0, esqMaxUpA=0, esqMaxUpB=0, esqLabA='paterna', esqLabB='materna';
-let esqAbierto=new Set(), esqAbiertoInit=false;
-function _cerrarSub(id){ esqAbierto.delete(id);
-  const M=window._miembros||{}; Object.values(M).forEach(c=>{ if((c.padre_id===id||c.madre_id===id) && esqAbierto.has(c.id)) _cerrarSub(c.id); });
+let esqRama='ambas';   // 'ambas' | 'paterna' | 'materna' — aislar un lado del árbol
+let esqAbierto=new Set(), esqBase=new Set(), esqAbiertoInit=false;
+function _ancestrosDe(xId){ const M=window._miembros||{}, out=new Set();
+  (function up(id){ const m=M[id]; if(!m) return; [m.padre_id,m.madre_id].forEach(p=>{ if(p&&!out.has(p)){ out.add(p); up(p); } }); })(xId);
+  return out;
+}
+function _cerrarSub(id, force){ if(!force && esqBase.has(id)) return;   // la exclusividad nunca cierra la línea directa
+  esqAbierto.delete(id);
+  const M=window._miembros||{}; Object.values(M).forEach(c=>{ if((c.padre_id===id||c.madre_id===id) && esqAbierto.has(c.id)) _cerrarSub(c.id, force); });
 }
 function toggleGen(ev,id){ if(ev&&ev.stopPropagation) ev.stopPropagation();
-  const M=window._miembros||{};
-  if(esqAbierto.has(id)){ _cerrarSub(id); }          // cerrar esta rama y lo que cuelgue
+  if(esqAbierto.has(id)){ _cerrarSub(id, true); }    // el usuario pliega: se cierra esta rama y lo que cuelgue
   else {
-    const X=M[id]; const ps=[X&&X.padre_id,X&&X.madre_id].filter(Boolean);   // cerrar hermanos abiertos (una a la vez por grupo)
-    if(ps.length) Object.values(M).forEach(y=>{ if(y.id!==id && (ps.includes(y.padre_id)||ps.includes(y.madre_id)) && esqAbierto.has(y.id)) _cerrarSub(y.id); });
-    esqAbierto.add(id);
+    const anc=_ancestrosDe(id);                      // al abrir una rama se cierran las demás colaterales abiertas…
+    Array.from(esqAbierto).forEach(y=>{ if(y!==id && !esqBase.has(y) && !anc.has(y)) _cerrarSub(y, false); });
+    esqAbierto.add(id);                              // …pero no la línea directa ni el camino por el que has entrado
   }
   redibujaFamilia();
 }
@@ -2170,24 +2184,18 @@ function ramaUp(lado,d){
 }
 function ramaVerTodo(){ esqUpA=esqMaxUpA; esqUpB=esqMaxUpB; redibujaFamilia(); }
 function ramaDesdeAbuelos(){ esqUpA=0; esqUpB=0; redibujaFamilia(); }
+function ramaMostrar(lado){ esqRama = (esqRama===lado) ? 'ambas' : lado; redibujaFamilia(); }
+function ramaAmbas(){ esqRama='ambas'; redibujaFamilia(); }
 function controlesFamiliaHTML(){
-  const esc=s=>s.charAt(0).toUpperCase()+s.slice(1);
-  const mk=(lado,lab,up,max)=>{
-    if(max<=0) return '';
-    const niv = up>0 ? ('bisabuelos'+(up>1?' +'+(up-1):'')) : 'solo abuelos';
-    return '<div class="rama-ctrl">'
-      +'<span class="rama-lbl">⬆️ Rama '+esc(lab)+'</span>'
-      +'<button class="rama-b" onclick="ramaUp(\''+lado+'\',-1)"'+(up<=0?' disabled':'')+'>➖</button>'
-      +'<span class="rama-niv">'+niv+'</span>'
-      +'<button class="rama-b" onclick="ramaUp(\''+lado+'\',1)"'+(up>=max?' disabled':'')+'>➕</button>'
-      +'</div>';
-  };
-  const pa=mk('A',esqLabA,esqUpA,esqMaxUpA), ma=mk('B',esqLabB,esqUpB,esqMaxUpB);
-  if(!pa && !ma) return '';   // no hay antepasados por encima de los abuelos: nada que desplegar
-  const extra='<div class="rama-ctrl2">'
-    +'<button class="rama-b2" onclick="ramaVerTodo()">👁️ Ver todo</button>'
-    +'<button class="rama-b2" onclick="ramaDesdeAbuelos()">🔽 Desde los abuelos</button></div>';
-  return '<div class="rama-panel"><div class="rama-tit">Mostrar antepasados</div>'+pa+ma+extra+'</div>';
+  // Solo tiene sentido aislar si hay dos lados distintos (padre y madre)
+  if(!esqLabA || !esqLabB || esqLabA===esqLabB) return '';
+  const btn=(lado,txt)=> '<button class="rama-b2'+(esqRama===lado?' on':'')+'" onclick="ramaMostrar(\''+lado+'\')">'+txt+'</button>';
+  return '<div class="rama-panel"><div class="rama-tit">Ver el árbol</div>'
+    +'<div class="rama-ctrl2">'
+    + btn('paterna','👨 Rama paterna')
+    + btn('materna','👩 Rama materna')
+    + '<button class="rama-b2'+(esqRama==='ambas'?' on':'')+'" onclick="ramaAmbas()">👁️ Ver ambas</button>'
+    +'</div></div>';
 }
 function redibujaFamilia(){
   const html=familiaHTML(esqFocusId);   // calcula esqMaxUpA/B y coloca según esqUpA/B
@@ -2232,8 +2240,9 @@ function abrirEsquema(rootId, clase, grupo){
     const mh=mascotasHTML(false, esqClase, esqGrupo);
     document.getElementById("esq-tree").innerHTML = chips + (mh || '<div class="hint" style="margin-top:30px">Aún no hay '+(esAmigo?'amigos':'mascotas')+' en este grupo.<br>Usa ➕ Añadir para empezar.</div>');
   } else {
-    esqUpA=0; esqUpB=0;        // antepasados: por defecto desde los abuelos (se suben con los botones)
-    esqAbiertoInit=false;      // recalcular la apertura por defecto (línea directa abierta, ramas plegadas)
+    esqUpA=99; esqUpB=99;      // antepasados: por defecto hasta arriba (bisabuelos…); se clampa al máximo real
+    esqRama='ambas';           // empezar mostrando las dos ramas
+    esqAbiertoInit=false;      // recalcular la apertura por defecto (línea directa completa abierta, colaterales plegados)
     redibujaFamilia();
   }
   // Las mascotas YA NO salen en el árbol de la familia: cada cosa en su árbol.
