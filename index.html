@@ -1113,15 +1113,24 @@ function pintarPlacas(){
     unidades.push({cx, depth, kids});
     return cx;
   }
+  // El banner principal centra en TU familia directa (no satura): padres → tú + hermanos → hijos + sobrinos.
+  // Arranca desde tus padres y baja 3 generaciones; tíos, primos, abuelos y demás viven en "Ver el árbol genealógico".
+  const esP=id=>{ const m=M[id]; return !!m && m.clase!=='mascota' && m.clase!=='amigo' && !m.oculto; };
+  const tieneHijos=id=> arr.some(c=>c.padre_id===id||c.madre_id===id);
+  const gensArriba=(id,g)=>{ g=g||0; if(g>12) return 0; const m=M[id]; if(!m) return 0; let mx=0;
+    [m.padre_id,m.madre_id].forEach(p=>{ if(esP(p)) mx=Math.max(mx,1+gensArriba(p,g+1)); }); return mx; };
   const raizId=arbolActual&&arbolActual.raiz_id;
-  if(raizId && M[raizId] && M[raizId].clase!=='mascota' && M[raizId].clase!=='amigo'){
-    // Cabeza fijada: el banner muestra solo esa pareja y sus 3 generaciones (antepasados por encima solo en la rama)
-    layout(M[raizId],0);
-  } else {
-    const esRaiz=m=>{ if(m.padre_id||m.madre_id) return false; return !_parejasDe(m).some(p=>p.padre_id||p.madre_id); };
-    arr.filter(esRaiz).forEach(r=>{ if(!vis.has(r.id)) layout(r,0); });
-    arr.forEach(m=>{ if(!vis.has(m.id)) layout(m,0); });
+  // focal = "tú": la cabeza fijada (si tiene padres) o, si no, la persona más honda que tenga hijos
+  let focalId = (esP(raizId) && (M[raizId].padre_id||M[raizId].madre_id)) ? raizId : null;
+  if(!focalId){
+    let best=null,bestD=-1;
+    arr.forEach(m=>{ if(!tieneHijos(m.id)) return; const d=gensArriba(m.id); if(d>bestD){ bestD=d; best=m.id; } });
+    if(best===null) arr.forEach(m=>{ const d=gensArriba(m.id); if(d>bestD){ bestD=d; best=m.id; } });
+    focalId = best || arr[0].id;
   }
+  const fc=M[focalId];
+  const rootM = (esP(fc&&fc.padre_id)?M[fc.padre_id]:null) || (esP(fc&&fc.madre_id)?M[fc.madre_id]:null) || fc;
+  if(rootM) layout(rootM,0);
 
   const ids=Object.keys(pos); if(!ids.length) return;
   const sxs=ids.map(id=>pos[id].sx), minSx=Math.min.apply(null,sxs), maxSx=Math.max.apply(null,sxs), span=maxSx-minSx;
