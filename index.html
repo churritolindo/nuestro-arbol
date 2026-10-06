@@ -391,6 +391,10 @@
   .ped-node .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px;
     text-shadow:0 1px 2px rgba(255,250,235,.9)}
   .ped-heart{position:absolute;transform:translate(-50%,-50%);font-size:13px;z-index:3}
+  .ped-tog{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;z-index:5;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;line-height:1;color:#fff;
+    background:linear-gradient(160deg,#4a7a5e,#2f5340);box-shadow:0 0 0 1.5px var(--oroC),0 1px 3px rgba(0,0,0,.35)}
+  .ped-tog.on{background:linear-gradient(160deg,#b06a2e,#8a5120)}
   .ped-node.dueno .lauro{width:58px;height:62px}
   .ped-node.dueno .foto{width:34px;height:34px;font-size:14px}
   .ped-node.dueno .pn{font-size:11.5px;font-weight:800}
@@ -1988,7 +1992,14 @@ function familiaHTML(focalId){
   if(persona(fa0)||persona(mo0)){ A=persona(fa0)?fa0:mo0; B=(persona(fa0)&&persona(mo0))?mo0:null; }
   else { A=focal; B=parejaDe(focal); }
 
-  const NW=58, COLW=80, GENH=108, placed=new Set(), nodes=[], links=[], hearts=[];
+  // Por defecto: línea directa abierta (tú y tus descendientes); tíos y demás ramas plegadas
+  if(!esqAbiertoInit){
+    esqAbierto=new Set(); if(A) esqAbierto.add(A.id); if(focal) esqAbierto.add(focal.id);
+    (function desc(id){ arr.forEach(c=>{ if((c.padre_id===id||c.madre_id===id)&&!esqAbierto.has(c.id)){ esqAbierto.add(c.id); desc(c.id); } }); })(focal.id);
+    esqAbiertoInit=true;
+  }
+
+  const NW=58, COLW=80, GENH=108, placed=new Set(), nodes=[], links=[], hearts=[], toggles=[];
   let cur=0;
   // coloca a `id`(+pareja) en fila `y` y sus descendientes debajo; devuelve el centro (x) de la pareja
   function down(id, y){
@@ -1997,7 +2008,9 @@ function familiaHTML(focalId){
     placed.add(id);
     const par=parejaDe(m); if(par) placed.add(par.id);
     const pIds=[id]; if(par) pIds.push(par.id);
-    const kids=hijosDe(pIds).filter(k=>persona(k)&&!placed.has(k.id));
+    const kidsAll=hijosDe(pIds).filter(k=>persona(k)&&!placed.has(k.id));
+    const abierto = esqAbierto.has(id) || (par && esqAbierto.has(par.id));
+    const kids = abierto ? kidsAll : [];
     const cc=[];
     kids.forEach(k=>{ const c=down(k.id, y+GENH); if(c!=null) cc.push(c); });
     let center;
@@ -2010,6 +2023,7 @@ function familiaHTML(focalId){
       links.push([cc[0],my,cc[cc.length-1],my]);
       cc.forEach(c=>links.push([c,my,c,by-26]));
     }
+    if(kidsAll.length) toggles.push({x:center, y:y+34, id, abierto});   // ➕/➖ si tiene descendientes
     return center;
   }
   const sibsOf = m => {
@@ -2074,7 +2088,7 @@ function familiaHTML(focalId){
   if(B) abuelosDe(B, rc.concat([Bx]), esqUpB);
 
   if(!nodes.length) return "";
-  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y), PADX=46, PADY=50;
+  const xs=nodes.map(n=>n.x).concat(toggles.map(t=>t.x)), ys=nodes.map(n=>n.y).concat(toggles.map(t=>t.y)), PADX=46, PADY=50;
   const minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs), minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
   const W=(maxX-minX)+PADX*2, H=(maxY-minY)+PADY*2, ox=PADX-minX, oy=PADY-minY;
   let svg='';
@@ -2086,6 +2100,7 @@ function familiaHTML(focalId){
       +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div></div>';
   });
   hearts.forEach(h=>{ nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>'; });
+  toggles.forEach(t=>{ nod+='<div class="ped-tog'+(t.abierto?' on':'')+'" style="left:'+(t.x+ox)+'px;top:'+(t.y+oy)+'px" onclick="toggleGen(event,\''+t.id+'\')" title="'+(t.abierto?'Plegar':'Desplegar')+'">'+(t.abierto?'−':'+')+'</div>'; });
   return '<div class="ped" style="width:'+W+'px;height:'+H+'px">'
     +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><g stroke="#6b4f2a" stroke-width="2" fill="none" opacity=".8">'+svg+'</g></svg>'
     +nod+'</div>';
@@ -2134,6 +2149,20 @@ function esquemaHTML(rootId, clase){
 }
 let esqFocusId=null;
 let esqUpA=0, esqUpB=0, esqMaxUpA=0, esqMaxUpB=0, esqLabA='paterna', esqLabB='materna';
+let esqAbierto=new Set(), esqAbiertoInit=false;
+function _cerrarSub(id){ esqAbierto.delete(id);
+  const M=window._miembros||{}; Object.values(M).forEach(c=>{ if((c.padre_id===id||c.madre_id===id) && esqAbierto.has(c.id)) _cerrarSub(c.id); });
+}
+function toggleGen(ev,id){ if(ev&&ev.stopPropagation) ev.stopPropagation();
+  const M=window._miembros||{};
+  if(esqAbierto.has(id)){ _cerrarSub(id); }          // cerrar esta rama y lo que cuelgue
+  else {
+    const X=M[id]; const ps=[X&&X.padre_id,X&&X.madre_id].filter(Boolean);   // cerrar hermanos abiertos (una a la vez por grupo)
+    if(ps.length) Object.values(M).forEach(y=>{ if(y.id!==id && (ps.includes(y.padre_id)||ps.includes(y.madre_id)) && esqAbierto.has(y.id)) _cerrarSub(y.id); });
+    esqAbierto.add(id);
+  }
+  redibujaFamilia();
+}
 function ramaUp(lado,d){
   if(lado==='A') esqUpA=Math.max(0,Math.min(esqMaxUpA,esqUpA+d));
   else            esqUpB=Math.max(0,Math.min(esqMaxUpB,esqUpB+d));
@@ -2203,7 +2232,8 @@ function abrirEsquema(rootId, clase, grupo){
     const mh=mascotasHTML(false, esqClase, esqGrupo);
     document.getElementById("esq-tree").innerHTML = chips + (mh || '<div class="hint" style="margin-top:30px">Aún no hay '+(esAmigo?'amigos':'mascotas')+' en este grupo.<br>Usa ➕ Añadir para empezar.</div>');
   } else {
-    esqUpA=0; esqUpB=0;   // por defecto: desde los abuelos (antepasados por encima, plegados)
+    esqUpA=0; esqUpB=0;        // antepasados: por defecto desde los abuelos (se suben con los botones)
+    esqAbiertoInit=false;      // recalcular la apertura por defecto (línea directa abierta, ramas plegadas)
     redibujaFamilia();
   }
   // Las mascotas YA NO salen en el árbol de la familia: cada cosa en su árbol.
