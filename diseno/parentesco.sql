@@ -65,3 +65,6 @@ alter table arboles add column if not exists raiz_id uuid;
 
 -- Aureola opcional para quien ya no está (se muestra flotando sobre la corona)
 alter table miembros add column if not exists aureola boolean default false;
+
+-- Tipo/especie de mascota (texto libre: perro, gato, pájaro…) para separar el árbol de mascotas por especie
+alter table miembros add column if not exists especie text;
