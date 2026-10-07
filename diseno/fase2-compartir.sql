@@ -44,3 +44,7 @@ create policy am_dueno on arbol_miembros for all
 
 drop policy if exists am_propia on arbol_miembros;
 create policy am_propia on arbol_miembros for select using (user_id = auth.uid());
+
+-- Ámbito de la invitación: 'familia' | 'amigos' | 'mascotas' (para que un código de amigos
+-- solo dé acceso al árbol de amigos). Se aplicará al activar el permiso de ver (RLS).
+alter table invitaciones add column if not exists ambito text default 'familia';

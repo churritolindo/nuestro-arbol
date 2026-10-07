@@ -882,6 +882,23 @@
       <div id="sub-especie-cap" onclick="toggleEspeciesSub()" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px;cursor:pointer">🌳 Toca para cambiar el arbolito</div>
       <div id="sub-especies" class="hide" style="margin-bottom:10px"></div>
       <button class="btn sec" id="sub-papiro-btn" style="margin:0 0 10px" onclick="verSubPapiro()">📜 Ver el árbol genealógico</button>
+      <button class="btn sec" id="sub-invitar-btn" style="margin:0 0 10px;display:none" onclick="toggleInv('inva')">🔗 Invitar amigos</button>
+      <div id="inva-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">🔗 Invitar amigos</h2>
+        <p class="sub">Comparte un código para que tus amigos entren <b>solo</b> al árbol de amigos. <b>Nota:</b> que puedan verlo se activará en el siguiente paso (lo estamos montando).</p>
+        <label>¿Qué podrá hacer quien entre?</label>
+        <select id="inva-rol">
+          <option value="visitante">👀 Visitante — solo mirar y dejar recuerdos</option>
+          <option value="colaborador">✍️ Colaborador — también añadir amigos y fotos</option>
+        </select>
+        <button class="btn" style="margin-top:10px" onclick="crearInv('amigos','inva')">Generar código</button>
+        <div id="inva-result" class="hide" style="margin-top:12px">
+          <div id="inva-codigo" style="text-align:center;font-size:26px;font-weight:800;letter-spacing:5px;color:var(--verde);background:#fffdf7;border-radius:12px;padding:12px;box-shadow:0 0 0 1.5px var(--oroC)"></div>
+          <a id="inva-wa" class="btn" style="margin-top:10px;display:block;text-align:center;text-decoration:none" target="_blank">📲 Compartir por WhatsApp</a>
+          <button class="btn sec" style="margin-top:8px" onclick="copiarCod('inva')">📋 Copiar código</button>
+        </div>
+        <div id="inva-msg" class="msg"></div>
+      </div>
       <div id="sub-vacio" class="hide" style="text-align:center;color:#fff;font-style:italic;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin:6px 0 12px"></div>
       <div class="vidrio">
         <button class="btn sec" id="sub-addbtn" style="margin:0" onclick="togAdd('sub-form',this,document.getElementById('sub-addlbl').textContent)">➕ Añadir</button>
@@ -1366,6 +1383,8 @@ function abrirSub(clase){
   document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
   document.getElementById("sub-grupolbl").textContent=esAmigo?"¿De quién es este amigo/a?":"¿De quién es esta mascota?";
   const sab=document.getElementById("sub-addbtn"); if(sab){ sab.textContent="➕ "+(esAmigo?"Añadir un amigo/a":"Añadir una mascota"); }
+  const sib=document.getElementById("sub-invitar-btn"); if(sib) sib.style.display=esAmigo?"block":"none";
+  const iab=document.getElementById("inva-box"); if(iab) iab.classList.add("hide");
   const sf=document.getElementById("sub-form"); if(sf) sf.classList.add("hide");
   const esM=clase==='mascota';
   document.getElementById("sub-especielbl").style.display=esM?"block":"none";
@@ -1654,29 +1673,32 @@ function dictar(targetId, btn){
   try{ rec.start(); }catch(e){ _pararDictado(); }
 }
 /* ====== Fase 2: invitar por código (parte segura: generar y compartir) ====== */
-let _ultimaInvCod="";
 function toggleInvitar(){ const b=document.getElementById("invitar-box"); if(!b) return; b.classList.toggle("hide"); document.getElementById("inv-result").classList.add("hide"); limpiar("inv-msg"); }
+function toggleInv(pre){ const b=document.getElementById(pre+"-box"); if(!b) return; b.classList.toggle("hide"); document.getElementById(pre+"-result").classList.add("hide"); limpiar(pre+"-msg"); }
 function _codigoAlea(){ const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
-async function crearInvitacion(){
-  if(!arbolActual||!usuario){ msg("inv-msg","Abre tu árbol primero."); return; }
-  limpiar("inv-msg");
-  const rol=document.getElementById("inv-rol").value;
+async function crearInv(ambito, pre){
+  if(!arbolActual||!usuario){ msg(pre+"-msg","Abre tu árbol primero."); return; }
+  limpiar(pre+"-msg");
+  const rol=document.getElementById(pre+"-rol").value;
   const codigo=_codigoAlea();
-  const { error }=await sb.from("invitaciones").insert({arbol_id:arbolActual.id, codigo, rol, creado_por:usuario.id});
+  const { error }=await sb.from("invitaciones").insert({arbol_id:arbolActual.id, codigo, rol, creado_por:usuario.id, ambito});
   if(error){
     const falta = error.code==="42P01" || /relation .* does not exist|could not find the table/i.test(error.message||"");
-    msg("inv-msg", falta ? "Aún falta crear la tabla de invitaciones en Supabase (te he dejado el SQL)." : "No se pudo crear: "+error.message);
+    msg(pre+"-msg", falta ? "Aún falta crear la tabla de invitaciones en Supabase (te he dejado el SQL)." : "No se pudo crear: "+error.message);
     return;
   }
-  _ultimaInvCod=codigo;
   const url=location.origin+location.pathname+"?invite="+codigo;
-  document.getElementById("inv-codigo").textContent=codigo;
-  const texto="Te invito a nuestro Árbol de recuerdos 🌳.\nEntra aquí: "+url+"\nY pon el código: "+codigo;
-  document.getElementById("inv-wa").href="https://wa.me/?text="+encodeURIComponent(texto);
-  document.getElementById("inv-result").classList.remove("hide");
-  msg("inv-msg","Código creado ✔","ok");
+  document.getElementById(pre+"-codigo").textContent=codigo;
+  const texto = (ambito==='amigos')
+    ? "Te invito al Árbol de Amigos 🌳.\nEntra aquí: "+url+"\nY pon el código: "+codigo
+    : "Te invito a nuestro Árbol de recuerdos 🌳.\nEntra aquí: "+url+"\nY pon el código: "+codigo;
+  document.getElementById(pre+"-wa").href="https://wa.me/?text="+encodeURIComponent(texto);
+  document.getElementById(pre+"-result").classList.remove("hide");
+  msg(pre+"-msg","Código creado ✔","ok");
 }
-function copiarInv(){ if(_ultimaInvCod && navigator.clipboard){ navigator.clipboard.writeText(_ultimaInvCod).then(()=>msg("inv-msg","Código copiado ✔","ok")).catch(()=>{}); } }
+function crearInvitacion(){ return crearInv('familia','inv'); }
+function copiarCod(pre){ const el=document.getElementById(pre+"-codigo"); const c=el?el.textContent.trim():""; if(c && navigator.clipboard){ navigator.clipboard.writeText(c).then(()=>msg(pre+"-msg","Código copiado ✔","ok")).catch(()=>{}); } }
+function copiarInv(){ return copiarCod('inv'); }
 /* ====== FICHA ====== */
 function abrirFicha(id){
   miembroActual=window._miembros[id];
