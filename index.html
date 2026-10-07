@@ -404,6 +404,9 @@
     display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;line-height:1;color:#fff;
     background:linear-gradient(160deg,#4a7a5e,#2f5340);box-shadow:0 0 0 1.5px var(--oroC),0 1px 3px rgba(0,0,0,.35)}
   .ped-tog.on{background:linear-gradient(160deg,#b06a2e,#8a5120)}
+  .ped-inlaw{position:absolute;transform:translate(-50%,-50%);z-index:6;cursor:pointer;font-size:11px;font-weight:800;line-height:1;
+    color:#fff;background:linear-gradient(160deg,#5a7fa8,#38597f);border-radius:11px;padding:3px 6px;white-space:nowrap;
+    box-shadow:0 0 0 1.5px var(--oroC),0 1px 3px rgba(0,0,0,.35)}
   .ped-node.dueno .lauro{width:58px;height:62px}
   .ped-node.dueno .foto{width:34px;height:34px;font-size:14px}
   .ped-node.dueno .pn{font-size:11.5px;font-weight:800}
@@ -2055,7 +2058,7 @@ function familiaHTML(focalId){
     esqAbiertoInit=true;
   }
 
-  const NW=58, COLW=80, GENH=108, placed=new Set(), nodes=[], links=[], hearts=[], toggles=[];
+  const NW=58, COLW=80, GENH=108, placed=new Set(), nodes=[], links=[], hearts=[], toggles=[], inLaws=new Set();
   let cur=0;
   // coloca a `id`(+pareja) en fila `y` y sus descendientes debajo; devuelve el centro (x) de la pareja
   function down(id, y){
@@ -2073,7 +2076,9 @@ function familiaHTML(focalId){
     if(cc.length){ center=(cc[0]+cc[cc.length-1])/2; }
     else { const span=par?2:1; center=cur+span*COLW/2; cur+=span*COLW; }
     nodes.push({id, x:(par?center-NW/2:center), y});
-    if(par){ nodes.push({id:par.id, x:center+NW/2, y}); hearts.push({x:center,y,s:_simboloRel(m.tipo_pareja||par.tipo_pareja||'casados')}); }
+    if(par){ nodes.push({id:par.id, x:center+NW/2, y}); hearts.push({x:center,y,s:_simboloRel(m.tipo_pareja||par.tipo_pareja||'casados')});
+      if(id!==(A&&A.id)) inLaws.add(par.id);   // pareja que se casó en la familia: puede desplegar SU familia
+    }
     if(cc.length){ const by=y+GENH, my=(y+by)/2;
       links.push([center,y+26,center,my]);
       links.push([cc[0],my,cc[cc.length-1],my]);
@@ -2155,6 +2160,8 @@ function familiaHTML(focalId){
   });
   hearts.forEach(h=>{ nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>'; });
   toggles.forEach(t=>{ nod+='<div class="ped-tog'+(t.abierto?' on':'')+'" style="left:'+(t.x+ox)+'px;top:'+(t.y+oy)+'px" onclick="toggleGen(event,\''+t.id+'\')" title="'+(t.abierto?'Plegar':'Desplegar')+'">'+(t.abierto?'−':'+')+'</div>'; });
+  nodes.forEach(n=>{ if(!inLaws.has(n.id)) return;
+    nod+='<div class="ped-inlaw" style="left:'+(n.x+ox+NW/2+4)+'px;top:'+(n.y+oy-32)+'px" onclick="verRamaDe(event,\''+n.id+'\')" title="Ver y añadir SU familia (padres, hermanos…)">👪+</div>'; });
   return '<div class="ped" style="width:'+W+'px;height:'+H+'px">'
     +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><g stroke="#6b4f2a" stroke-width="2" fill="none" opacity=".8">'+svg+'</g></svg>'
     +nod+'</div>';
@@ -2306,6 +2313,8 @@ function verSuRama(){
 }
 function cerrarEsquema(){ document.getElementById("v-esquema").classList.remove("show"); }
 function abrirDesdeEsquema(id){ cerrarEsquema(); abrirFicha(id); }
+// ➕ junto a una pareja política: re-centra el genealógico en ELLA para ver/añadir su familia (paterna/materna)
+function verRamaDe(ev,id){ if(ev&&ev.stopPropagation) ev.stopPropagation(); abrirEsquema(id); }
 function toggleRamaForm(){
   const f=document.getElementById("rama-form");
   if(f.classList.contains("hide")){ rellenarRamaBase(); onRelChange(); f.classList.remove("hide"); f.scrollIntoView({behavior:'smooth',block:'center'}); }
