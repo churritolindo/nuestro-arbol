@@ -68,3 +68,6 @@ alter table miembros add column if not exists aureola boolean default false;
 
 -- Tipo/especie de mascota (texto libre: perro, gato, pájaro…) para separar el árbol de mascotas por especie
 alter table miembros add column if not exists especie text;
+
+-- Rol en el árbol de amigos: 'amigo' (manda su línea de año), 'pareja' (al lado del amigo), 'familiar'
+alter table miembros add column if not exists rol text;
