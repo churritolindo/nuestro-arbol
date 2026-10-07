@@ -273,6 +273,13 @@
   .inset-arb .mini-med{position:absolute;transform:translate(-50%,-50%) scale(.5);filter:drop-shadow(0 1px 2px rgba(40,25,5,.5))}
   .inset-arb .mini-med .lauro{width:50px;height:53px}
   .inset-arb .mini-med .foto{width:29px;height:29px;top:47%;font-size:13px}
+  /* carteles dorados (Familia/Amigos/Mascotas) a los pies del árbol, sin tapar */
+  .cartel-fam{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);width:29%;z-index:4;pointer-events:none;
+    filter:drop-shadow(0 2px 5px rgba(0,0,0,.6))}
+  .cartel-sub{position:absolute;bottom:3.5%;width:27%;z-index:4;pointer-events:none;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+  .cartel-sub.izq{left:1.5%}
+  .cartel-sub.der{right:1.5%}
   /* rótulo dorado (marco elaborado + letras oro), abajo en el tronco */
   .tree-label{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);width:58%;pointer-events:none}
   .tree-label .marco{width:100%;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
@@ -1271,12 +1278,13 @@ function pintarArbol(){
   const espA=(arbolActual&&arbolActual.especie_amigos)||'cerezo';
   const espM=(arbolActual&&arbolActual.especie_mascotas)||'olivo';
   const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
-    +'<img src="diseno/arboles/mini/'+espA+'.png">'
-    +'<div class="tree-label"><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Amigos</span></div></div>';
+    +'<img src="diseno/arboles/mini/'+espA+'.png"></div>';
   const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
-    +'<img src="diseno/arboles/mini/'+espM+'.png">'
-    +'<div class="tree-label"><span class="paw-top">🐾</span><img class="marco" src="diseno/marco-amigos.png"><span class="txt">Mascotas</span></div></div>';
-  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+'</div>';
+    +'<img src="diseno/arboles/mini/'+espM+'.png"></div>';
+  const carteles='<img class="cartel-sub izq" src="diseno/carteles/amigos.png" alt="Amigos">'
+    +'<img class="cartel-fam" src="diseno/carteles/familia.png" alt="Familia">'
+    +'<img class="cartel-sub der" src="diseno/carteles/mascotas.png" alt="Mascotas">';
+  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+carteles+'</div>';
   document.getElementById("especies-cap").innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>";
   pintarPlacas();
 }
