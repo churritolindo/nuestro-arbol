@@ -69,6 +69,8 @@
   /* corona + avatar */
   .lauro{position:relative;flex-shrink:0}
   .lauro .lau{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%}
+  .lauro .aureola-ov{position:absolute;left:50%;top:-11%;transform:translateX(-50%);width:88%;z-index:6;pointer-events:none;
+    filter:drop-shadow(0 1px 2px rgba(120,90,0,.5))}
   .lauro .foto{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;
     background:linear-gradient(135deg,#e6d09a,#c9a24b);display:flex;align-items:center;justify-content:center;
     color:#7a5410;font-family:Georgia,serif;font-weight:700;box-shadow:0 0 0 1.5px var(--oroO)}
@@ -517,7 +519,8 @@
       </div>
       <div id="lista"></div>
       <div class="vidrio" style="margin-top:16px">
-        <h2>Añadir familiar</h2>
+        <button class="btn sec" style="margin:0" onclick="togAdd('add-form',this,'Añadir familiar')">➕ Añadir familiar</button>
+        <div id="add-form" class="hide" style="margin-top:12px">
         <label>Nombre</label>
         <input id="m-nombre" placeholder="Ej. Abuela Rosa">
         <div class="fila">
@@ -544,6 +547,7 @@
         </div>
         <button class="btn" onclick="anadirMiembro()">Añadir al árbol</button>
         <div id="add-msg" class="msg"></div>
+        </div>
       </div>
       <button class="link" onclick="salir()">Cerrar sesión</button>
     </div>
@@ -556,7 +560,7 @@
         <button class="del-badge ficha-del" onclick="borrarMiembro()" title="Borrar">🗑️</button>
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
-        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
+        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><img class="aureola-ov" id="f-aureola" src="diseno/carteles/aureola.png" alt="" style="display:none"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
         <input type="file" id="foto-input" accept="image/*" class="hide" onchange="fotoPerfilElegida()">
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="mote serif" id="f-mote" style="display:none"></div>
@@ -683,6 +687,7 @@
           <div><label>Nacimiento</label><input type="date" id="e-nac"></div>
           <div><label>Fallecimiento</label><input type="date" id="e-fall"></div>
         </div>
+        <label class="chk-row"><input type="checkbox" id="e-aureola"> 😇 Ponerle aureola (para quien ya no está)</label>
         <label>💍 Aniversario de boda (opcional)</label>
         <input type="date" id="e-boda">
         <label>🕊️ Religión / cultura (opcional)</label>
@@ -848,6 +853,8 @@
       <button class="btn sec" id="sub-papiro-btn" style="margin:0 0 10px" onclick="verSubPapiro()">📜 Ver el árbol genealógico</button>
       <div id="sub-vacio" class="hide" style="text-align:center;color:#fff;font-style:italic;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin:6px 0 12px"></div>
       <div class="vidrio">
+        <button class="btn sec" id="sub-addbtn" style="margin:0" onclick="togAdd('sub-form',this,document.getElementById('sub-addlbl').textContent)">➕ Añadir</button>
+        <div id="sub-form" class="hide" style="margin-top:12px">
         <label id="sub-addlbl">Añadir</label>
         <input id="sub-nombre" placeholder="Nombre">
         <label id="sub-grupolbl" style="margin-top:8px">¿De quién es?</label>
@@ -868,6 +875,7 @@
         <select id="sub-hermano"></select>
         <button class="btn" style="margin-top:10px" onclick="anadirSub()">＋ Añadir</button>
         <div id="sub-msg" class="msg"></div>
+        </div>
         <p style="font-size:12.5px;color:var(--suave,#6b5b3a);margin:8px 0 0;line-height:1.5">Toca cualquier corona para abrir su ficha. Las parejas salen juntas con su corazón y los más antiguos arriba.</p>
       </div>
     </div>
@@ -1172,7 +1180,7 @@ function pintarPlacas(){
     if(_anivs.has(id)) b.setAttribute("data-badge",_anivs.get(id));
     b.style.left=X(p.sx)+"%"; b.style.top=Y(p.depth,p.drop)+"%"; b.title=m.nombre;
     const cara=m._url?'<img src="'+m._url+'">':inicial(m.nombre);
-    b.innerHTML='<div class="lauro" style="width:'+sz+'px;height:'+Math.round(sz*1.06)+'px"><img class="lau" src="corona.png"><div class="foto" style="width:'+foto+'px;height:'+foto+'px">'+cara+'</div></div>';
+    b.innerHTML='<div class="lauro" style="width:'+sz+'px;height:'+Math.round(sz*1.06)+'px"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto" style="width:'+foto+'px;height:'+foto+'px">'+cara+'</div></div>';
     b.onclick=(e)=>{ e.stopPropagation(); abrirFicha(m.id); };
     ov.appendChild(b);
   });
@@ -1268,6 +1276,11 @@ function _medallitas(ms){
   }
   return h+'</div>';
 }
+function togAdd(id,btn,label){
+  const e=document.getElementById(id); if(!e) return;
+  const nowHidden=e.classList.toggle('hide');
+  btn.textContent=(nowHidden?'➕ ':'➖ ')+(label||'Añadir');
+}
 function pintarArbol(){
   const esp=(arbolActual&&arbolActual.especie)||"olivo";
   especieElegida=esp;
@@ -1311,6 +1324,8 @@ function abrirSub(clase){
     :"🐾 <b>Nuestras mascotas</b>";
   document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
   document.getElementById("sub-grupolbl").textContent=esAmigo?"¿De quién es este amigo/a?":"¿De quién es esta mascota?";
+  const sab=document.getElementById("sub-addbtn"); if(sab){ sab.textContent="➕ "+(esAmigo?"Añadir un amigo/a":"Añadir una mascota"); }
+  const sf=document.getElementById("sub-form"); if(sf) sf.classList.add("hide");
   document.getElementById("sub-nombre").value="";
   const pb=document.getElementById("sub-papiro-btn"); if(pb) pb.textContent=esAmigo?"🌳 Ver el árbol de la amistad":"📜 Ver el árbol genealógico";
   rellenarGrupoSelect();
@@ -1618,6 +1633,7 @@ function abrirFicha(id){
   miembroActual=window._miembros[id];
   const m=miembroActual;
   pintarFotoFicha(m);
+  const fau=document.getElementById("f-aureola"); if(fau) fau.style.display=m.aureola?"block":"none";
   document.getElementById("f-nom").textContent = m.nombre;
   const moteEl=document.getElementById("f-mote"), ap=(m.apodo||"").trim();
   if(ap){ moteEl.textContent="«"+ap+"»"; moteEl.style.display="block"; } else moteEl.style.display="none";
@@ -1694,6 +1710,7 @@ function abrirEditar(){
   document.getElementById("e-apellidos").value=m.apellidos||"";
   document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
   document.getElementById("e-oculto").checked=!!m.oculto;
+  document.getElementById("e-aureola").checked=!!m.aureola;
   // mote solo para amigos; ocultar solo si es ex-pareja
   document.getElementById("e-mote-wrap").style.display = (m.clase==='amigo') ? "block":"none";
   editTipoCambia();
@@ -1792,6 +1809,7 @@ async function guardarEdicion(){
     madre_id:document.getElementById("e-madre").value||null,
     pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP, hermano_id:hermano,
     amigo_desde:(parseInt(document.getElementById("e-amigodesde").value)||null),
+    aureola:document.getElementById("e-aureola").checked,
     oculto:(tipoP==="ex" && document.getElementById("e-oculto").checked) };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
@@ -1829,10 +1847,12 @@ function _caraTree(m){
   if(m._url) return '<img src="'+m._url+'">';
   return m.clase==="mascota" ? "🐾" : inicial(m.nombre);
 }
+// aureola dorada opcional (persona/mascota fallecida); va dentro del .lauro, flotando sobre la corona
+function _aur(m){ return (m&&m.aureola) ? '<img class="aureola-ov" src="diseno/carteles/aureola.png" alt="">' : ''; }
 function _persTree(m){
   const sub=(m.clase&&m.clase!=="persona")?(m.clase==="mascota"?"mascota":"amigo/a"):"";
   return '<div class="pnode" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
-    +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
+    +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
     +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
 function _mascNode(m){
@@ -1842,7 +1862,7 @@ function _mascNode(m){
   const anio = m.nacimiento?String(m.nacimiento).slice(0,4):'';
   const meta=[anio,de].filter(Boolean).join(' · ');
   return '<div class="masc-node" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
-    +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+cara+'</div></div>'
+    +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+cara+'</div></div>'
     +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
     +(meta?'<div class="pr">'+meta+'</div>':'')+'</div>';
 }
@@ -1984,7 +2004,7 @@ function _subPedHTML(arr, clase, grupo){
     const esYo = n.owner && usuario && owner.creado_por===usuario.id;
     const nm = escapar((m.nombre||'').split(' ')[0]) + (esYo?' <span style="color:#8a6d3b">(tú)</span>':'');
     nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
-      +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
+      +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
       +'<div class="pn">'+nm+'</div></div>';
   });
   hearts.forEach(h=>nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>');
@@ -2122,7 +2142,7 @@ function familiaHTML(focalId){
   let nod='';
   nodes.forEach(n=>{ const m=P(n.id); if(!m) return;
     nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
-      +'<div class="lauro"><img class="lau" src="corona.png"><div class="foto">'+_caraTree(m)+'</div></div>'
+      +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
       +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div></div>';
   });
   hearts.forEach(h=>{ nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>'; });

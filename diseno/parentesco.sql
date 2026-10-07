@@ -62,3 +62,6 @@ alter table arboles add column if not exists especie_mascotas text default 'oliv
 -- Cabeza del árbol principal: la pareja desde la que se pintan las 3 generaciones
 -- (los antepasados por encima -bisabuelos, tatarabuelos- solo salen en "Ver su rama")
 alter table arboles add column if not exists raiz_id uuid;
+
+-- Aureola opcional para quien ya no está (se muestra flotando sobre la corona)
+alter table miembros add column if not exists aureola boolean default false;
