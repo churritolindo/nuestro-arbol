@@ -76,10 +76,12 @@
   .setiq:before,.setiq:after{content:"";height:1px;width:40px;background:linear-gradient(90deg,transparent,var(--oroC),transparent)}
   /* corona + avatar */
   .lauro{position:relative;flex-shrink:0}
-  .lauro .lau{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%}
+  .lauro .lau{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%;z-index:2}
+  .lauro .alas-ov{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:210%;z-index:1;pointer-events:none;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,.28))}
   .lauro .aureola-ov{position:absolute;left:50%;top:-11%;transform:translateX(-50%);width:88%;z-index:6;pointer-events:none;
     filter:drop-shadow(0 1px 2px rgba(120,90,0,.5))}
-  .lauro .foto{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;
+  .lauro .foto{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;z-index:3;
     background:linear-gradient(135deg,#e6d09a,#c9a24b);display:flex;align-items:center;justify-content:center;
     color:#7a5410;font-family:Georgia,serif;font-weight:700;box-shadow:0 0 0 1.5px var(--oroO)}
   .lauro .foto img{width:100%;height:100%;object-fit:cover}
@@ -579,7 +581,7 @@
         <button class="del-badge ficha-del" onclick="borrarMiembro()" title="Borrar">🗑️</button>
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
-        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><img class="aureola-ov" id="f-aureola" src="diseno/carteles/aureola.png" alt="" style="display:none"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
+        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><img class="alas-ov" id="f-alas" src="diseno/carteles/alas.png" alt="" style="display:none"><img class="aureola-ov" id="f-aureola" src="diseno/carteles/aureola.png" alt="" style="display:none"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
         <input type="file" id="foto-input" accept="image/*" class="hide" onchange="fotoPerfilElegida()">
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="mote serif" id="f-mote" style="display:none"></div>
@@ -718,11 +720,15 @@
           <div><label>Nacimiento</label><input type="date" id="e-nac"></div>
           <div><label>Fallecimiento</label><input type="date" id="e-fall"></div>
         </div>
-        <label class="chk-row"><input type="checkbox" id="e-aureola"> 😇 Ponerle aureola (para quien ya no está)</label>
+        <div id="e-adorno-wrap" style="display:none">
+          <label class="chk-row"><input type="checkbox" id="e-aureola"> 😇 Ponerle aureola</label>
+          <label class="chk-row"><input type="checkbox" id="e-alas"> 👼 Ponerle alas de ángel</label>
+          <div style="font-size:11.5px;color:var(--suave,#6b5b3a);margin:-2px 0 4px">Opcional, para quien ya no está. Puedes elegir una, otra o las dos.</div>
+        </div>
         <label>💍 Aniversario de boda (opcional)</label>
         <input type="date" id="e-boda">
         <label>🕊️ Religión / cultura (opcional)</label>
-        <select id="e-religion">
+        <select id="e-religion" onchange="toggleAdorno()">
           <option value="">— Sin especificar —</option>
           <option value="cristiana">✝️ Cristiana</option>
           <option value="judia">✡️ Judía</option>
@@ -1704,7 +1710,9 @@ function abrirFicha(id){
   miembroActual=window._miembros[id];
   const m=miembroActual;
   pintarFotoFicha(m);
-  const fau=document.getElementById("f-aureola"); if(fau) fau.style.display=m.aureola?"block":"none";
+  const _cri=m.religion==='cristiana';
+  const fau=document.getElementById("f-aureola"); if(fau) fau.style.display=(_cri&&m.aureola)?"block":"none";
+  const fal=document.getElementById("f-alas"); if(fal) fal.style.display=(_cri&&m.alas)?"block":"none";
   document.getElementById("f-nom").textContent = m.nombre;
   const moteEl=document.getElementById("f-mote"), ap=(m.apodo||"").trim();
   if(ap){ moteEl.textContent="«"+ap+"»"; moteEl.style.display="block"; } else moteEl.style.display="none";
@@ -1782,6 +1790,8 @@ function abrirEditar(){
   document.getElementById("e-tipopareja").value=m.tipo_pareja||(m.expareja?"ex":"pareja");
   document.getElementById("e-oculto").checked=!!m.oculto;
   document.getElementById("e-aureola").checked=!!m.aureola;
+  document.getElementById("e-alas").checked=!!m.alas;
+  toggleAdorno();
   // mote solo para amigos; ocultar solo si es ex-pareja
   document.getElementById("e-mote-wrap").style.display = (m.clase==='amigo') ? "block":"none";
   document.getElementById("e-especie-wrap").style.display = (m.clase==='mascota') ? "block":"none";
@@ -1888,7 +1898,8 @@ async function guardarEdicion(){
     madre_id:document.getElementById("e-madre").value||null,
     pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP, hermano_id:hermano,
     amigo_desde:(parseInt(document.getElementById("e-amigodesde").value)||null),
-    aureola:document.getElementById("e-aureola").checked,
+    aureola:(document.getElementById("e-religion").value==='cristiana' && document.getElementById("e-aureola").checked),
+    alas:(document.getElementById("e-religion").value==='cristiana' && document.getElementById("e-alas").checked),
     oculto:(tipoP==="ex" && document.getElementById("e-oculto").checked) };
   const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
   if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
@@ -1926,8 +1937,16 @@ function _caraTree(m){
   if(m._url) return '<img src="'+m._url+'">';
   return m.clase==="mascota" ? "🐾" : inicial(m.nombre);
 }
-// aureola dorada opcional (persona/mascota fallecida); va dentro del .lauro, flotando sobre la corona
-function _aur(m){ return (m&&m.aureola) ? '<img class="aureola-ov" src="diseno/carteles/aureola.png" alt="">' : ''; }
+// adornos opcionales SOLO para religión cristiana: alas (detrás de la corona) y/o aureola (encima)
+function toggleAdorno(){ const cr=document.getElementById("e-religion").value==='cristiana';
+  const w=document.getElementById("e-adorno-wrap"); if(w) w.style.display=cr?'block':'none'; }
+function _aur(m){
+  if(!m || m.religion!=='cristiana') return '';
+  let h='';
+  if(m.alas) h+='<img class="alas-ov" src="diseno/carteles/alas.png" alt="">';
+  if(m.aureola) h+='<img class="aureola-ov" src="diseno/carteles/aureola.png" alt="">';
+  return h;
+}
 function _persTree(m){
   const sub=(m.clase&&m.clase!=="persona")?(m.clase==="mascota"?"mascota":"amigo/a"):"";
   return '<div class="pnode" onclick="abrirDesdeEsquema(\''+m.id+'\')">'

@@ -71,3 +71,6 @@ alter table miembros add column if not exists especie text;
 
 -- Rol en el árbol de amigos: 'amigo' (manda su línea de año), 'pareja' (al lado del amigo), 'familiar'
 alter table miembros add column if not exists rol text;
+
+-- Alas de ángel opcionales (como la aureola); solo se ofrecen/pintan para religión cristiana
+alter table miembros add column if not exists alas boolean default false;
