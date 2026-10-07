@@ -408,6 +408,9 @@
   .ped-node.dueno .foto{width:34px;height:34px;font-size:14px}
   .ped-node.dueno .pn{font-size:11.5px;font-weight:800}
   .ped-year{position:absolute;transform:translate(-50%,-50%);font-family:Georgia,serif;font-weight:800;font-size:15px;color:#8a5a1e;background:rgba(251,244,223,.85);border-radius:9px;padding:1px 6px;box-shadow:0 0 0 1.5px var(--oroC)}
+  .sub-especie-bloque{margin:2px 0 22px}
+  .sub-especie-tit{display:inline-block;font-family:'Cinzel',Georgia,serif;font-weight:700;color:#5a3d12;font-size:16px;
+    margin:0 0 2px 8px;background:rgba(251,244,223,.9);padding:3px 14px;border-radius:11px;box-shadow:0 0 0 1.5px var(--oroC)}
   .mic-btn{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 10px;font-size:12.5px;font-family:Georgia,serif;font-weight:700;
     color:#fff;background:linear-gradient(160deg,#4a7a5e,#2f5340);border:none;border-radius:16px;cursor:pointer;vertical-align:middle;
     box-shadow:0 0 0 1.5px var(--oroC),0 2px 5px rgba(60,40,10,.25)}
@@ -677,6 +680,10 @@
           <input type="checkbox" id="e-oculto">
           <span>Ocultar del árbol principal (ex que no es de la familia). Seguirá visible en la rama de sus hijos.</span>
         </label>
+        <div id="e-especie-wrap" style="display:none">
+          <label>¿Qué tipo de mascota? (perro, gato, pájaro…)</label>
+          <input id="e-especie" placeholder="Ej. gato">
+        </div>
         <div class="fila">
           <div><label>Apellidos (opcional)</label><input id="e-apellidos" placeholder="Rodríguez Barbero"></div>
           <div><label>Tipo</label>
@@ -859,6 +866,8 @@
         <input id="sub-nombre" placeholder="Nombre">
         <label id="sub-grupolbl" style="margin-top:8px">¿De quién es?</label>
         <select id="sub-grupo"></select>
+        <label id="sub-especielbl" style="margin-top:8px;display:none">¿Qué tipo de mascota? (perro, gato, pájaro…)</label>
+        <input id="sub-especie" placeholder="Ej. gato" style="display:none">
         <div class="fila" style="margin-top:8px">
           <div><label id="sub-naclbl">Nació (para ordenar por antigüedad)</label><input type="date" id="sub-nac"></div>
           <div><label id="sub-parejalbl">Pareja de… (opcional)</label><select id="sub-pareja"></select></div>
@@ -1317,7 +1326,7 @@ async function cambiarEspecie(k){
 let subClase=null, subGrupo=null;
 const _normG=g=>(g&&String(g).trim())?String(g).trim():'Familia';
 function abrirSub(clase){
-  subClase=clase; subGrupo=null;
+  subClase=clase; subGrupo=null; subAbierto=new Set();
   const esAmigo=clase==='amigo';
   document.getElementById("sub-cap").innerHTML=esAmigo
     ?"🧑‍🤝‍🧑 <b>Nuestros amigos</b>"
@@ -1326,6 +1335,9 @@ function abrirSub(clase){
   document.getElementById("sub-grupolbl").textContent=esAmigo?"¿De quién es este amigo/a?":"¿De quién es esta mascota?";
   const sab=document.getElementById("sub-addbtn"); if(sab){ sab.textContent="➕ "+(esAmigo?"Añadir un amigo/a":"Añadir una mascota"); }
   const sf=document.getElementById("sub-form"); if(sf) sf.classList.add("hide");
+  const esM=clase==='mascota';
+  document.getElementById("sub-especielbl").style.display=esM?"block":"none";
+  const sesp=document.getElementById("sub-especie"); sesp.style.display=esM?"block":"none"; sesp.value="";
   document.getElementById("sub-nombre").value="";
   const pb=document.getElementById("sub-papiro-btn"); if(pb) pb.textContent=esAmigo?"🌳 Ver el árbol de la amistad":"📜 Ver el árbol genealógico";
   rellenarGrupoSelect();
@@ -1541,13 +1553,14 @@ async function anadirSub(){
   const madre=document.getElementById("sub-madre").value||null;
   const hermano=document.getElementById("sub-hermano").value||null;
   const amigodesde=parseInt(document.getElementById("sub-amigodesde").value)||null;
+  const especie = subClase==='mascota' ? (document.getElementById("sub-especie").value.trim()||null) : null;
   const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:subClase,grupo,
-    nacimiento:nac,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,hermano_id:hermano,amigo_desde:amigodesde}).select().single();
+    nacimiento:nac,padre_id:padre,madre_id:madre,pareja_id:pareja,expareja:tipoP==="ex",tipo_pareja:tipoP,hermano_id:hermano,amigo_desde:amigodesde,especie}).select().single();
   if(error){ msg("sub-msg","No se pudo guardar: "+error.message); return; }
   if(pareja&&nuevo) await sb.from("miembros").update({pareja_id:nuevo.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   // el hermano/a queda enlazado por los dos lados (solo para la ficha, no para el árbol)
   if(hermano&&nuevo) await sb.from("miembros").update({hermano_id:nuevo.id}).eq("id",hermano);
-  ["sub-nombre","sub-nac","sub-amigodesde"].forEach(id=>document.getElementById(id).value="");
+  ["sub-nombre","sub-nac","sub-amigodesde","sub-especie"].forEach(id=>document.getElementById(id).value="");
   ["sub-pareja","sub-padre","sub-madre","sub-hermano"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   document.getElementById("sub-tipopareja").value="pareja";
   subGrupo=grupo;
@@ -1713,6 +1726,8 @@ function abrirEditar(){
   document.getElementById("e-aureola").checked=!!m.aureola;
   // mote solo para amigos; ocultar solo si es ex-pareja
   document.getElementById("e-mote-wrap").style.display = (m.clase==='amigo') ? "block":"none";
+  document.getElementById("e-especie-wrap").style.display = (m.clase==='mascota') ? "block":"none";
+  document.getElementById("e-especie").value = m.especie||"";
   editTipoCambia();
   pintaSelect("e-padre",m.padre_id,m.id);
   pintaSelect("e-madre",m.madre_id,m.id);
@@ -1800,6 +1815,7 @@ async function guardarEdicion(){
   const cambios={ nombre,
     apodo:document.getElementById("e-apodo").value.trim()||null,
     clase:document.getElementById("e-clase").value,
+    especie:(document.getElementById("e-clase").value==='mascota' ? (document.getElementById("e-especie").value.trim()||null) : null),
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
     fecha_boda:document.getElementById("e-boda").value.trim()||null,
@@ -1892,123 +1908,115 @@ function mascotasHTML(mini, clase, grupo){
   // --- vista completa: árbol genealógico en abanico (como la familia) ---
   return _subPedHTML(arr, clase, grupo);
 }
-// Árbol genealógico de amigos/mascotas en abanico: más antiguos arriba, mismo año en la
-// misma línea, parejas juntas con su corazón, hijos/cachorros debajo, y el dueño arriba.
+let subAbierto = new Set();   // familias expandidas en el árbol de amigos/mascotas (id de la unidad)
+function redibujaSub(){ abrirEsquema(null, esqClase, esqGrupo); }
+function subTog(ev,id){ if(ev&&ev.stopPropagation) ev.stopPropagation();
+  if(subAbierto.has(id)) subAbierto.delete(id); else subAbierto.add(id);
+  redibujaSub();
+}
+function _espIco(e){ e=(e||'').toLowerCase();
+  if(/perr|cachorr/.test(e)) return '🐶'; if(/gat|minino/.test(e)) return '🐱';
+  if(/paj|ave|loro|canar|peric|aguil|buho|jilguero/.test(e)) return '🐦'; if(/pez|pec|acuar/.test(e)) return '🐟';
+  if(/conej/.test(e)) return '🐰'; if(/caball|yegu|poni/.test(e)) return '🐴';
+  if(/tortug|reptil|iguan|serp|lagart/.test(e)) return '🐢'; if(/hams|raton|cobay|roedor|chinch/.test(e)) return '🐹';
+  return '🐾'; }
+function _cap(s){ s=(s||'').trim(); return s.charAt(0).toUpperCase()+s.slice(1); }
+// Árbol genealógico de amigos/mascotas que se DESPLIEGA HACIA LA DERECHA:
+// filas por año (etiqueta a la izquierda), generaciones en columnas, +/- por familia.
+// Mascotas: un bloque por especie (perro, gato, pájaro…).
 function _subPedHTML(arr, clase, grupo){
-  // dueño/a del grupo -> entra como un nodo más, en la fila de SU año (no de cabecilla)
   let owner=null;
   if(grupo && _normG(grupo).toLowerCase()!=='familia')
     owner=(window._arr||[]).find(x=>(!x.clase||x.clase==='persona') && (x.nombre||'').trim().toLowerCase()===grupo.trim().toLowerCase());
-  const all = owner ? arr.concat([owner]) : arr.slice();
+  const base = arr.slice();
+  if(!base.length && !owner) return "";
+  if(clase==='mascota'){
+    const byEsp={}, order=[];
+    base.forEach(m=>{ const e=(m.especie&&m.especie.trim())?m.especie.trim():'Otras'; const k=e.toLowerCase();
+      if(!byEsp[k]){ byEsp[k]=[]; order.push({k,label:e}); } byEsp[k].push(m); });
+    if(order.length>1){
+      order.sort((a,b)=> a.k==='otras'?1:(b.k==='otras'?-1:a.label.localeCompare(b.label)));
+      let html='';
+      order.forEach(o=>{ const blk=_subBloque(byEsp[o.k], clase, null);
+        if(blk) html+='<div class="sub-especie-bloque"><div class="sub-especie-tit">'+_espIco(o.label)+' '+escapar(_cap(o.label))+'</div>'+blk+'</div>';
+      });
+      return html;
+    }
+  }
+  return _subBloque(owner?base.concat([owner]):base, clase, owner);
+}
+function _subBloque(all, clase, owner){
   const byId={}; all.forEach(m=>byId[m.id]=m);
   const yr=m=>{ const s=(m.nacimiento||'').slice(0,4); return s?parseInt(s):9999; };
-  const parejasVis=m=>{ const o=[]; if(m.pareja_id&&byId[m.pareja_id]) o.push(byId[m.pareja_id]); return o; };
-  // unidades (pareja junta; se queda en la fila del más antiguo de los dos)
   const used=new Set(), units=[];
   all.slice().sort((a,b)=>yr(a)-yr(b)).forEach(m=>{
     if(used.has(m.id)) return;
-    const par=parejasVis(m).filter(p=>!used.has(p.id));
+    const par=(m.pareja_id&&byId[m.pareja_id]&&!used.has(m.pareja_id))?[byId[m.pareja_id]]:[];
     used.add(m.id); par.forEach(p=>used.add(p.id));
     const members=[m,...par];
-    const _ad=x=>{ const v=parseInt(x.amigo_desde); return isNaN(v)?Infinity:v; };
-    let _prim=members[0],_best=Infinity; members.forEach(x=>{ const a=_ad(x); if(a<_best){_best=a;_prim=x;} });
-    if(_best===Infinity) _prim=members.reduce((p,x)=>yr(x)>=yr(p)?x:p, members[0]);  // sin "amigo desde": el más joven
-    units.push({members, y:yr(_prim),
-      hasParent:members.some(x=>(x.padre_id&&byId[x.padre_id])||(x.madre_id&&byId[x.madre_id]))});
+    units.push({id:m.id, members, y:Math.min.apply(null,members.map(yr)), owner:owner&&members.some(x=>x.id===owner.id)});
   });
-  const roots=units.filter(u=>!u.hasParent).sort((a,b)=>a.y-b.y);
-  // UNA fila por año: más antiguo arriba, mismo año en la misma línea, bajando por antigüedad
-  // Años conocidos -> una fila por año (más antiguo arriba). Sin año puesto -> abanico abajo (filas de 1,2,3)
-  const conAno = roots.filter(u=>u.y!==9999);
-  const sinAno = roots.filter(u=>u.y===9999);
-  const anos=[]; conAno.forEach(u=>{ if(!anos.includes(u.y)) anos.push(u.y); }); anos.sort((a,b)=>a-b);
-  const rows=anos.map(y=>conAno.filter(u=>u.y===y));
-  const rowYear=anos.slice();   // año de cada fila (para la etiqueta a la izquierda); null = "sin año"
-  if(sinAno.length){ const tgt=[1,2,3]; let i=0,ri=0;
-    while(i<sinAno.length){ const T=tgt[Math.min(ri,tgt.length-1)]; const row=[]; let c=0;
-      while(i<sinAno.length && c<T){ row.push(sinAno[i]); c+=sinAno[i].members.length; i++; }
-      rows.push(row); rowYear.push(null); ri++; }
-  }
-  const NW=58, PAIRW=62, COLW=34, GENH=104, DROP=26, DROP_PAIR=34;
-  const pos={}, hearts=[];
-  const anchoUnit=u=>(u.members.length-1)*PAIRW;
-  // niveles: raíz = su año; hijos/cachorros = nivel del padre + 1
-  rows.forEach((fila,ri)=>fila.forEach(u=>u.level=ri));
-  units.forEach(u=>{ if(u.level===undefined) u.level=null; });
-  let ch=true, gg=0;
-  while(ch && gg++<60){ ch=false;
-    units.forEach(u=>{ if(u.level!=null) return; let pLv=null;
-      u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&byId[pid]){ const pu=units.find(z=>z.members.some(mm=>mm.id===pid)); if(pu&&pu.level!=null) pLv=Math.max(pLv==null?-1:pLv,pu.level); } }));
-      if(pLv!=null){ u.level=pLv+1; ch=true; } });
-  }
-  units.forEach(u=>{ if(u.level==null) u.level=rows.length; });
-  // colocar por nivel (arriba->abajo), centrado; raíces por año, hijos cerca de su padre (sin solaparse)
-  const byLevel={}; units.forEach(u=>{ (byLevel[u.level]=byLevel[u.level]||[]).push(u); });
-  Object.keys(byLevel).map(Number).sort((a,b)=>a-b).forEach(L=>{
-    const us=byLevel[L];
-    us.forEach(u=>{ let px=0,c=0; u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&pos[pid]){ px+=pos[pid].x; c++; } })); u._px=c?px/c:null; });
-    const rootU=us.filter(u=>u._px==null).sort((a,b)=>a.y-b.y);
-    const kidU =us.filter(u=>u._px!=null).sort((a,b)=>a._px-b._px);
-    const base=rootU.concat(kidU);
-    // solteros a los lados, parejas al centro (más bonito y simétrico)
-    const sing=base.filter(u=>u.members.length===1), par=base.filter(u=>u.members.length>1);
-    const half=Math.ceil(sing.length/2);
-    const ordered=sing.slice(0,half).concat(par).concat(sing.slice(half));
-    let total=0; ordered.forEach((u,ui)=>{ total+=anchoUnit(u); if(ui<ordered.length-1) total+=COLW+NW; });
-    let cur=-total/2; const y=L*GENH;
-    ordered.forEach(u=>{ const k=u.members.length;
-      const uy = k===2 ? y+DROP_PAIR : y;   // los casados bajan un poco de la línea del año (con su pareja al lado)
-      u.members.forEach((mm,j)=>{ pos[mm.id]={x:cur+j*PAIRW, y:uy}; });
-      if(k===2) hearts.push({x:cur+PAIRW/2, y:uy, s:_simboloRel(u.members[0].tipo_pareja||u.members[1].tipo_pareja||'pareja')});
-      cur += anchoUnit(u)+COLW+NW;
+  const unitOf={}; units.forEach(u=>u.members.forEach(mm=>unitOf[mm.id]=u));
+  units.forEach(u=>{ const tp=u.members.some(x=>(x.padre_id&&unitOf[x.padre_id])||(x.madre_id&&unitOf[x.madre_id])); u.gen=tp?null:0; });
+  let ch=true,guard=0;
+  while(ch&&guard++<80){ ch=false; units.forEach(u=>{ if(u.gen!=null) return; let pg=null;
+    u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ const pu=pid&&unitOf[pid]; if(pu&&pu.gen!=null) pg=Math.max(pg==null?-1:pg,pu.gen); }));
+    if(pg!=null){ u.gen=pg+1; ch=true; } }); }
+  units.forEach(u=>{ if(u.gen==null) u.gen=0; });
+  units.forEach(u=>{ let pu=null; u.members.forEach(x=>[x.padre_id,x.madre_id].forEach(pid=>{ if(pid&&unitOf[pid]) pu=unitOf[pid]; })); u.parent=pu; });
+  units.forEach(u=>u.hijos=units.filter(z=>z.parent===u));
+  const vis=u=> u.gen===0 || (u.parent && subAbierto.has(u.parent.id) && vis(u.parent));
+  const visU=units.filter(vis);
+  if(!visU.length) return "";
+  const years=[]; visU.forEach(u=>{ if(!years.includes(u.y)) years.push(u.y); }); years.sort((a,b)=>a-b);
+  const rowI={}; years.forEach((y,i)=>rowI[y]=i);
+  const gens=[]; visU.forEach(u=>{ if(!gens.includes(u.gen)) gens.push(u.gen); }); gens.sort((a,b)=>a-b);
+  const NW=66, PAIRW=62, GAP=30, ROWH=100, GENSEP=60;
+  const unitW=u=>(u.members.length-1)*PAIRW+NW;
+  const colX={}; let xc=0;
+  gens.forEach(g=>{ colX[g]=xc; let mw=NW;
+    years.forEach(y=>{ const us=visU.filter(u=>u.gen===g&&u.y===y); if(!us.length) return;
+      let w=0; us.forEach((u,i)=>{ w+=unitW(u); if(i<us.length-1) w+=GAP; }); if(w>mw) mw=w; });
+    xc += mw + GENSEP; });
+  const pos={}, hearts=[], toggles=[];
+  gens.forEach(g=> years.forEach(y=>{
+    const us=visU.filter(u=>u.gen===g&&u.y===y); let cur=colX[g];
+    us.forEach(u=>{ const yy=rowI[y]*ROWH;
+      u.members.forEach((mm,j)=>{ pos[mm.id]={x:cur+NW/2+j*PAIRW, y:yy}; });
+      if(u.members.length===2) hearts.push({x:cur+NW/2+PAIRW/2, y:yy, s:_simboloRel(u.members[0].tipo_pareja||u.members[1].tipo_pareja||'pareja')});
+      if(u.hijos.length) toggles.push({x:cur+unitW(u)+12, y:yy, id:u.id, abierto:subAbierto.has(u.id)});
+      cur += unitW(u)+GAP;
     });
-  });
-  // líneas
+  }));
   const links=[];
-  const cxDe=fila=>{ const xs=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) xs.push(pos[mm.id].x); })); return xs.length?(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2:0; };
-  const bajaA=(trunkX, yTopEdge, fila, yLine)=>{
-    const mem=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) mem.push(pos[mm.id]); }));
-    if(!mem.length) return;
-    const my=(yTopEdge+yLine)/2;
-    links.push([trunkX, yTopEdge, trunkX, my]);
-    const xs=mem.map(p=>p.x), lo=Math.min.apply(null,xs.concat([trunkX])), hi=Math.max.apply(null,xs.concat([trunkX]));
-    links.push([lo, my, hi, my]);
-    mem.forEach(p=>links.push([p.x, my, p.x, p.y-DROP]));
-  };
-  for(let i=0;i<rows.length-1;i++){
-    const memI=[]; rows[i].forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) memI.push(pos[mm.id]); }));
-    if(!memI.length) continue;
-    const yTopEdge=Math.max.apply(null,memI.map(p=>p.y))+DROP;
-    bajaA(cxDe(rows[i]), yTopEdge, rows[i+1], (i+1)*GENH);
-  }
-  // padres -> hijos/cachorros
-  all.forEach(m=>{ if(!pos[m.id]) return; [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&pos[pid]) links.push([pos[pid].x, pos[pid].y+DROP, pos[m.id].x, pos[m.id].y-DROP]); }); });
-  // nodos
-  const nodes=[];
-  all.forEach(m=>{ if(pos[m.id]) nodes.push({id:m.id, x:pos[m.id].x, y:pos[m.id].y, owner:owner&&m.id===owner.id}); });
-  if(!nodes.length) return "";
-  // etiquetas de año a la izquierda de cada línea (como el croquis: '65, '73…)
-  const yearLabels=[];
-  rows.forEach((fila,i)=>{ if(rowYear[i]==null) return;
-    const xs=[]; fila.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) xs.push(pos[mm.id].x); }));
-    if(!xs.length) return;
-    yearLabels.push({x:Math.min.apply(null,xs)-58, y:i*GENH, txt:"'"+String(rowYear[i]).slice(-2)});
+  visU.forEach(u=>{ const pu=u.parent; if(!pu||!subAbierto.has(pu.id)) return;
+    const pm=pu.members.map(x=>pos[x.id]).filter(Boolean), cm=u.members.map(x=>pos[x.id]).filter(Boolean);
+    if(!pm.length||!cm.length) return;
+    const px=Math.max.apply(null,pm.map(p=>p.x))+NW*0.42, py=pm[0].y;
+    const cx=Math.min.apply(null,cm.map(p=>p.x))-NW*0.42, cy=cm[0].y;
+    const midX=px+(cx-px)*0.5;
+    links.push([px,py,midX,py]); links.push([midX,py,midX,cy]); links.push([midX,cy,cx,cy]);
   });
-  const allX=nodes.map(n=>n.x).concat(hearts.map(h=>h.x)).concat(yearLabels.map(l=>l.x)), allY=nodes.map(n=>n.y).concat(hearts.map(h=>h.y)).concat(yearLabels.map(l=>l.y));
-  const PADX=52, PADY=56;
+  const yearLabels=[]; years.forEach(y=>{ if(y===9999) return; yearLabels.push({x:-46, y:rowI[y]*ROWH, txt:"'"+String(y).slice(-2)}); });
+  const nodes=[]; visU.forEach(u=>u.members.forEach(mm=>{ if(pos[mm.id]) nodes.push({id:mm.id, x:pos[mm.id].x, y:pos[mm.id].y, owner:u.owner&&owner&&mm.id===owner.id}); }));
+  if(!nodes.length) return "";
+  const allX=nodes.map(n=>n.x).concat(hearts.map(h=>h.x),toggles.map(t=>t.x),yearLabels.map(l=>l.x));
+  const allY=nodes.map(n=>n.y).concat(hearts.map(h=>h.y),toggles.map(t=>t.y),yearLabels.map(l=>l.y));
+  const PADX=54, PADY=52;
   const minX=Math.min.apply(null,allX), maxX=Math.max.apply(null,allX), minY=Math.min.apply(null,allY), maxY=Math.max.apply(null,allY);
   const W=(maxX-minX)+PADX*2, H=(maxY-minY)+PADY*2, ox=PADX-minX, oy=PADY-minY;
   let svg=''; links.forEach(l=>svg+='<path d="M'+(l[0]+ox).toFixed(1)+' '+(l[1]+oy).toFixed(1)+' L'+(l[2]+ox).toFixed(1)+' '+(l[3]+oy).toFixed(1)+'"/>');
   let nod='';
-  nodes.forEach(n=>{ const m = byId[n.id]; if(!m) return;
-    const esYo = n.owner && usuario && owner.creado_por===usuario.id;
-    const nm = escapar((m.nombre||'').split(' ')[0]) + (esYo?' <span style="color:#8a6d3b">(tú)</span>':'');
+  nodes.forEach(n=>{ const m=byId[n.id]; if(!m) return;
+    const esYo=n.owner && usuario && owner && owner.creado_por===usuario.id;
+    const nm=escapar((m.nombre||'').split(' ')[0])+(esYo?' <span style="color:#8a6d3b">(tú)</span>':'');
     nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
       +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
       +'<div class="pn">'+nm+'</div></div>';
   });
   hearts.forEach(h=>nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>');
   yearLabels.forEach(l=>nod+='<div class="ped-year" style="left:'+(l.x+ox)+'px;top:'+(l.y+oy)+'px">'+l.txt+'</div>');
+  toggles.forEach(t=>nod+='<div class="ped-tog'+(t.abierto?' on':'')+'" style="left:'+(t.x+ox)+'px;top:'+(t.y+oy)+'px" onclick="subTog(event,\''+t.id+'\')" title="'+(t.abierto?'Plegar':'Desplegar la familia')+'">'+(t.abierto?'−':'+')+'</div>');
   return '<div class="ped" style="width:'+W+'px;height:'+H+'px">'
     +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><g stroke="#6b4f2a" stroke-width="2" fill="none" opacity=".8">'+svg+'</g></svg>'
     +nod+'</div>';
