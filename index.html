@@ -290,6 +290,9 @@
     filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
   .cartel-sub.izq{left:2%}
   .cartel-sub.der{right:2%}
+  /* carteles dorados en cabecera de pantallas (amigos/mascotas) y en el genealógico */
+  .cartel-top{display:block;margin:8px auto 2px;width:60%;max-width:250px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+  .cartel-esq{display:block;margin:4px auto 2px;width:54%;max-width:240px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
   /* rótulo dorado (marco elaborado + letras oro), abajo en el tronco */
   .tree-label{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);width:58%;pointer-events:none}
   .tree-label .marco{width:100%;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
@@ -921,7 +924,7 @@
       <button class="esq-back" onclick="cerrarEsquema()">‹ Volver</button>
       <button class="esq-add" onclick="toggleRamaForm()">➕ Añadir familiar</button>
       <div class="esq-scroll">
-        <div class="top"><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
+        <div class="top"><img id="esq-cartel" class="cartel-esq" style="display:none" alt=""><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
         <div id="rama-form" class="rama-form hide">
           <h3 id="rf-titulo">Añadir un familiar a la rama</h3>
           <label>Nombre</label>
@@ -1359,9 +1362,7 @@ const _normG=g=>(g&&String(g).trim())?String(g).trim():'Familia';
 function abrirSub(clase){
   subClase=clase; subGrupo=null; subAbierto=new Set();
   const esAmigo=clase==='amigo';
-  document.getElementById("sub-cap").innerHTML=esAmigo
-    ?"🧑‍🤝‍🧑 <b>Nuestros amigos</b>"
-    :"🐾 <b>Nuestras mascotas</b>";
+  document.getElementById("sub-cap").innerHTML='<img class="cartel-top" src="diseno/carteles/'+(esAmigo?'amigos':'mascotas')+'.png" alt="'+(esAmigo?'Amigos':'Mascotas')+'">';
   document.getElementById("sub-addlbl").textContent=esAmigo?"Añadir un amigo/a":"Añadir una mascota";
   document.getElementById("sub-grupolbl").textContent=esAmigo?"¿De quién es este amigo/a?":"¿De quién es esta mascota?";
   const sab=document.getElementById("sub-addbtn"); if(sab){ sab.textContent="➕ "+(esAmigo?"Añadir un amigo/a":"Añadir una mascota"); }
@@ -2318,14 +2319,14 @@ function abrirEsquema(rootId, clase, grupo){
   // mostramos el árbol completo (todos los antepasados de todos los lados); esqFocusId solo fija el "de quién" del formulario
   const esAmigo=esqClase==='amigo';
   const deTxt = esqGrupo ? (_normG(esqGrupo).toLowerCase()==='familia' ? ' de la familia' : ' de '+esqGrupo) : '';
-  let titulo, rama, oroFam=false;
-  if(esqClase==='mascota'){ titulo="🐾 Mascotas"+deTxt; rama="La familia peluda"; }
-  else if(esAmigo){ titulo="🧑‍🤝‍🧑 Amigos"+deTxt; rama="Árbol de la amistad"; }
-  else { titulo=(arbolActual&&arbolActual.nombre)||"Nuestra familia"; rama="Familia"; oroFam=true; }
-  const tEl=document.getElementById("esq-titulo"); tEl.textContent=titulo;
-  tEl.classList.toggle("esq-oro",oroFam); tEl.classList.toggle("oro-txt",oroFam);
-  const ramaEl=document.querySelector("#v-esquema .rama"); if(ramaEl){ ramaEl.textContent=rama;
-    ramaEl.classList.toggle("rama-oro",oroFam); ramaEl.classList.toggle("oro-txt",oroFam); }
+  const cartel = esqClase==='mascota' ? 'mascotas' : (esAmigo ? 'amigos' : 'familia');
+  let titulo;
+  if(esqClase==='mascota' || esAmigo) titulo = deTxt ? deTxt.trim() : '';
+  else titulo = (arbolActual&&arbolActual.nombre)||'';
+  const cEl=document.getElementById("esq-cartel"); if(cEl){ cEl.src='diseno/carteles/'+cartel+'.png'; cEl.style.display='block'; }
+  const tEl=document.getElementById("esq-titulo"); tEl.textContent=titulo; tEl.style.display=titulo?'block':'none';
+  tEl.classList.remove("esq-oro","oro-txt");
+  const ramaEl=document.querySelector("#v-esquema .rama"); if(ramaEl){ ramaEl.style.display='none'; ramaEl.classList.remove("rama-oro","oro-txt"); }
   if(esqClase==='mascota'||esqClase==='amigo'){
     // pestañas de grupo para no mezclar (amigos de Luis / de la familia…)
     const todos=(window._arr||[]).filter(m=>m.clase===esqClase);
