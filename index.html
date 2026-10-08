@@ -475,6 +475,12 @@
         <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
         <button class="btn" onclick="entrar()">Entrar</button>
         <button class="btn sec" onclick="crearCuenta()">Crear cuenta nueva</button>
+        <button class="link" style="margin-top:6px" onclick="recuperarPass()">¿Olvidaste tu contraseña?</button>
+        <div id="reset-box" class="hide" style="margin-top:10px;border-top:1px solid var(--linea);padding-top:10px">
+          <label>Nueva contraseña</label>
+          <input id="newpass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+          <button class="btn" style="margin-top:8px" onclick="guardarNuevaPass()">Guardar nueva contraseña</button>
+        </div>
         <div id="auth-msg" class="msg"></div>
       </div>
     </div>
@@ -1058,10 +1064,35 @@ function fmtFecha(s){ s=(s||"").trim(); const m=s.match(/^(\d{4})-(\d{2})-(\d{2}
 function inicial(n){ return (n||"?").trim().charAt(0).toUpperCase(); }
 
 /* ====== ARRANQUE ====== */
+let _recoveryMode=false;
+sb.auth.onAuthStateChange((event)=>{ if(event==="PASSWORD_RECOVERY") _mostrarReset(); });
+function _mostrarReset(){ _recoveryMode=true; ver("v-auth");
+  const r=document.getElementById("reset-box"); if(r) r.classList.remove("hide");
+  msg("auth-msg","Escribe tu nueva contraseña y pulsa «Guardar».","ok");
+}
+async function recuperarPass(){
+  const email=(document.getElementById("email").value||"").trim();
+  if(!email){ msg("auth-msg","Escribe tu correo arriba y vuelve a pulsar «¿Olvidaste tu contraseña?»."); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin+location.pathname });
+  if(error){ msg("auth-msg","No se pudo enviar: "+error.message); return; }
+  msg("auth-msg","Te hemos enviado un correo para cambiar la contraseña. Ábrelo desde este mismo móvil y pulsa el enlace.","ok");
+}
+async function guardarNuevaPass(){
+  const np=document.getElementById("newpass").value||"";
+  if(np.length<6){ msg("auth-msg","La contraseña debe tener 6 o más caracteres."); return; }
+  const { error } = await sb.auth.updateUser({ password: np });
+  if(error){ msg("auth-msg","No se pudo cambiar: "+error.message); return; }
+  document.getElementById("reset-box").classList.add("hide"); _recoveryMode=false;
+  msg("auth-msg","Contraseña cambiada ✔. Entrando…","ok");
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session){ usuario=session.user; await entrarAlArbol(); }
+}
 async function arranque(){
   ver("v-carga"); fondo("bgV");
   try{ const c=new URLSearchParams(location.search).get("invite"); if(c) _invitePend=c.toUpperCase().replace(/[^A-Z0-9]/g,""); }catch(e){}
+  if(/type=recovery/.test(location.hash||"") || _recoveryMode){ _mostrarReset(); return; }
   const { data:{ session } } = await sb.auth.getSession();
+  if(_recoveryMode) return;
   if(session){ usuario=session.user; await entrarAlArbol(); }
   else { ver("v-auth"); if(_invitePend) msg("auth-msg","Tienes una invitación 🌳. Entra o crea tu cuenta y te uniremos al árbol.","ok"); }
 }
