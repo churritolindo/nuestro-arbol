@@ -515,6 +515,10 @@
     <div id="v-arbol" class="hide">
       <div id="anivs-bar" class="anivs-bar hide"></div>
       <div id="avisos-bar" class="avisos-bar hide" onclick="abrirBuzon()"></div>
+      <div id="arbol-sel-wrap" class="hide" style="margin:2px 0 8px;text-align:center">
+        <label style="color:#fff;font-size:12px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin-right:6px">🌳 Árbol:</label>
+        <select id="arbol-sel" onchange="cambiarArbol(this.value)" style="max-width:72%;padding:4px 8px;border-radius:10px"></select>
+      </div>
       <div id="arbol-visual" onclick="toggleEspecies()" style="cursor:pointer"></div>
       <div id="especies-cap" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
@@ -537,6 +541,14 @@
           <button class="btn sec" style="margin-top:8px" onclick="copiarInv()">📋 Copiar código</button>
         </div>
         <div id="inv-msg" class="msg"></div>
+      </div>
+      <button class="btn sec" style="margin:0 0 10px" onclick="toggleJoin()">🔑 Entrar con un código</button>
+      <div id="join-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">🔑 Entrar con un código</h2>
+        <p class="sub">¿Te han invitado a otro árbol? Pega aquí el código que te pasaron.</p>
+        <input id="join-codigo" placeholder="Ej. 7K3MQ9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;font-size:20px">
+        <button class="btn" style="margin-top:10px" onclick="unirseConCodigo()">Unirme a ese árbol</button>
+        <div id="join-msg" class="msg"></div>
       </div>
       <div id="lista"></div>
       <div class="vidrio" style="margin-top:16px">
@@ -1024,6 +1036,7 @@ const BUCKET = "media";
 const LIMITE_MB = 45;
 
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
+let _arboles = [], _invitePend = null;   // árboles a los que tengo acceso + código de invitación pendiente
 let especieElegida = "olivo", mascotaOn = false;
 
 /* ====== UTILIDADES ====== */
@@ -1047,9 +1060,10 @@ function inicial(n){ return (n||"?").trim().charAt(0).toUpperCase(); }
 /* ====== ARRANQUE ====== */
 async function arranque(){
   ver("v-carga"); fondo("bgV");
+  try{ const c=new URLSearchParams(location.search).get("invite"); if(c) _invitePend=c.toUpperCase().replace(/[^A-Z0-9]/g,""); }catch(e){}
   const { data:{ session } } = await sb.auth.getSession();
   if(session){ usuario=session.user; await entrarAlArbol(); }
-  else ver("v-auth");
+  else { ver("v-auth"); if(_invitePend) msg("auth-msg","Tienes una invitación 🌳. Entra o crea tu cuenta y te uniremos al árbol.","ok"); }
 }
 
 /* ====== AUTH ====== */
@@ -1077,11 +1091,37 @@ async function salir(){ await sb.auth.signOut(); arbolActual=null; miembroActual
   document.getElementById("subhead").textContent="Donde la familia no se pierde"; fondo("bgV"); ver("v-auth"); }
 
 /* ====== ÁRBOL ====== */
-async function entrarAlArbol(){
+async function entrarAlArbol(preferId){
   ver("v-carga");
-  const { data,error }=await sb.from("arboles").select("*").order("creado").limit(1);
+  if(_invitePend){ const c=_invitePend; _invitePend=null; await unirseConCodigo(c); return; }
+  const { data,error }=await sb.from("arboles").select("*").order("creado");
   if(error){ ver("v-auth"); msg("auth-msg","Error al leer tus datos: "+error.message); return; }
-  if(data&&data.length){ arbolActual=data[0]; mostrarArbol(); } else { montarCrear(); ver("v-crear"); }
+  if(!data || !data.length){ montarCrear(); ver("v-crear"); return; }
+  _arboles=data;
+  let sel = preferId; if(!sel){ try{ sel=localStorage.getItem("arbolSel"); }catch(e){} }
+  arbolActual = (sel && data.find(a=>a.id===sel)) || data[0];
+  try{ localStorage.setItem("arbolSel", arbolActual.id); }catch(e){}
+  mostrarArbol();
+}
+function cambiarArbol(id){ const a=_arboles.find(x=>x.id===id); if(!a) return; arbolActual=a; try{ localStorage.setItem("arbolSel",id); }catch(e){} mostrarArbol(); }
+function toggleJoin(){ const b=document.getElementById("join-box"); if(b){ b.classList.toggle("hide"); limpiar("join-msg"); } }
+// Unirse a un árbol con un código (funciona del todo cuando esté el permiso del Paso B en Supabase)
+async function unirseConCodigo(codigoArg){
+  let codigo = codigoArg; if(!codigo){ const el=document.getElementById("join-codigo"); codigo=el?el.value:""; }
+  codigo=(codigo||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const box = codigoArg ? "auth-msg" : "join-msg";
+  if(!codigo){ msg(box,"Escribe el código."); return; }
+  if(!usuario){ _invitePend=codigo; ver("v-auth"); msg("auth-msg","Entra o crea tu cuenta y te uniremos al árbol.","ok"); return; }
+  ver("v-carga");
+  const { data, error } = await sb.from("invitaciones").select("arbol_id,rol").eq("codigo",codigo).limit(1);
+  if(error || !data || !data[0]){
+    if(codigoArg){ await entrarAlArbol(); } else { ver("v-arbol"); }
+    msg(box,"Ese código no vale o aún no está activo. Pídele a quien te invitó que lo compruebe."); return;
+  }
+  const inv=data[0];
+  try{ await sb.from("arbol_miembros").insert({arbol_id:inv.arbol_id, user_id:usuario.id, rol:inv.rol||"visitante"}); }catch(e){}
+  try{ localStorage.setItem("arbolSel", inv.arbol_id); }catch(e){}
+  await entrarAlArbol(inv.arbol_id);
 }
 function montarCrear(){
   especieElegida="olivo"; mascotaOn=false;
@@ -1104,6 +1144,13 @@ async function mostrarArbol(){
   document.getElementById("arbol-tipo").textContent=arbolActual.tipo;
   document.getElementById("subhead").textContent =
     arbolActual.tipo==="amigos" ? "Los amigos también son familia" : "Donde la familia no se pierde";
+  const asw=document.getElementById("arbol-sel-wrap"), asel=document.getElementById("arbol-sel");
+  if(asw && asel){
+    if(_arboles && _arboles.length>1){
+      asel.innerHTML=_arboles.map(a=>'<option value="'+a.id+'"'+(a.id===arbolActual.id?" selected":"")+'>'+escapar(a.nombre||"Árbol")+'</option>').join("");
+      asw.classList.remove("hide");
+    } else asw.classList.add("hide");
+  }
   pintarArbol();
   await cargarMiembros();
 }
