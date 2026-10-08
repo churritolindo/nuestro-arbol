@@ -353,6 +353,24 @@
   .faq summary:before{content:"＋";color:var(--oro);font-weight:700;margin-right:8px}
   .faq details[open] summary:before{content:"–"}
   .faq p{font-size:13.5px;color:var(--texto);line-height:1.55;margin:8px 0 2px;padding-left:20px}
+  /* ===== guía ilustrada de ayuda ===== */
+  .guia .gcard{margin-bottom:12px}
+  .guia h3{font-family:Georgia,serif;color:var(--verde);font-size:17px;margin:0;display:flex;align-items:center;gap:9px;line-height:1.2}
+  .guia h3 .ge{font-size:24px;flex:none}
+  .guia .gsub{font-size:12.5px;color:var(--tinta);margin:4px 0 2px;font-style:italic;opacity:.9}
+  .guia p{font-size:13.8px;color:var(--texto);line-height:1.55;margin:8px 0}
+  .guia ol{margin:8px 0;padding-left:22px}
+  .guia ol li{font-size:13.8px;color:var(--texto);line-height:1.5;margin:5px 0}
+  .guia ol li b{color:var(--verde)}
+  .guia .btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .guia .gbtn{display:inline-flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,253,247,.62);
+    border-radius:13px;padding:9px 12px;min-width:60px;box-shadow:0 2px 8px rgba(90,60,20,.13)}
+  .guia .gbtn .gic{font-size:23px;line-height:1}
+  .guia .gbtn b{font-size:10px;color:var(--verde);font-family:Georgia,serif;font-weight:700;text-align:center}
+  .guia .eg{background:rgba(214,170,90,.16);border-left:3px solid var(--oro);border-radius:9px;
+    padding:9px 12px;margin:9px 0 2px;font-size:13px;color:var(--texto);line-height:1.5}
+  .guia .eg b{color:var(--verde)}
+  .guia .gintro{font-size:14px;line-height:1.6;color:var(--texto);margin:2px 0 4px}
   /* ===== árbol genealógico (esquema) ===== */
   .esq{position:fixed;inset:0;z-index:60;overflow:auto;background:#c9b389;display:none}
   .esq.show{display:block}
@@ -1015,6 +1033,147 @@
     <!-- AYUDA -->
     <div id="v-ayuda" class="hide">
       <button class="btn sec" style="margin-top:4px" onclick="cerrarAyuda()">‹ Volver</button>
+
+      <div class="setiq">Guía de uso</div>
+      <div class="guia">
+
+        <div class="vidrio gcard">
+          <p class="gintro">🌳 <b>Nuestro Árbol</b> guarda a tu familia para siempre: sus fotos, sus vídeos, su voz y sus historias. Aquí te explicamos, con dibujitos, para qué sirve cada botón y cómo hacer cada cosa. Sin prisa. 💛</p>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">👥</span> Añadir a las personas</h3>
+          <div class="gsub">Para empezar tu árbol.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">➕</span><b>Añadir<br>familiar</b></span>
+            <span class="gbtn"><span class="gic">🌳</span><b>Añadir<br>al árbol</b></span>
+          </div>
+          <ol>
+            <li>En la pantalla del árbol, baja un poco y pulsa <b>➕ Añadir familiar</b>.</li>
+            <li>Escribe su nombre y, si quieres, las fechas, el parentesco y una foto.</li>
+            <li>Pulsa <b>Añadir al árbol</b> y ya aparece en la lista.</li>
+          </ol>
+          <div class="eg">💡 <b>Ejemplo:</b> quieres meter a tu abuela → <b>➕ Añadir familiar</b>, pones «Carmen», su año de nacimiento, y listo.</div>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">🖼️</span> La ficha de cada persona</h3>
+          <div class="gsub">Toca a cualquier persona de la lista para abrir su ficha. Dentro está todo lo suyo.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">📷</span><b>Su foto</b></span>
+            <span class="gbtn"><span class="gic">✏️</span><b>Editar</b></span>
+            <span class="gbtn"><span class="gic">📜</span><b>Ver su<br>rama</b></span>
+          </div>
+          <ol>
+            <li><b>📷</b> (sobre la corona) le pone su foto de perfil.</li>
+            <li><b>✏️</b> edita sus datos: nombre, fechas, parentesco, religión…</li>
+            <li><b>📜 Ver su rama</b> abre su parte del árbol genealógico.</li>
+          </ol>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">💝</span> Añadir recuerdos</h3>
+          <div class="gsub">Fotos, vídeos, la voz de la persona o un texto.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">📷</span><b>Foto</b></span>
+            <span class="gbtn"><span class="gic">🎬</span><b>Vídeo</b></span>
+            <span class="gbtn"><span class="gic">🎤</span><b>Voz</b></span>
+            <span class="gbtn"><span class="gic">✍️</span><b>Texto</b></span>
+          </div>
+          <ol>
+            <li>Abre la ficha de la persona.</li>
+            <li>Baja hasta <b>«Añadir un recuerdo»</b>.</li>
+            <li>Elige <b>📷 Foto</b>, <b>🎬 Vídeo</b>, <b>🎤 Voz</b> (grabar o dictar) o <b>✍️ Texto</b>.</li>
+            <li>Se guarda solo en la nube. 🔒</li>
+          </ol>
+          <div class="eg">💡 <b>Ejemplo:</b> un audio con la voz de tu padre contando una anécdota → <b>🎤 Voz</b> → «Grabar en audio».</div>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">😇</span> Aureola y alas de ángel</h3>
+          <div class="gsub">Un homenaje para quien ya no está. (Solo aparece si la religión es cristiana.)</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">✏️</span><b>Editar</b></span>
+            <span class="gbtn"><span class="gic">😇</span><b>Aureola</b></span>
+            <span class="gbtn"><span class="gic">👼</span><b>Alas</b></span>
+          </div>
+          <ol>
+            <li>Abre la ficha → <b>✏️ editar</b>.</li>
+            <li>En <b>Religión</b> elige «Cristiana».</li>
+            <li>Marca <b>😇 Ponerle aureola</b> y/o <b>👼 Ponerle alas de ángel</b>. Puedes poner una, la otra o las dos.</li>
+          </ol>
+          <p>👉 Para marcar que alguien ha fallecido, al editar rellena la fecha de <b>«Fallecimiento»</b>: su ficha cambiará sola al fondo del atardecer, como homenaje.</p>
+          <div class="eg">💡 <b>Ejemplo:</b> para un niño que falleció, las alitas le quedan preciosas. 🕊️</div>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">🤍</span> Dejar una ofrenda</h3>
+          <div class="gsub">Un gesto de cariño: una vela, flores, una piedra… con tu mensaje.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">🤍</span><b>Dejar una<br>ofrenda</b></span>
+          </div>
+          <ol>
+            <li>Abre la ficha → baja a <b>«Ofrendas»</b>.</li>
+            <li>Escribe tu nombre y, si quieres, un mensaje.</li>
+            <li>Pulsa <b>🤍 Dejar una ofrenda</b> y elige el detalle (vela, flores…).</li>
+          </ol>
+          <p>🕊️ Las ofrendas son un detalle del momento: se van solas a los 15 días para dejar sitio a otras. Esto también lo pueden hacer los invitados.</p>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">🔒</span> Zona privada: mensajes para el futuro</h3>
+          <div class="gsub">Lo más especial. Aquí dejas cosas que nadie ve todavía. Tú eliges <b>para quién</b> es y <b>cuándo</b> se abrirá.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">🔒</span><b>Zona<br>privada</b></span>
+          </div>
+          <ol>
+            <li>Abre tu ficha → <b>🔒 Zona privada</b> y pon un código secreto (solo tú entras).</li>
+            <li>En <b>«Responsable»</b> escribe quién podrá abrir esto el día de mañana.</li>
+            <li>En <b>«Dejar algo nuevo»</b> elige <b>¿Quién podrá verlo?</b> → una persona, la familia, los amigos o todos.</li>
+            <li>Elige <b>¿Cuándo podrá verlo?</b> → <i>Cuando yo falte</i>, <i>En una fecha concreta</i> (ej. cuando cumplan 18) o <i>Ya mismo</i>.</li>
+            <li>Deja una 📷 foto, 🎬 vídeo, 🎤 audio o ✍️ texto. Queda cerrado hasta ese día.</li>
+          </ol>
+          <div class="eg">💡 <b>Ejemplo:</b> ¿quieres dejar una carta solo para tu hija, para el día que cumpla 18?<br>→ <b>🔒 Zona privada</b> → ¿Quién? <b>tu hija</b> → ¿Cuándo? <b>una fecha concreta</b> (su 18 cumpleaños) → <b>✍️ Texto</b>.<br>Ella la verá ese día, ni un minuto antes.</div>
+          <div class="eg">💡 <b>Otro ejemplo:</b> un vídeo para toda la familia para cuando tú faltes → ¿Quién? <b>toda la familia</b> → ¿Cuándo? <b>cuando yo falte</b>.</div>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">🔗</span> Compartir e invitar</h3>
+          <div class="gsub">Dar acceso a más gente. Dos maneras de entrar y dos tipos de permiso.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">🔗</span><b>Invitar a<br>la familia</b></span>
+            <span class="gbtn"><span class="gic">🔑</span><b>Entrar con<br>un código</b></span>
+          </div>
+          <ol>
+            <li><b>🔗 Invitar a la familia</b> crea un código. Compártelo por WhatsApp o como quieras.</li>
+            <li>Quien lo recibe pulsa <b>🔑 Entrar con un código</b>, lo pega, y entra en <b>tu</b> árbol.</li>
+            <li>En la sección de amigos hay su propio botón de invitar (así solo ven el árbol de amigos).</li>
+          </ol>
+          <p>Hay dos tipos de permiso:</p>
+          <ol>
+            <li>👀 <b>Invitado:</b> puede ver el árbol, leer las historias y dejar flores y mensajes. No cuelga fotos.</li>
+            <li>✍️ <b>Colaborador:</b> puede añadir personas, fotos y vídeos, igual que tú.</li>
+          </ol>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">🌳</span> El árbol genealógico</h3>
+          <div class="gsub">El dibujo del árbol, con sus coronas.</div>
+          <div class="btns">
+            <span class="gbtn"><span class="gic">📜</span><b>Ver árbol<br>genealógico</b></span>
+            <span class="gbtn"><span class="gic">➕</span><b>Abrir<br>rama</b></span>
+            <span class="gbtn"><span class="gic">👁️</span><b>Ver<br>ambas</b></span>
+          </div>
+          <ol>
+            <li>Pulsa <b>📜 Ver árbol genealógico</b>.</li>
+            <li>Con <b>➕</b> y <b>➖</b> abres y cierras las ramas (tíos, primos…).</li>
+            <li>Arriba eliges ver solo la <b>rama del padre</b>, solo la de la <b>madre</b>, o <b>👁️ Ver ambas</b>.</li>
+            <li>Toca una corona para abrir la ficha de esa persona.</li>
+          </ol>
+        </div>
+
+      </div>
+
       <div class="setiq">¿Necesitas ayuda?</div>
       <div class="vidrio faq">
         <details><summary>¿Cómo subo una foto, vídeo, audio o texto?</summary>
