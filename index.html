@@ -70,6 +70,12 @@
   .cargando{text-align:center;color:var(--suave);padding:30px 0;font-size:14px}
   .vacio{text-align:center;color:var(--suave);font-size:14px;padding:22px 10px}
   .hide{display:none!important}
+  /* Interfaz según el rol en el árbol que estás viendo */
+  body:not(.rol-dueno) .solo-dueno{display:none!important}
+  body.rol-visit .solo-editar{display:none!important}
+  .rol-banner{display:none;text-align:center;margin:0 0 10px;padding:8px 12px;border-radius:12px;font-size:13px;font-weight:700;
+    color:#fff;background:linear-gradient(160deg,#4a7a5e,#2f5340);box-shadow:0 0 0 1.5px var(--oroC),0 2px 6px rgba(0,0,0,.25)}
+  body.rol-visit .rol-banner, body.rol-colab .rol-banner{display:block}
   /* etiqueta seccion */
   .setiq{text-align:center;font-size:11.5px;letter-spacing:2px;color:#fff;text-transform:uppercase;font-weight:700;
     margin:8px 0 12px;display:flex;align-items:center;justify-content:center;gap:11px;text-shadow:0 1px 5px rgba(0,0,0,.5)}
@@ -525,14 +531,15 @@
         <label style="color:#fff;font-size:12px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin-right:6px">🌳 Árbol:</label>
         <select id="arbol-sel" onchange="cambiarArbol(this.value)" style="max-width:72%;padding:4px 8px;border-radius:10px"></select>
       </div>
+      <div id="rol-banner" class="rol-banner"></div>
       <div id="arbol-visual" onclick="toggleEspecies()" style="cursor:pointer"></div>
-      <div id="especies-cap" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
+      <div id="especies-cap" class="solo-dueno" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirRecibidos()">📁 Mensajes guardados</button>
-      <button class="btn sec" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
-      <div id="invitar-box" class="hide vidrio" style="margin:0 0 12px">
+      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
+      <div id="invitar-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
         <h2 style="font-size:17px">🔗 Invitar por WhatsApp</h2>
         <p class="sub">Comparte un código para que tu familia o amigos entren a tu árbol. <b>Nota:</b> que el invitado pueda VERLO se activará en el siguiente paso (estamos montándolo).</p>
         <label>¿Qué podrá hacer quien entre?</label>
@@ -557,7 +564,7 @@
         <div id="join-msg" class="msg"></div>
       </div>
       <div id="lista"></div>
-      <div class="vidrio" style="margin-top:16px">
+      <div class="vidrio solo-editar" style="margin-top:16px">
         <button class="btn sec" style="margin:0" onclick="togAdd('add-form',this,'Añadir familiar')">➕ Añadir familiar</button>
         <div id="add-form" class="hide" style="margin-top:12px">
         <label>Nombre</label>
@@ -594,12 +601,12 @@
     <!-- FICHA -->
     <div id="v-ficha" class="hide">
       <div class="vidrio perfil">
-        <button class="edit-badge" onclick="abrirEditar()">✏️</button>
-        <button class="save-badge ficha-sv" id="ficha-save" onclick="guardarFicha()" title="Guardar">💾</button>
-        <button class="del-badge ficha-del" onclick="borrarMiembro()" title="Borrar">🗑️</button>
+        <button class="edit-badge solo-editar" onclick="abrirEditar()">✏️</button>
+        <button class="save-badge ficha-sv solo-editar" id="ficha-save" onclick="guardarFicha()" title="Guardar">💾</button>
+        <button class="del-badge ficha-del solo-editar" onclick="borrarMiembro()" title="Borrar">🗑️</button>
         <div class="olivo izq"><img src="olivo.png"></div>
         <div class="olivo der"><img src="olivo.png"></div>
-        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><img class="alas-ov" id="f-alas" src="diseno/carteles/alas.png" alt="" style="display:none"><img class="aureola-ov" id="f-aureola" src="diseno/carteles/aureola.png" alt="" style="display:none"><div class="foto" id="f-av">?</div><button class="cam-badge" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
+        <div class="lauro" onclick="pedirFotoPerfil()" style="cursor:pointer"><img class="lau" src="corona.png"><img class="alas-ov" id="f-alas" src="diseno/carteles/alas.png" alt="" style="display:none"><img class="aureola-ov" id="f-aureola" src="diseno/carteles/aureola.png" alt="" style="display:none"><div class="foto" id="f-av">?</div><button class="cam-badge solo-editar" onclick="event.stopPropagation();pedirFotoPerfil()">📷</button></div>
         <input type="file" id="foto-input" accept="image/*" class="hide" onchange="fotoPerfilElegida()">
         <div class="nom serif" id="f-nom">Nombre</div>
         <div class="mote serif" id="f-mote" style="display:none"></div>
@@ -607,14 +614,14 @@
         <div class="rel" id="f-rel">relación</div>
         <div class="fechas" id="f-fechas" style="display:none"></div>
         <button class="btn sec" id="f-rama-btn" style="margin-top:10px" onclick="verSuRama()">📜 Ver su rama</button>
-        <button class="btn sec" id="f-priv-btn" style="margin-top:8px" onclick="abrirPrivada()">🔒 Zona privada</button>
+        <button class="btn sec solo-dueno" id="f-priv-btn" style="margin-top:8px" onclick="abrirPrivada()">🔒 Zona privada</button>
       </div>
 
       <div class="vidrio">
         <h2>Su historia</h2>
         <p id="f-historia" class="historia-txt">—</p>
         <div id="f-nicho" class="fechas" style="display:none;margin-top:6px"></div>
-        <button class="btn sec" onclick="abrirHistoria()">✍️ Editar su historia</button>
+        <button class="btn sec solo-editar" onclick="abrirHistoria()">✍️ Editar su historia</button>
       </div>
 
       <!-- OFRENDAS / GESTOS -->
@@ -629,7 +636,7 @@
         <div id="ofr-msg" class="msg"></div>
       </div>
 
-      <div class="vidrio">
+      <div class="vidrio solo-editar">
         <h2>Añadir un recuerdo</h2>
         <p class="sub">Foto, vídeo, audio o un texto. Se guarda en la nube.</p>
         <div class="subir-fila">
@@ -1043,6 +1050,7 @@ const LIMITE_MB = 45;
 
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
 let _arboles = [], _invitePend = null;   // árboles a los que tengo acceso + código de invitación pendiente
+let miRol = 'dueno';                       // mi rol en el árbol actual: dueno | colaborador | visitante
 let especieElegida = "olivo", mascotaOn = false;
 
 /* ====== UTILIDADES ====== */
@@ -1182,8 +1190,30 @@ async function mostrarArbol(){
       asw.classList.remove("hide");
     } else asw.classList.add("hide");
   }
+  await _calcularRol();
   pintarArbol();
   await cargarMiembros();
+}
+// Calcula mi rol en el árbol actual y adapta la interfaz (oculta botones que no me tocan)
+async function _calcularRol(){
+  miRol='visitante';
+  try{
+    if(arbolActual && usuario && arbolActual.dueno===usuario.id){ miRol='dueno'; }
+    else if(arbolActual && usuario){
+      const { data }=await sb.from("arbol_miembros").select("rol").eq("arbol_id",arbolActual.id).eq("user_id",usuario.id).maybeSingle();
+      miRol=(data&&data.rol)?data.rol:'visitante';
+    }
+  }catch(e){ miRol='dueno'; }   // si algo falla, no bloqueamos al dueño
+  const cls = miRol==='dueno' ? 'rol-dueno' : (miRol==='colaborador' ? 'rol-colab' : 'rol-visit');
+  document.body.classList.remove('rol-dueno','rol-colab','rol-visit');
+  document.body.classList.add(cls);
+  const b=document.getElementById("rol-banner");
+  if(b){
+    const nom=escapar(arbolActual && arbolActual.nombre ? arbolActual.nombre : "este árbol");
+    if(miRol==='dueno'){ b.style.display="none"; b.innerHTML=""; }
+    else if(miRol==='colaborador'){ b.style.display="block"; b.innerHTML='✍️ Colaboras en «'+nom+'». Puedes añadir fichas, fotos y vídeos.'; }
+    else { b.style.display="block"; b.innerHTML='👀 Estás viendo «'+nom+'» como invitado. Puedes dejar flores y mensajes. 🌸'; }
+  }
 }
 async function cargarMiembros(){
   const lista=document.getElementById("lista");
