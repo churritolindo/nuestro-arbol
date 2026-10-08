@@ -1247,8 +1247,20 @@ async function recuperarPass(){
 async function guardarNuevaPass(){
   const np=document.getElementById("newpass").value||"";
   if(np.length<6){ msg("auth-msg","La contraseña debe tener 6 o más caracteres."); return; }
+  // Debe existir una sesión de recuperación (creada al abrir el enlace del correo)
+  const { data:{ session:sesPrev } } = await sb.auth.getSession();
+  if(!sesPrev){
+    msg("auth-msg","El enlace ha caducado o se abrió en otro sitio. Vuelve a pulsar «¿Olvidaste tu contraseña?», abre el correo NUEVO en este mismo móvil y hazlo en los primeros minutos.");
+    return;
+  }
   const { error } = await sb.auth.updateUser({ password: np });
-  if(error){ msg("auth-msg","No se pudo cambiar: "+error.message); return; }
+  if(error){
+    let m=error.message||"";
+    if(/different from the old/i.test(m)) m="La nueva contraseña debe ser distinta a la anterior.";
+    else if(/session|missing|expired|invalid/i.test(m)) m="El enlace ha caducado o ya se usó. Pide uno nuevo.";
+    else if(/weak|password/i.test(m)) m="Prueba una contraseña un poco más larga (6 o más).";
+    msg("auth-msg","No se pudo cambiar: "+m); return;
+  }
   document.getElementById("reset-box").classList.add("hide"); _recoveryMode=false;
   msg("auth-msg","Contraseña cambiada ✔. Entrando…","ok");
   const { data:{ session } } = await sb.auth.getSession();
@@ -1257,7 +1269,27 @@ async function guardarNuevaPass(){
 async function arranque(){
   ver("v-carga"); fondo("bgV");
   try{ const c=new URLSearchParams(location.search).get("invite"); if(c) _invitePend=c.toUpperCase().replace(/[^A-Z0-9]/g,""); }catch(e){}
-  if(/type=recovery/.test(location.hash||"") || _recoveryMode){ _mostrarReset(); return; }
+  // ¿Volvemos de un enlace de recuperación de contraseña?
+  const _h=location.hash||"", _q=location.search||"";
+  // a) el enlace venía con error (caducado o ya usado)
+  if(/error=|error_code=/.test(_h) || /error=|error_code=/.test(_q)){
+    ver("v-auth");
+    msg("auth-msg","El enlace de recuperación ha caducado o ya se usó. Pulsa «¿Olvidaste tu contraseña?» para pedir uno nuevo y ábrelo enseguida.");
+    try{ history.replaceState(null,"",location.pathname); }catch(e){}
+    return;
+  }
+  // b) enlace nuevo estilo PKCE (?code=...): hay que canjearlo por una sesión
+  let _code=null; try{ _code=new URLSearchParams(_q).get("code"); }catch(e){}
+  if(_code){
+    try{
+      const { error } = await sb.auth.exchangeCodeForSession(_code);
+      try{ history.replaceState(null,"",location.pathname); }catch(e){}
+      if(error){ ver("v-auth"); msg("auth-msg","El enlace ha caducado o ya se usó. Pide uno nuevo y ábrelo enseguida."); return; }
+      _mostrarReset(); return;
+    }catch(e){ ver("v-auth"); msg("auth-msg","El enlace ha caducado o ya se usó. Pide uno nuevo y ábrelo enseguida."); return; }
+  }
+  // c) enlace clásico (#access_token...&type=recovery)
+  if(/type=recovery/.test(_h) || _recoveryMode){ _mostrarReset(); return; }
   const { data:{ session } } = await sb.auth.getSession();
   if(_recoveryMode) return;
   if(session){ usuario=session.user; await entrarAlArbol(); }
