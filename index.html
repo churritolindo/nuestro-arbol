@@ -330,6 +330,8 @@
     border-radius:8px}
   .rec .marco-f{padding:4px 4px 0}
   .rec .tit{font-size:11.5px;color:var(--suave);padding:5px 9px;font-style:italic}
+  .rec-autor{font-size:10.5px;color:var(--suave);opacity:.9;padding:0 9px 6px;text-align:right;font-style:italic}
+  .rec.texto .rec-autor{text-align:right;padding:6px 0 0}
   .rec.texto{grid-column:span 2;padding:14px 16px}
   .rec.texto .cuerpo{font-size:14.5px;color:var(--texto);white-space:pre-wrap;line-height:1.5;font-family:Georgia,serif;text-align:center}
   .rec.audio{grid-column:span 2;padding:12px 14px}
@@ -657,6 +659,12 @@
       <div class="vidrio solo-editar">
         <h2>Añadir un recuerdo</h2>
         <p class="sub">Foto, vídeo, audio o un texto. Se guarda en la nube.</p>
+        <div style="display:flex;gap:8px;align-items:center;margin:0 0 10px">
+          <span style="font-size:12.5px;color:var(--texto);white-space:nowrap">✍️ Firmas como:</span>
+          <input id="firma-nombre" placeholder="Tu nombre (ej. Luis)" style="flex:1;min-width:0;margin:0" onchange="guardarMiNombre()">
+          <button class="btn sec" style="flex:none;width:auto;padding:9px 12px;margin:0" onclick="guardarMiNombre()">Guardar</button>
+        </div>
+        <div id="firma-msg" class="msg"></div>
         <div class="subir-fila">
           <button onclick="elegir('foto')"><span class="ic">📷</span><b>Foto</b></button>
           <button onclick="elegir('video')"><span class="ic">🎬</span><b>Vídeo</b></button>
@@ -1210,6 +1218,7 @@ const LIMITE_MB = 45;
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
 let _arboles = [], _invitePend = null;   // árboles a los que tengo acceso + código de invitación pendiente
 let miRol = 'dueno';                       // mi rol en el árbol actual: dueno | colaborador | visitante
+let miNombre = '';                         // nombre con el que firmo lo que subo (se guarda en mi cuenta)
 let especieElegida = "olivo", mascotaOn = false;
 
 /* ====== UTILIDADES ====== */
@@ -1381,6 +1390,7 @@ async function mostrarArbol(){
       asw.classList.remove("hide");
     } else asw.classList.add("hide");
   }
+  try{ miNombre=(usuario&&usuario.user_metadata&&usuario.user_metadata.nombre)||""; }catch(e){ miNombre=""; }
   await _calcularRol();
   pintarArbol();
   await cargarMiembros();
@@ -2044,7 +2054,8 @@ function abrirFicha(id){
   document.getElementById("ofr-picker").classList.add("hide");
   document.getElementById("ofr-tit").textContent = m.clase==='mascota' ? "🦴 Ofrendas" : "🕯️ Ofrendas";
   document.getElementById("ofr-sub").textContent = m.clase==='mascota' ? "Déjale un juguete, una pelota, un hueso…" : "Deja un gesto de cariño: una vela, flores, una piedra…";
-  if(document.getElementById("ofr-autor")) document.getElementById("ofr-autor").value=_ultimoAutor||"";
+  if(document.getElementById("firma-nombre")) document.getElementById("firma-nombre").value=miNombre||"";
+  if(document.getElementById("ofr-autor")) document.getElementById("ofr-autor").value=_ultimoAutor||miNombre||"";
   if(document.getElementById("ofr-mensaje")) document.getElementById("ofr-mensaje").value="";
   limpiar("ofr-msg");
   ver("v-ficha");
@@ -2093,6 +2104,20 @@ function comprimirImagen(file){
       img.src=url;
     }catch(e){ resolve({blob:file, ext:null, type:file.type}); }
   });
+}
+// Guarda el nombre con el que el usuario firma lo que sube (en su propia cuenta)
+async function guardarMiNombre(){
+  const n=((document.getElementById("firma-nombre")||{}).value||"").trim();
+  if(n===miNombre){ return; }
+  miNombre=n;
+  try{
+    await sb.auth.updateUser({ data:{ nombre:n } });
+    if(usuario){ usuario.user_metadata=usuario.user_metadata||{}; usuario.user_metadata.nombre=n; }
+  }catch(e){}
+  if(document.getElementById("firma-msg")){
+    msg("firma-msg", n?("Firmarás como «"+n+"» ✔"):"Firma quitada.","ok");
+    setTimeout(()=>limpiar("firma-msg"),1800);
+  }
 }
 function pedirFotoPerfil(){ const i=document.getElementById("foto-input"); i.value=""; i.click(); }
 async function fotoPerfilElegida(){
@@ -2157,7 +2182,7 @@ function abrirHistoria(){
   document.getElementById("h-historia").value=m.historia||"";
   document.getElementById("h-nicho").value=m.nicho||"";
   document.getElementById("anec-titulo").textContent="📖 Anécdotas de "+(m.nombre||"");
-  if(document.getElementById("a-autor")) document.getElementById("a-autor").value=_ultimoAutor||"";
+  if(document.getElementById("a-autor")) document.getElementById("a-autor").value=_ultimoAutor||miNombre||"";
   limpiar("hist-msg"); limpiar("anec-msg"); ver("v-historia"); window.scrollTo(0,0);
   cargarAnecdotas();
 }
@@ -2954,7 +2979,7 @@ async function subirGrabacion(){
   if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
   const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
     miembro_id:miembroActual.id, tipo:_recTipo, archivo_path:ruta,
-    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id }, _privCampos()));
+    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id, autor:miNombre||null }, _privCampos()));
   prog.style.display="none";
   if(dbErr){ msg(MSG,"Subido, pero no se guardó: "+dbErr.message); return; }
   msg(MSG,"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),1800);
@@ -2989,7 +3014,7 @@ async function archivoElegido(){
   if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
   const tipoBD = tipoElegido==="foto"?"foto":tipoElegido;
   const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
-    miembro_id:miembroActual.id, tipo:tipoBD, archivo_path:ruta, titulo:file.name, subido_por:usuario.id
+    miembro_id:miembroActual.id, tipo:tipoBD, archivo_path:ruta, titulo:file.name, subido_por:usuario.id, autor:miNombre||null
   }, _privCampos()));
   prog.style.display="none";
   if(dbErr){ msg(MSG,"Subido, pero no se guardó la ficha: "+dbErr.message); return; }
@@ -3003,7 +3028,7 @@ async function guardarTexto(){
   const titulo=document.getElementById("texto-titulo").value.trim();
   if(!cuerpo){ msg("rec-msg","Escribe algo primero."); return; }
   const { error }=await sb.from("contenido").insert({
-    miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo, titulo:titulo||null, subido_por:usuario.id
+    miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo, titulo:titulo||null, subido_por:usuario.id, autor:miNombre||null
   });
   if(error){ msg("rec-msg","No se pudo guardar: "+error.message); return; }
   document.getElementById("texto-box").classList.add("hide");
@@ -3022,10 +3047,11 @@ async function cargarRecuerdos(){
   data.forEach(r=>{ if(_cuenta[r.tipo]!=null) _cuenta[r.tipo]++; }); pintarContadores();
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const piezas=await Promise.all(data.map(async r=>{
+    const fir = r.autor ? `<div class="rec-autor">— ${escapar(r.autor)}</div>` : "";
     if(r.tipo==="texto"){
       return `<div class="rec texto"><button class="borrar" onclick="borrar('${r.id}',null)">×</button>
         ${r.titulo?`<div class="tit" style="font-weight:700;color:var(--texto);text-align:center;padding:0 0 6px">${escapar(r.titulo)}</div>`:""}
-        <div class="cuerpo">${escapar(r.texto)}</div></div>`;
+        <div class="cuerpo">${escapar(r.texto)}</div>${fir}</div>`;
     }
     let url="";
     if(r.archivo_path){
@@ -3033,9 +3059,9 @@ async function cargarRecuerdos(){
       url=sig?sig.signedUrl:"";
     }
     const del=`<button class="borrar" onclick="borrar('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
-    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div><div class="tit">${escapar(r.titulo||"Foto")}</div></div>`;
-    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" preload="metadata"></video><button class="play-ov" onclick="verMedia('${url}','video')">▶</button></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div></div>`;
-    if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio></div>`;
+    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div><div class="tit">${escapar(r.titulo||"Foto")}</div>${fir}</div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" preload="metadata"></video><button class="play-ov" onclick="verMedia('${url}','video')">▶</button></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div>${fir}</div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio>${fir}</div>`;
     return "";
   }));
   g.innerHTML=piezas.join("");
@@ -3231,7 +3257,7 @@ async function guardarTextoPriv(){
   _privActivo=true;
   const { error }=await sb.from("contenido").insert(Object.assign({
     miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo,
-    titulo:document.getElementById("priv-texto-titulo").value.trim()||null, subido_por:usuario.id }, _privCampos()));
+    titulo:document.getElementById("priv-texto-titulo").value.trim()||null, subido_por:usuario.id, autor:miNombre||null }, _privCampos()));
   if(error){ msg("priv-msg","No se pudo guardar: "+error.message); return; }
   document.getElementById("priv-texto-box").classList.add("hide");
   msg("priv-msg","¡Guardado! ✔","ok"); setTimeout(()=>limpiar("priv-msg"),1800);
