@@ -583,6 +583,8 @@
         <button class="btn" style="margin-top:10px" onclick="unirseConCodigo()">Unirme a ese árbol</button>
         <div id="join-msg" class="msg"></div>
       </div>
+      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="descargarCopia()">⬇️ Descargar una copia</button>
+      <div id="copia-msg" class="msg"></div>
       <div id="lista"></div>
       <div class="vidrio solo-editar" style="margin-top:16px">
         <button class="btn sec" style="margin:0" onclick="togAdd('add-form',this,'Añadir familiar')">➕ Añadir familiar</button>
@@ -3037,6 +3039,114 @@ async function guardarTexto(){
   cargarRecuerdos();
 }
 
+/* ===== DESCARGAR UNA COPIA (ZIP con fichas + fotos/vídeos/audios) ===== */
+function _slug(s){ return (s||"persona").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40)||"persona"; }
+function _cargarJSZip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise(function(res,rej){
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload=function(){ res(window.JSZip); };
+    s.onerror=function(){ rej(new Error("no se pudo cargar el compresor (revisa tu conexión)")); };
+    document.head.appendChild(s);
+  });
+}
+function _htmlCopia(miembros, byMiem, carpetas){
+  const e=escapar;
+  const CUANDO={ fallecimiento:"cuando la persona falte", fecha:"en una fecha concreta", siempre:"siempre" };
+  let filas="";
+  (miembros||[]).forEach(function(m){
+    const cont=byMiem[m.id]||[];
+    const fechas=[ m.nacimiento?("n. "+fmtFecha(m.nacimiento)):"", m.fallecimiento?("† "+fmtFecha(m.fallecimiento)):"" ].filter(Boolean).join(" · ");
+    let bloque = '<div class="p"><h2>'+e(m.nombre||"(sin nombre)")+'</h2>';
+    const meta=[ m.parentesco||m.relacion||"", m.clase&&m.clase!=="persona"?m.clase:"", fechas ].filter(Boolean).join(" · ");
+    if(meta) bloque+='<div class="meta">'+e(meta)+'</div>';
+    if(m.historia) bloque+='<p class="hist">'+e(m.historia)+'</p>';
+    const textos=cont.filter(function(c){return c.tipo==="texto"||c.tipo==="anecdota";});
+    const medias=cont.filter(function(c){return c.archivo_path;});
+    const ofrendas=cont.filter(function(c){return c.tipo==="ofrenda";});
+    if(textos.length){ bloque+='<div class="sec">Escritos</div>'; textos.forEach(function(c){
+      const priv=c.privado?'<span class="lock">🔒 privado · '+(CUANDO[c.cuando]||"")+(c.para?(" · para "+e(c.para)):"")+'</span> ':'';
+      bloque+='<div class="t">'+priv+(c.titulo?'<b>'+e(c.titulo)+'</b><br>':'')+e(c.texto||"")+(c.autor?'<span class="aut"> — '+e(c.autor)+'</span>':'')+'</div>';
+    }); }
+    if(medias.length){ bloque+='<div class="sec">Fotos, vídeos y audios</div><ul class="media">'; medias.forEach(function(c){
+      const ext=(c.archivo_path.split(".").pop()||"dat").split("?")[0];
+      const idx = medias.indexOf(c)+1;   // mismo orden que al guardar en el zip
+      bloque+='<li><a href="'+e(carpetas[m.id])+'/'+e((c.tipo||"archivo"))+"_"+idx+"."+e(ext)+'">'+e(c.titulo||c.tipo||"archivo")+'</a>'+(c.autor?'<span class="aut"> — '+e(c.autor)+'</span>':'')+'</li>';
+    }); bloque+='</ul>'; }
+    if(ofrendas.length){ bloque+='<div class="sec">Ofrendas y mensajes</div><ul class="ofr">'; ofrendas.forEach(function(c){
+      bloque+='<li>'+e(c.titulo||c.texto||"ofrenda")+(c.autor?'<span class="aut"> — '+e(c.autor)+'</span>':'')+'</li>';
+    }); bloque+='</ul>'; }
+    bloque+='</div>';
+    filas+=bloque;
+  });
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<title>Nuestro Árbol — copia</title><style>'
+    +'body{font-family:Georgia,serif;background:#f3ead7;color:#3a2f22;margin:0;padding:22px 16px;line-height:1.55}'
+    +'h1{text-align:center;color:#6f5a2d;font-size:26px;margin:0 0 4px}.top{text-align:center;color:#8a7a55;font-size:13px;margin-bottom:22px}'
+    +'.p{background:#fffdf7;border:1px solid #e3d6b8;border-radius:14px;padding:16px 18px;margin:0 auto 14px;max-width:720px;box-shadow:0 2px 8px rgba(90,60,20,.08)}'
+    +'.p h2{color:#2f5d3a;margin:0 0 2px;font-size:20px}.meta{color:#8a7a55;font-style:italic;font-size:13px;margin-bottom:8px}'
+    +'.hist{white-space:pre-wrap}.sec{color:#6f5a2d;text-transform:uppercase;letter-spacing:1px;font-size:11px;font-weight:700;margin:12px 0 4px}'
+    +'.t{background:#f8f2e2;border-radius:8px;padding:8px 11px;margin:5px 0;white-space:pre-wrap;font-size:14px}'
+    +'.aut{color:#8a7a55;font-style:italic;font-size:12px}.lock{color:#9a6a2a;font-size:12px}'
+    +'ul.media,ul.ofr{margin:4px 0;padding-left:20px}ul a{color:#2f5d3a}'
+    +'</style></head><body><h1>🌳 '+e(arbolActual&&arbolActual.nombre||"Nuestro Árbol")+'</h1>'
+    +'<div class="top">Copia de seguridad · '+fmtFecha(new Date().toISOString().slice(0,10))+' · '+(miembros||[]).length+' fichas</div>'
+    +filas+'</body></html>';
+}
+async function descargarCopia(){
+  if(!arbolActual) return;
+  const MSG="copia-msg";
+  try{
+    msg(MSG,"Preparando la copia… un momento ⏳","ok");
+    const JSZip=await _cargarJSZip();
+    const zip=new JSZip();
+    const { data:miembros,error:e1 }=await sb.from("miembros").select("*").eq("arbol_id",arbolActual.id).order("creado");
+    if(e1) throw e1;
+    const ids=(miembros||[]).map(function(m){return m.id;});
+    let contenido=[];
+    if(ids.length){
+      const { data:cont,error:e2 }=await sb.from("contenido").select("*").in("miembro_id",ids).order("creado");
+      if(e2) throw e2; contenido=cont||[];
+    }
+    const byMiem={}; contenido.forEach(function(c){ (byMiem[c.miembro_id]=byMiem[c.miembro_id]||[]).push(c); });
+    const carpetas={}; (miembros||[]).forEach(function(m){ carpetas[m.id]=_slug(m.nombre)+"_"+String(m.id).slice(0,6); });
+    // lista de archivos a bajar (foto de perfil + media de cada ficha)
+    const archivos=[];
+    (miembros||[]).forEach(function(m){
+      if(m.foto) archivos.push({ path:m.foto, carpeta:carpetas[m.id], nombre:"perfil" });
+      const media=(byMiem[m.id]||[]).filter(function(c){return c.archivo_path;});
+      media.forEach(function(c,i){ archivos.push({ path:c.archivo_path, carpeta:carpetas[m.id], nombre:(c.tipo||"archivo")+"_"+(i+1) }); });
+    });
+    let ok=0;
+    for(let i=0;i<archivos.length;i++){
+      const a=archivos[i];
+      msg(MSG,"Descargando archivo "+(i+1)+" de "+archivos.length+"… ⏳","ok");
+      try{
+        const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(a.path,3600);
+        if(sig&&sig.signedUrl){
+          const resp=await fetch(sig.signedUrl);
+          if(resp.ok){
+            const blob=await resp.blob();
+            const ext=(a.path.split(".").pop()||"dat").split("?")[0];
+            zip.file("Nuestro_Arbol/"+a.carpeta+"/"+a.nombre+"."+ext, blob);
+            ok++;
+          }
+        }
+      }catch(e){ /* si un archivo falla, seguimos con el resto */ }
+    }
+    zip.file("Nuestro_Arbol/copia.html", _htmlCopia(miembros, byMiem, carpetas));
+    zip.file("Nuestro_Arbol/datos.json", JSON.stringify({ arbol:arbolActual, miembros:miembros, contenido:contenido }, null, 2));
+    msg(MSG,"Empaquetando todo… ⏳","ok");
+    const out=await zip.generateAsync({ type:"blob" });
+    const url=URL.createObjectURL(out);
+    const a=document.createElement("a"); a.href=url;
+    a.download="Nuestro_Arbol_"+_slug(arbolActual.nombre)+".zip";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); },5000);
+    msg(MSG,"¡Copia lista! Se ha descargado ("+ok+" archivos + el índice). 💾","ok");
+  }catch(e){ msg(MSG,"No se pudo hacer la copia: "+(e&&e.message||e)); }
+}
 async function cargarRecuerdos(){
   const g=document.getElementById("galeria"), vac=document.getElementById("galeria-vacio");
   g.innerHTML='<div class="cargando" style="grid-column:span 2;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Cargando…</div>';
