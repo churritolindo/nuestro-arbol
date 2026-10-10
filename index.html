@@ -331,6 +331,7 @@
   .rec .marco-f{padding:4px 4px 0}
   .rec .tit{font-size:11.5px;color:var(--suave);padding:5px 9px;font-style:italic}
   .rec-autor{font-size:10.5px;color:var(--suave);opacity:.9;padding:0 9px 6px;text-align:right;font-style:italic}
+  .rec-solo{display:inline-block;margin:0 9px 6px;font-size:10px;font-weight:700;color:#9a6a2a;background:rgba(214,170,90,.2);border-radius:20px;padding:2px 8px}
   .rec.texto .rec-autor{text-align:right;padding:6px 0 0}
   .rec.texto{grid-column:span 2;padding:14px 16px}
   .rec.texto .cuerpo{font-size:14.5px;color:var(--texto);white-space:pre-wrap;line-height:1.5;font-family:Georgia,serif;text-align:center}
@@ -667,6 +668,13 @@
           <button class="btn sec" style="flex:none;width:auto;padding:9px 12px;margin:0" onclick="guardarMiNombre()">Guardar</button>
         </div>
         <div id="firma-msg" class="msg"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin:0 0 10px">
+          <span style="font-size:12.5px;color:var(--texto);white-space:nowrap">👁️ ¿Quién lo ve?</span>
+          <select id="rec-visib" style="flex:1;min-width:0;margin:0">
+            <option value="grupo">👥 Todo el grupo</option>
+            <option value="solo">🔒 Solo yo</option>
+          </select>
+        </div>
         <div class="subir-fila">
           <button onclick="elegir('foto')"><span class="ic">📷</span><b>Foto</b></button>
           <button onclick="elegir('video')"><span class="ic">🎬</span><b>Vídeo</b></button>
@@ -2058,6 +2066,7 @@ function abrirFicha(id){
   document.getElementById("ofr-tit").textContent = m.clase==='mascota' ? "🦴 Ofrendas" : "🕯️ Ofrendas";
   document.getElementById("ofr-sub").textContent = m.clase==='mascota' ? "Déjale un juguete, una pelota, un hueso…" : "Deja un gesto de cariño: una vela, flores, una piedra…";
   if(document.getElementById("firma-nombre")) document.getElementById("firma-nombre").value=miNombre||"";
+  if(document.getElementById("rec-visib")) document.getElementById("rec-visib").value="grupo";
   if(document.getElementById("ofr-autor")) document.getElementById("ofr-autor").value=_ultimoAutor||miNombre||"";
   if(document.getElementById("ofr-mensaje")) document.getElementById("ofr-mensaje").value="";
   limpiar("ofr-msg");
@@ -2121,6 +2130,18 @@ async function guardarMiNombre(){
     msg("firma-msg", n?("Firmarás como «"+n+"» ✔"):"Firma quitada.","ok");
     setTimeout(()=>limpiar("firma-msg"),1800);
   }
+}
+// ¿El recuerdo que se sube es "solo yo"? (nunca en la zona privada, que tiene su propio sistema)
+function _soloYo(){ if(_privActivo) return false; const s=document.getElementById("rec-visib"); return !!(s && s.value==="solo"); }
+// Inserta un recuerdo; si la columna solo_autor aún no existe (falta el SQL), reintenta sin ella
+async function _insContenido(obj){
+  let res=await sb.from("contenido").insert(obj);
+  if(res.error && obj.solo_autor && /solo_autor|column|does not exist/i.test(res.error.message||"")){
+    const o=Object.assign({},obj); delete o.solo_autor;
+    res=await sb.from("contenido").insert(o);
+    if(!res.error) res._soloFallo=true;
+  }
+  return res;
 }
 function pedirFotoPerfil(){ const i=document.getElementById("foto-input"); i.value=""; i.click(); }
 async function fotoPerfilElegida(){
@@ -2980,12 +3001,13 @@ async function subirGrabacion(){
   const ruta=usuario.id+"/"+miembroActual.id+"/"+_recTipo+"_"+Date.now()+"."+ext;
   const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,blob,{contentType:mime});
   if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
-  const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
+  const _r=await _insContenido(Object.assign({
     miembro_id:miembroActual.id, tipo:_recTipo, archivo_path:ruta,
-    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id, autor:miNombre||null }, _privCampos()));
+    titulo:(_recTipo==="video"?"Vídeo":"Audio")+" "+new Date().toLocaleDateString("es-ES"), subido_por:usuario.id, autor:miNombre||null, solo_autor:_soloYo() }, _privCampos()));
+  const dbErr=_r.error;
   prog.style.display="none";
   if(dbErr){ msg(MSG,"Subido, pero no se guardó: "+dbErr.message); return; }
-  msg(MSG,"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),1800);
+  msg(MSG, _r._soloFallo?"¡Guardado! (el «solo yo» necesita el pasito de SQL)":"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),2200);
   if(_privActivo) cargarPrivado(); else cargarRecuerdos();
 }
 function pintarContadores(){
@@ -3016,12 +3038,13 @@ async function archivoElegido(){
   const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,blob,{contentType:type});
   if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
   const tipoBD = tipoElegido==="foto"?"foto":tipoElegido;
-  const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
-    miembro_id:miembroActual.id, tipo:tipoBD, archivo_path:ruta, titulo:file.name, subido_por:usuario.id, autor:miNombre||null
+  const _r=await _insContenido(Object.assign({
+    miembro_id:miembroActual.id, tipo:tipoBD, archivo_path:ruta, titulo:file.name, subido_por:usuario.id, autor:miNombre||null, solo_autor:_soloYo()
   }, _privCampos()));
+  const dbErr=_r.error;
   prog.style.display="none";
   if(dbErr){ msg(MSG,"Subido, pero no se guardó la ficha: "+dbErr.message); return; }
-  msg(MSG,"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),1800);
+  msg(MSG, _r._soloFallo?"¡Guardado! (el «solo yo» necesita el pasito de SQL)":"¡Guardado! ✔","ok"); setTimeout(()=>limpiar(MSG),2200);
   if(_privActivo) cargarPrivado(); else cargarRecuerdos();
 }
 
@@ -3030,12 +3053,13 @@ async function guardarTexto(){
   const cuerpo=document.getElementById("texto-cuerpo").value.trim();
   const titulo=document.getElementById("texto-titulo").value.trim();
   if(!cuerpo){ msg("rec-msg","Escribe algo primero."); return; }
-  const { error }=await sb.from("contenido").insert({
-    miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo, titulo:titulo||null, subido_por:usuario.id, autor:miNombre||null
+  const _r=await _insContenido({
+    miembro_id:miembroActual.id, tipo:"texto", texto:cuerpo, titulo:titulo||null, subido_por:usuario.id, autor:miNombre||null, solo_autor:_soloYo()
   });
+  const error=_r.error;
   if(error){ msg("rec-msg","No se pudo guardar: "+error.message); return; }
   document.getElementById("texto-box").classList.add("hide");
-  msg("rec-msg","¡Texto guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
+  msg("rec-msg", _r._soloFallo?"¡Texto guardado! (el «solo yo» necesita el pasito de SQL)":"¡Texto guardado! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),2200);
   cargarRecuerdos();
 }
 
@@ -3154,15 +3178,18 @@ async function cargarRecuerdos(){
   _cuenta={foto:0,video:0,audio:0}; pintarContadores();
   const { data:todo,error }=await sb.from("contenido").select("*").eq("miembro_id",miembroActual.id).neq("tipo","anecdota").order("creado",{ascending:false});
   if(error){ g.innerHTML=""; msg("rec-msg","Error al leer recuerdos: "+error.message); return; }
-  const data=(todo||[]).filter(r=>!r.privado && r.tipo!=="ofrenda");   // privados y ofrendas no salen aquí
+  const data=(todo||[]).filter(r=>!r.privado && r.tipo!=="ofrenda"      // privados y ofrendas no salen aquí
+    && !( r.solo_autor && usuario && r.subido_por!==usuario.id && miRol!=="dueno" ));   // "solo yo" de otros no se ve (el dueño sí)
   data.forEach(r=>{ if(_cuenta[r.tipo]!=null) _cuenta[r.tipo]++; }); pintarContadores();
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
   const piezas=await Promise.all(data.map(async r=>{
+    const solo = r.solo_autor ? `<div class="rec-solo">🔒 Solo yo</div>` : "";
     const fir = r.autor ? `<div class="rec-autor">— ${escapar(r.autor)}</div>` : "";
+    const pie = solo+fir;
     if(r.tipo==="texto"){
       return `<div class="rec texto"><button class="borrar" onclick="borrar('${r.id}',null)">×</button>
         ${r.titulo?`<div class="tit" style="font-weight:700;color:var(--texto);text-align:center;padding:0 0 6px">${escapar(r.titulo)}</div>`:""}
-        <div class="cuerpo">${escapar(r.texto)}</div>${fir}</div>`;
+        <div class="cuerpo">${escapar(r.texto)}</div>${pie}</div>`;
     }
     let url="";
     if(r.archivo_path){
@@ -3170,9 +3197,9 @@ async function cargarRecuerdos(){
       url=sig?sig.signedUrl:"";
     }
     const del=`<button class="borrar" onclick="borrar('${r.id}','${escapar(r.archivo_path||"")}')">×</button>`;
-    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div><div class="tit">${escapar(r.titulo||"Foto")}</div>${fir}</div>`;
-    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" preload="metadata"></video><button class="play-ov" onclick="verMedia('${url}','video')">▶</button></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div>${fir}</div>`;
-    if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio>${fir}</div>`;
+    if(r.tipo==="foto") return `<div class="rec">${del}<div class="marco-f"><img src="${url}" loading="lazy" onclick="verMedia('${url}','foto')"></div><div class="tit">${escapar(r.titulo||"Foto")}</div>${pie}</div>`;
+    if(r.tipo==="video") return `<div class="rec">${del}<div class="marco-f"><video src="${url}" preload="metadata"></video><button class="play-ov" onclick="verMedia('${url}','video')">▶</button></div><div class="tit">${escapar(r.titulo||"Vídeo")}</div>${pie}</div>`;
+    if(r.tipo==="audio") return `<div class="rec audio">${del}<div class="tit" style="padding:0 0 6px">${escapar(r.titulo||"Audio")}</div><audio src="${url}" controls></audio>${pie}</div>`;
     return "";
   }));
   g.innerHTML=piezas.join("");
