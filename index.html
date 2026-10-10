@@ -2059,15 +2059,52 @@ async function pintarFotoFicha(m){
     el.innerHTML = (sig&&sig.signedUrl) ? `<img src="${sig.signedUrl}">` : (m.clase==="mascota"?"🐾":inicial(m.nombre));
   } else el.textContent = m.clase==="mascota"?"🐾":inicial(m.nombre);
 }
+/* ===== Compresión de imágenes en el navegador (ahorra espacio y sube más rápido) ===== */
+const IMG_MAXLADO = 1600;    // el lado más largo se limita a esto (px)
+const IMG_CALIDAD = 0.82;    // calidad del JPEG (0 a 1)
+function _esImagenComprimible(file){
+  return !!(file && file.type && file.type.indexOf("image/")===0 && file.type!=="image/gif");
+}
+// Devuelve {blob, ext, type}. Si no es imagen, no la puede encoger o no mejora, devuelve el original.
+function comprimirImagen(file){
+  return new Promise(function(resolve){
+    if(!_esImagenComprimible(file)){ resolve({blob:file, ext:null, type:file.type}); return; }
+    try{
+      const url=URL.createObjectURL(file);
+      const img=new Image();
+      img.onload=function(){
+        try{
+          let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+          const lado=Math.max(w,h);
+          const esc = lado>IMG_MAXLADO ? IMG_MAXLADO/lado : 1;
+          const nw=Math.max(1,Math.round(w*esc)), nh=Math.max(1,Math.round(h*esc));
+          const c=document.createElement("canvas"); c.width=nw; c.height=nh;
+          const ctx=c.getContext("2d");
+          ctx.fillStyle="#fff"; ctx.fillRect(0,0,nw,nh);   // fondo blanco por si la imagen es transparente
+          ctx.drawImage(img,0,0,nw,nh);
+          URL.revokeObjectURL(url);
+          c.toBlob(function(blob){
+            if(blob && blob.size < file.size) resolve({blob:blob, ext:"jpg", type:"image/jpeg"});
+            else resolve({blob:file, ext:null, type:file.type});   // si no mejora, dejamos el original
+          }, "image/jpeg", IMG_CALIDAD);
+        }catch(e){ try{URL.revokeObjectURL(url);}catch(_ ){} resolve({blob:file, ext:null, type:file.type}); }
+      };
+      img.onerror=function(){ try{URL.revokeObjectURL(url);}catch(_ ){} resolve({blob:file, ext:null, type:file.type}); };
+      img.src=url;
+    }catch(e){ resolve({blob:file, ext:null, type:file.type}); }
+  });
+}
 function pedirFotoPerfil(){ const i=document.getElementById("foto-input"); i.value=""; i.click(); }
 async function fotoPerfilElegida(){
   limpiar("rec-msg");
   const inp=document.getElementById("foto-input"); const file=inp.files[0]; if(!file||!miembroActual) return;
   if(file.size>LIMITE_MB*1024*1024){ msg("rec-msg","La foto pesa demasiado (máx "+LIMITE_MB+" MB)."); return; }
   const prog=document.getElementById("prog"); prog.style.display="block";
-  const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+  const r=await comprimirImagen(file);
+  const blob=r.blob, type=r.type||file.type;
+  const ext=r.ext || (file.name.split(".").pop()||"jpg").toLowerCase();
   const ruta=usuario.id+"/"+miembroActual.id+"/perfil_"+Date.now()+"."+ext;
-  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,file,{contentType:file.type,upsert:true});
+  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,blob,{contentType:type,upsert:true});
   if(upErr){ prog.style.display="none"; msg("rec-msg","No se pudo subir la foto: "+upErr.message); return; }
   const { error:dbErr }=await sb.from("miembros").update({foto:ruta}).eq("id",miembroActual.id);
   prog.style.display="none";
@@ -2944,9 +2981,11 @@ async function archivoElegido(){
     return;
   }
   const prog=document.getElementById(_pProg()); prog.style.display="block";
-  const ext=(file.name.split(".").pop()||"dat").toLowerCase();
+  const r=await comprimirImagen(file);
+  const blob=r.blob, type=r.type||file.type;
+  const ext = r.ext || (file.name.split(".").pop()||"dat").toLowerCase();
   const ruta = usuario.id+"/"+miembroActual.id+"/"+Date.now()+"."+ext;
-  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,file,{contentType:file.type});
+  const { error:upErr }=await sb.storage.from(BUCKET).upload(ruta,blob,{contentType:type});
   if(upErr){ prog.style.display="none"; msg(MSG,"No se pudo subir: "+upErr.message); return; }
   const tipoBD = tipoElegido==="foto"?"foto":tipoElegido;
   const { error:dbErr }=await sb.from("contenido").insert(Object.assign({
