@@ -568,7 +568,7 @@
         <label>¿Qué podrá hacer quien entre?</label>
         <select id="inv-rol">
           <option value="visitante">👀 Visitante — solo mirar y dejar recuerdos/ofrendas</option>
-          <option value="colaborador">✍️ Colaborador — también añadir fotos, vídeos y fichas</option>
+          <option value="colaborador">✍️ Familiar — también añadir fotos, vídeos y fichas</option>
         </select>
         <button class="btn" style="margin-top:10px" onclick="crearInvitacion()">Generar código</button>
         <div id="inv-result" class="hide" style="margin-top:12px">
@@ -958,7 +958,7 @@
         <label>¿Qué podrá hacer quien entre?</label>
         <select id="inva-rol">
           <option value="visitante">👀 Visitante — solo mirar y dejar recuerdos</option>
-          <option value="colaborador">✍️ Colaborador — también añadir amigos y fotos</option>
+          <option value="colaborador">✍️ Familiar — también añadir amigos y fotos</option>
         </select>
         <button class="btn" style="margin-top:10px" onclick="crearInv('amigos','inva')">Generar código</button>
         <div id="inva-result" class="hide" style="margin-top:12px">
@@ -1173,7 +1173,7 @@
           <p>Hay dos tipos de permiso:</p>
           <ol>
             <li>👀 <b>Invitado:</b> puede ver el árbol, leer las historias y dejar flores y mensajes. No cuelga fotos.</li>
-            <li>✍️ <b>Colaborador:</b> puede añadir personas, fotos y vídeos, igual que tú.</li>
+            <li>✍️ <b>Familiar:</b> puede añadir personas, fotos y vídeos, igual que tú.</li>
           </ol>
         </div>
 
@@ -1432,7 +1432,7 @@ async function _calcularRol(){
   if(b){
     const nom=escapar(arbolActual && arbolActual.nombre ? arbolActual.nombre : "este árbol");
     if(miRol==='dueno'){ b.style.display="none"; b.innerHTML=""; }
-    else if(miRol==='colaborador'){ b.style.display="block"; b.innerHTML='✍️ Colaboras en «'+nom+'». Puedes añadir fichas, fotos y vídeos.'; }
+    else if(miRol==='colaborador'){ b.style.display="block"; b.innerHTML='✍️ Eres familiar en «'+nom+'». Puedes añadir fichas, fotos y vídeos.'; }
     else { b.style.display="block"; b.innerHTML='👀 Estás viendo «'+nom+'» como invitado. Puedes dejar flores y mensajes. 🌸'; }
   }
 }
