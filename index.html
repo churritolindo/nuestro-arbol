@@ -558,6 +558,7 @@
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
       <div id="quien-soy" class="vidrio" style="margin:0 0 12px;display:none"></div>
+      <div id="confirmar-quien" class="vidrio solo-dueno" style="margin:0 0 12px;display:none"></div>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirRecibidos()">📁 Mensajes guardados</button>
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
@@ -1472,6 +1473,7 @@ async function cargarMiembros(){
   await cargarAvisos();
   lista.innerHTML="";
   pintarQuienSoy();
+  cargarConfirmaciones();
 }
 /* ===== ENTREGA REAL · FASE A — "¿quién eres en este árbol?" ===== */
 function _opcionesPersonas(){
@@ -1508,6 +1510,45 @@ async function guardarQuienSoy(){
     }
     miMiembroId=mid; pintarQuienSoy();
   }catch(e){ msg("quien-soy-msg","No se pudo guardar ahora mismo."); }
+}
+/* --- Panel del DUEÑO: confirmar quién es cada invitado (Fase C) --- */
+async function cargarConfirmaciones(){
+  const box=document.getElementById("confirmar-quien"); if(!box) return;
+  if(miRol!=="dueno"){ box.style.display="none"; box.innerHTML=""; return; }
+  let rows=[];
+  try{
+    const { data }=await sb.from("arbol_miembros").select("user_id,miembro_id,miembro_ok,rol").eq("arbol_id",arbolActual.id);
+    rows=(data||[]).filter(r=>r.user_id!==usuario.id);
+  }catch(e){ rows=[]; }
+  if(!rows.length){ box.style.display="none"; box.innerHTML=""; return; }
+  const M=window._miembros||{};
+  box.style.display="block";
+  box.innerHTML='<div class="setiq" style="margin-top:0">Quién es quién</div>'
+    +'<p class="sub" style="text-align:center;margin:0 0 10px">Confirma quién es cada persona que entró con tu código. Es lo que permite entregarle sus mensajes.</p>'
+    +rows.map(r=>_filaConfirm(r,M)).join("");
+}
+function _filaConfirm(r,M){
+  const nom = r.miembro_id && M[r.miembro_id] ? escapar(M[r.miembro_id].nombre||"—") : "";
+  const sel = '<select id="conf-sel-'+r.user_id+'" style="margin:0;flex:1;min-width:0"><option value="">— elige —</option>'
+    +(window._arr||[]).filter(m=>m.clase!=="mascota").map(m=>'<option value="'+m.id+'"'+(m.id===r.miembro_id?" selected":"")+'>'+escapar(m.nombre||"—")+'</option>').join("")+'</select>';
+  let estado;
+  if(!r.miembro_id) estado='<span style="color:#9a6a2a">aún no ha dicho quién es</span>';
+  else if(r.miembro_ok) estado='<span style="color:#2f7d3a">✔ confirmado: <b>'+nom+'</b></span>';
+  else estado='<span style="color:#9a6a2a">dice ser <b>'+nom+'</b> · pendiente de que confirmes</span>';
+  return '<div style="padding:10px 12px;margin:0 0 8px;border-radius:12px;background:rgba(255,253,247,.45);box-shadow:0 0 0 1px var(--oroC)">'
+    +'<div style="font-size:12.5px;margin-bottom:6px">'+estado+'</div>'
+    +'<div style="display:flex;gap:6px;align-items:center">'+sel
+    +'<button class="btn sec" style="flex:none;width:auto;padding:8px 12px;margin:0" onclick="confirmarMiembro(\''+r.user_id+'\')">Confirmar</button></div>'
+    +'<div id="conf-msg-'+r.user_id+'" class="msg"></div></div>';
+}
+async function confirmarMiembro(uid){
+  const sel=document.getElementById("conf-sel-"+uid); const mid=sel?(sel.value||null):null;
+  if(!mid){ msg("conf-msg-"+uid,"Elige primero quién es."); return; }
+  try{
+    const { error }=await sb.from("arbol_miembros").update({ miembro_id:mid, miembro_ok:true }).eq("arbol_id",arbolActual.id).eq("user_id",uid);
+    if(error){ msg("conf-msg-"+uid, /miembro_ok|column|exist/i.test(error.message||"")?"Falta el pasito de SQL (Fase A).":"No se pudo: "+error.message); return; }
+    msg("conf-msg-"+uid,"¡Confirmado! ✔","ok"); cargarConfirmaciones();
+  }catch(e){ msg("conf-msg-"+uid,"No se pudo ahora mismo."); }
 }
 function nivelMiembros(){
   const M=window._miembros||{}, arr=window._arr||[], lvl={};
