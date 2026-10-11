@@ -502,6 +502,10 @@
         <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
         <button class="btn" onclick="entrar()">Entrar</button>
         <button class="btn sec" onclick="crearCuenta()">Crear cuenta nueva</button>
+        <label class="chk-row" style="margin-top:8px;font-size:12px;align-items:flex-start;gap:7px;text-align:left">
+          <input type="checkbox" id="reg-acepto" style="margin-top:2px">
+          <span>Para <b>crear una cuenta</b>: soy mayor de 18 años y acepto la <a href="#" onclick="abrirLegal(false);return false" style="color:var(--verde);font-weight:700">Política de Privacidad y las Condiciones</a>.</span>
+        </label>
         <button class="link" style="margin-top:6px" onclick="recuperarPass()">¿Olvidaste tu contraseña?</button>
         <div id="reset-box" class="hide" style="margin-top:10px;border-top:1px solid var(--linea);padding-top:10px">
           <label>Nueva contraseña</label>
@@ -1301,6 +1305,47 @@
         <details><summary>Tengo otra duda o me da un error</summary>
           <p>Muy pronto podrás preguntar aquí mismo a nuestro asistente y te ayudará al instante con cualquier duda (funcionamiento, errores o costes). De momento, esta sección irá creciendo.</p></details>
       </div>
+
+      <div class="setiq">Legal y cuenta</div>
+      <div class="vidrio" style="text-align:center">
+        <button class="btn sec" style="margin:0 0 8px" onclick="abrirLegal(false)">📄 Política de Privacidad, Condiciones y Aviso legal</button>
+        <button class="btn sec" style="margin:0;color:#b4462f" onclick="borrarCuenta()">🗑️ Borrar mi cuenta</button>
+        <div id="borrar-msg" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- TEXTOS LEGALES -->
+    <div id="v-legal" class="hide">
+      <button class="btn sec" id="legal-volver" style="margin-top:4px" onclick="cerrarLegal()">‹ Volver</button>
+      <div class="setiq">Condiciones</div>
+      <div class="vidrio faq">
+        <p class="sub" style="margin:0 0 6px">Al crear una cuenta y usar Nuestro Árbol aceptas lo siguiente. Resumen claro; toca cada apartado para leerlo.</p>
+        <details><summary>Política de Privacidad</summary>
+          <p><b>Quién gestiona tus datos.</b> El responsable del servicio (datos de contacto en el Aviso legal). Tratamos: tu correo y contraseña (cifrada), tu nombre de firma, y lo que subes (fotos, vídeos, audios, textos y datos de personas, incluidas fallecidas).</p>
+          <p><b>Para qué.</b> Solo para prestarte el servicio: guardar tu árbol y enseñárselo a quien tú autorizas, entregar los mensajes de la zona privada cuando tú indicas, y mantener la seguridad. <b>No vendemos tus datos ni los usamos para publicidad ni para entrenar inteligencia artificial.</b></p>
+          <p><b>Dónde se guardan.</b> En servidores de la Unión Europea (Supabase). Se conservan mientras tu cuenta esté activa; al borrarlos desaparecen del servicio y en poco tiempo también de las copias de seguridad.</p>
+          <p><b>Tus derechos.</b> Acceso, rectificación, supresión, portabilidad (tienes «Descargar una copia»), oposición y limitación. Puedes reclamar ante la Agencia Española de Protección de Datos (AEPD).</p>
+          <p><b>Personas fallecidas.</b> Sus herederos o allegados pueden pedir acceder, rectificar o suprimir sus datos (art. 3 LOPDGDD).</p>
+          <p><b>Menores.</b> El servicio es solo para mayores de 18 años.</p>
+          <p><b>Datos de otras personas.</b> Si subes fotos o datos de alguien vivo, confirmas que tienes su permiso.</p>
+        </details>
+        <details><summary>Condiciones de Uso</summary>
+          <p><b>Tu contenido es tuyo.</b> Solo nos das permiso para guardarlo y mostrarlo para darte el servicio; ese permiso termina cuando lo borras.</p>
+          <p><b>Tus obligaciones.</b> Ser mayor de 18, tener permiso de las personas vivas que subas, no subir contenido ilícito y no hacerte pasar por otro.</p>
+          <p><b>Compartir y roles.</b> El invitado solo mira y deja ofrendas; el familiar también añade contenido. Tú eres responsable de a quién das tus códigos.</p>
+          <p><b>Traspaso de propiedad.</b> Puedes traspasar el árbol a otra persona; cuando lo acepta, pasa a ser el dueño y no se puede deshacer. El pago (cuando lo haya) se gestiona aparte con una pasarela; no guardamos datos bancarios.</p>
+          <p><b>Zona privada / mensajes póstumos.</b> La entrega «cuando yo falte» depende de que alguien marque el fallecimiento; hacemos todo lo posible pero no podemos garantizarla si nadie lo activa.</p>
+          <p><b>Servicio «tal cual».</b> Hacemos lo posible por mantenerlo y conservar tus recuerdos, pero no garantizamos disponibilidad perpetua. Descarga tu copia de vez en cuando.</p>
+          <p>Se aplica la legislación española.</p>
+        </details>
+        <details><summary>Aviso Legal</summary>
+          <p>Titular del servicio: (nombre/razón social, NIF, domicilio y correo de contacto — pendientes de completar). Denominación: Nuestro Árbol.</p>
+          <p>La marca, el diseño y el programa pertenecen a su titular; el contenido subido pertenece a cada usuario. Legislación española.</p>
+        </details>
+        <p class="sub" style="margin:10px 0 0;font-style:italic">Estos textos son una primera versión y podrán ajustarse.</p>
+      </div>
+      <button class="btn hide" id="legal-acepto" style="margin-top:12px" onclick="aceptarLegal()">✅ He leído y acepto. Continuar</button>
+      <div id="legal-msg" class="msg"></div>
     </div>
 
   </div>
@@ -1314,6 +1359,7 @@ const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const BUCKET = "media";
 const LIMITE_MB = 45;
+const LEGAL_VER = "1";   // versión de las condiciones aceptadas (súbela si cambian y se pedirá aceptar de nuevo)
 
 let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null;
 let _arboles = [], _invitePend = null;   // árboles a los que tengo acceso + código de invitación pendiente
@@ -1325,14 +1371,60 @@ let especieElegida = "olivo", mascotaOn = false;
 /* ====== UTILIDADES ====== */
 let vistaPrevia="v-arbol";
 function ver(id){
-  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-privada","v-buzon","v-recibidos","v-sub","v-ayuda"].forEach(v=>{
-    document.getElementById(v).classList.toggle("hide", v!==id);
+  ["v-carga","v-auth","v-crear","v-arbol","v-ficha","v-editar","v-historia","v-privada","v-buzon","v-recibidos","v-sub","v-ayuda","v-legal"].forEach(v=>{
+    const el=document.getElementById(v); if(el) el.classList.toggle("hide", v!==id);
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
   document.getElementById("btn-ayuda").classList.toggle("hide", id==="v-ayuda"||id==="v-carga");
 }
 function abrirAyuda(){ const vs=["v-auth","v-crear","v-arbol","v-ficha"]; vistaPrevia=vs.find(v=>!document.getElementById(v).classList.contains("hide"))||"v-arbol"; ver("v-ayuda"); window.scrollTo(0,0); }
 function cerrarAyuda(){ ver(vistaPrevia); window.scrollTo(0,0); }
+/* ====== LEGAL / CONSENTIMIENTO ====== */
+let _legalGate=false, _legalPrev="v-ayuda";
+function _aceptado(){ try{ return !!(usuario && usuario.user_metadata && usuario.user_metadata.acepto_ver===LEGAL_VER); }catch(e){ return false; } }
+async function _trasLogin(preferId){
+  if(usuario && !_aceptado()){ abrirLegal(true); return; }   // cuenta existente que aún no aceptó: puerta
+  await entrarAlArbol(preferId);
+}
+function abrirLegal(gate){
+  _legalGate=!!gate;
+  if(!gate){ const vs=["v-auth","v-crear","v-arbol","v-ficha","v-ayuda"]; _legalPrev=vs.find(v=>!document.getElementById(v).classList.contains("hide"))||"v-ayuda"; }
+  ver("v-legal");
+  document.getElementById("legal-acepto").classList.toggle("hide", !gate);
+  document.getElementById("legal-volver").classList.toggle("hide", gate);  // en modo puerta no hay "Volver"
+  limpiar("legal-msg"); window.scrollTo(0,0);
+}
+function cerrarLegal(){ ver(_legalPrev||"v-ayuda"); window.scrollTo(0,0); }
+async function aceptarLegal(){
+  try{
+    await sb.auth.updateUser({ data:{ acepto_ver:LEGAL_VER, acepto_fecha:new Date().toISOString() } });
+    if(usuario){ usuario.user_metadata=usuario.user_metadata||{}; usuario.user_metadata.acepto_ver=LEGAL_VER; }
+  }catch(e){ msg("legal-msg","No se pudo guardar la aceptación: "+(e&&e.message||e)); return; }
+  _legalGate=false; await entrarAlArbol();
+}
+async function borrarCuenta(){
+  limpiar("borrar-msg");
+  if(!usuario){ msg("borrar-msg","Entra primero."); return; }
+  if(!confirm("¿Seguro que quieres BORRAR tu cuenta y todos tus árboles? No se puede deshacer.")) return;
+  if(!confirm("Última confirmación: se borrarán tus árboles, fichas y recuerdos para siempre. ¿Continuar?")) return;
+  msg("borrar-msg","Borrando tus datos… un momento ⏳","ok");
+  try{
+    const { data:arbs }=await sb.from("arboles").select("id").eq("dueno",usuario.id);
+    const aids=(arbs||[]).map(a=>a.id);
+    if(aids.length){
+      const { data:mids }=await sb.from("miembros").select("id").in("arbol_id",aids);
+      const mi=(mids||[]).map(m=>m.id);
+      if(mi.length) await sb.from("contenido").delete().in("miembro_id",mi);
+      await sb.from("miembros").delete().in("arbol_id",aids);
+      try{ await sb.from("invitaciones").delete().in("arbol_id",aids); }catch(e){}
+      try{ await sb.from("arbol_miembros").delete().in("arbol_id",aids); }catch(e){}
+      try{ await sb.from("traspasos").delete().in("arbol_id",aids); }catch(e){}
+      await sb.from("arboles").delete().in("id",aids);
+    }
+  }catch(e){ msg("borrar-msg","Hubo un problema al borrar: "+(e&&e.message||e)); return; }
+  msg("borrar-msg","Tus árboles se han borrado. Cerrando sesión…","ok");
+  setTimeout(async()=>{ await salir(); alert("Cuenta vaciada. Para eliminar también el acceso con tu correo, escríbenos (ver Aviso legal)."); }, 1200);
+}
 function fondo(cls){ const a=document.getElementById("app"); a.classList.remove("bgV","bgA","bgL"); a.classList.add(cls); }
 function msg(id,t,tipo){ const e=document.getElementById(id); e.textContent=t; e.className="msg "+(tipo||"err"); }
 function limpiar(id){ const e=document.getElementById(id); e.className="msg"; e.textContent=""; }
@@ -1374,7 +1466,7 @@ async function guardarNuevaPass(){
   document.getElementById("reset-box").classList.add("hide"); _recoveryMode=false;
   msg("auth-msg","Contraseña cambiada ✔. Entrando…","ok");
   const { data:{ session } } = await sb.auth.getSession();
-  if(session){ usuario=session.user; await entrarAlArbol(); }
+  if(session){ usuario=session.user; await _trasLogin(); }
 }
 async function arranque(){
   ver("v-carga"); fondo("bgV");
@@ -1402,7 +1494,7 @@ async function arranque(){
   if(/type=recovery/.test(_h) || _recoveryMode){ _mostrarReset(); return; }
   const { data:{ session } } = await sb.auth.getSession();
   if(_recoveryMode) return;
-  if(session){ usuario=session.user; await entrarAlArbol(); }
+  if(session){ usuario=session.user; await _trasLogin(); }
   else { ver("v-auth"); if(_invitePend) msg("auth-msg","Tienes una invitación 🌳. Entra o crea tu cuenta y te uniremos al árbol.","ok"); }
 }
 
@@ -1411,7 +1503,9 @@ async function crearCuenta(){
   limpiar("auth-msg");
   const email=document.getElementById("email").value.trim(), pass=document.getElementById("pass").value;
   if(!email||pass.length<6){ msg("auth-msg","Escribe un correo y una contraseña de 6 o más caracteres."); return; }
-  const { data,error }=await sb.auth.signUp({email,password:pass});
+  const acepto=document.getElementById("reg-acepto");
+  if(!acepto || !acepto.checked){ msg("auth-msg","Para crear la cuenta, marca la casilla de ser mayor de 18 y aceptar las condiciones."); return; }
+  const { data,error }=await sb.auth.signUp({ email, password:pass, options:{ data:{ acepto_ver:LEGAL_VER, acepto_fecha:new Date().toISOString() } } });
   if(error){ msg("auth-msg","No se pudo crear la cuenta: "+error.message); return; }
   if(data.session){ usuario=data.session.user; await entrarAlArbol(); }
   else msg("auth-msg","Cuenta creada. Revisa tu correo, confirma el enlace y pulsa «Entrar».","ok");
@@ -1422,7 +1516,7 @@ async function entrar(){
   if(!email||!pass){ msg("auth-msg","Escribe tu correo y tu contraseña."); return; }
   const { data,error }=await sb.auth.signInWithPassword({email,password:pass});
   if(error){ msg("auth-msg","No se pudo entrar: "+error.message); return; }
-  usuario=data.session.user; await entrarAlArbol();
+  usuario=data.session.user; await _trasLogin();
 }
 async function salir(){ await sb.auth.signOut(); arbolActual=null; miembroActual=null; usuario=null;
   document.getElementById("pass").value=""; document.getElementById("arbol-nombre").textContent="Nuestro Árbol";
