@@ -3532,15 +3532,43 @@ function pintarAnivsBar(){
   }).join(" · ");
   bar.classList.remove("hide");
 }
-function _msgActivo(r){
-  if(!r.privado || r.leido) return false;
+// ¿Ya ha llegado el momento de abrirlo? (fecha / fallecimiento / siempre)
+function _tiempoOk(r){
   if(r.cuando==="siempre") return true;
   if(r.cuando==="fecha") return !!(r.fecha_ver && r.fecha_ver <= _hoy());
   if(r.cuando==="fallecimiento"){ const a=(window._miembros||{})[r.miembro_id]; return !!(a && (a.fallecimiento||"").trim()); }
   return false;
 }
+// ¿Va dirigido a MÍ? (según qué persona del árbol soy)
+function _paraMi(r){
+  const yo=miMiembroId;
+  if(r.destino==="todos") return true;
+  if(r.destino==="persona"){
+    if(!yo) return false;
+    const ids=String(r.para_ids||r.para_id||"").split(",").map(s=>s.trim()).filter(Boolean);
+    return ids.indexOf(String(yo))>=0;
+  }
+  if(r.destino==="familia"||r.destino==="amigos"){
+    if(!yo) return false;
+    const m=(window._miembros||{})[yo]; if(!m) return false;
+    const esAmigo=(m.clase==="amigo");
+    return r.destino==="amigos" ? esAmigo : !esAmigo;
+  }
+  return false;
+}
+// "Ya lo vi" por dispositivo (no borra el mensaje a los demás destinatarios)
+function _seenKey(){ return "na_seen_"+((usuario&&usuario.id)||"anon"); }
+function _seenSet(){ try{ return new Set(JSON.parse(localStorage.getItem(_seenKey())||"[]")); }catch(e){ return new Set(); } }
+function _marcarVisto(ids){ try{ const s=_seenSet(); ids.forEach(id=>s.add(id)); localStorage.setItem(_seenKey(), JSON.stringify([...s])); }catch(e){} }
+let _vistos=new Set();
+function _msgActivo(r){
+  if(!r.privado) return false;
+  if(_vistos.has(r.id)) return false;      // ya lo abrí en este dispositivo
+  if(!_paraMi(r)) return false;            // no va dirigido a mí
+  return _tiempoOk(r);
+}
 async function cargarAvisos(){
-  _avisos=new Set(); _avisosLista=[];
+  _avisos=new Set(); _avisosLista=[]; _vistos=_seenSet();
   try{
     const ids=(window._arr||[]).map(m=>m.id);
     if(ids.length){
@@ -3583,9 +3611,9 @@ async function renderBuzon(){
     return "";
   }));
   g.innerHTML=piezas.join("");
-  // al leerlos: se marcan como leídos → dejan de avisar y pasan a "Mensajes guardados"
+  // al leerlos: se marcan como vistos EN ESTE DISPOSITIVO (no se borran para los demás destinatarios)
   const ids=_avisosLista.map(r=>r.id);
-  if(ids.length){ try{ await sb.from("contenido").update({leido:true}).in("id",ids); }catch(e){} }
+  if(ids.length){ _marcarVisto(ids); _vistos=_seenSet(); }
   _avisos=new Set(); _avisosLista=[]; pintarAvisosBar(); pintarPlacas();
 }
 function abrirRecibidos(){ fondo("bgL"); ver("v-recibidos"); window.scrollTo(0,0); renderRecibidos(); }
@@ -3598,8 +3626,9 @@ async function renderRecibidos(){
   try{
     const ids=(window._arr||[]).map(m=>m.id);
     if(ids.length){
-      const { data:d }=await sb.from("contenido").select("*").eq("privado",true).eq("leido",true).in("miembro_id",ids).order("creado",{ascending:false});
-      data=d||[];
+      const { data:d }=await sb.from("contenido").select("*").eq("privado",true).in("miembro_id",ids).order("creado",{ascending:false});
+      const seen=_seenSet();
+      data=(d||[]).filter(r=> _paraMi(r) && _tiempoOk(r) && seen.has(r.id));
     }
   }catch(e){}
   if(!data.length){ g.innerHTML=""; vac.classList.remove("hide"); return; }
