@@ -586,8 +586,33 @@
         <button class="btn" style="margin-top:10px" onclick="unirseConCodigo()">Unirme a ese árbol</button>
         <div id="join-msg" class="msg"></div>
       </div>
+      <button class="btn sec" style="margin:0 0 10px" onclick="toggleAceptarTr()">👑 Aceptar un traspaso</button>
+      <div id="acep-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">👑 Aceptar un traspaso</h2>
+        <p class="sub">¿Alguien te traspasa su árbol? Pega aquí el código. <b>Pasarás a ser el nuevo dueño.</b></p>
+        <input id="acep-codigo" placeholder="Ej. 7K3MQ9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;font-size:20px">
+        <button class="btn" style="margin-top:10px" onclick="aceptarTraspaso()">Aceptar y ser el nuevo dueño</button>
+        <div id="acep-msg" class="msg"></div>
+      </div>
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="descargarCopia()">⬇️ Descargar una copia</button>
       <div id="copia-msg" class="msg"></div>
+      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleTraspaso()">👑 Traspasar la propiedad</button>
+      <div id="traspaso-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
+        <h2 style="font-size:17px">👑 Traspasar la propiedad</h2>
+        <p class="sub">Da el control del árbol a otra persona; será el nuevo dueño cuando acepte el código. <b>Una vez aceptado, no se puede deshacer.</b></p>
+        <label>Cuando acepten, yo quiero…</label>
+        <select id="tr-rol">
+          <option value="familiar">Quedarme como familiar (seguir viendo y añadiendo)</option>
+          <option value="fuera">Salirme del árbol (dejar de tener acceso)</option>
+        </select>
+        <button class="btn" style="margin-top:10px" onclick="crearTraspaso()">Generar código de traspaso</button>
+        <div id="tr-result" class="hide" style="margin-top:12px">
+          <div id="tr-codigo" style="text-align:center;font-size:26px;font-weight:800;letter-spacing:5px;color:var(--verde);background:#fffdf7;border-radius:12px;padding:12px;box-shadow:0 0 0 1.5px var(--oroC)"></div>
+          <a id="tr-wa" class="btn" style="margin-top:10px;display:block;text-align:center;text-decoration:none" target="_blank">📲 Enviar por WhatsApp</a>
+          <button class="btn sec" style="margin-top:8px" onclick="copiarCod('tr')">📋 Copiar código</button>
+        </div>
+        <div id="tr-msg" class="msg"></div>
+      </div>
       <div id="lista"></div>
       <div class="vidrio solo-editar" style="margin-top:16px">
         <button class="btn sec" style="margin:0" onclick="togAdd('add-form',this,'Añadir familiar')">➕ Añadir familiar</button>
@@ -2111,6 +2136,43 @@ async function crearInv(ambito, pre){
 function crearInvitacion(){ return crearInv('familia','inv'); }
 function copiarCod(pre){ const el=document.getElementById(pre+"-codigo"); const c=el?el.textContent.trim():""; if(c && navigator.clipboard){ navigator.clipboard.writeText(c).then(()=>msg(pre+"-msg","Código copiado ✔","ok")).catch(()=>{}); } }
 function copiarInv(){ return copiarCod('inv'); }
+/* ====== TRASPASO DE PROPIEDAD ====== */
+function toggleTraspaso(){ const b=document.getElementById("traspaso-box"); if(b){ b.classList.toggle("hide"); document.getElementById("tr-result").classList.add("hide"); limpiar("tr-msg"); } }
+async function crearTraspaso(){
+  if(!arbolActual||!usuario){ msg("tr-msg","Abre tu árbol primero."); return; }
+  limpiar("tr-msg");
+  const rol=document.getElementById("tr-rol").value;
+  const codigo=_codigoAlea();
+  const { error }=await sb.from("traspasos").insert({ arbol_id:arbolActual.id, codigo, creado_por:usuario.id, rol_saliente:rol });
+  if(error){
+    const falta = error.code==="42P01" || /relation .* does not exist|could not find the table/i.test(error.message||"");
+    msg("tr-msg", falta ? "Aún falta crear la tabla de traspasos en Supabase (te he dejado el SQL)." : "No se pudo: "+error.message); return;
+  }
+  document.getElementById("tr-codigo").textContent=codigo;
+  const texto="Te traspaso nuestro Árbol de recuerdos 🌳. Para aceptarlo, entra con tu cuenta y pon este código en «Aceptar un traspaso»: "+codigo;
+  document.getElementById("tr-wa").href="https://wa.me/?text="+encodeURIComponent(texto);
+  document.getElementById("tr-result").classList.remove("hide");
+  msg("tr-msg","Código creado ✔. Quien lo acepte será el nuevo dueño.","ok");
+}
+function toggleAceptarTr(){ const b=document.getElementById("acep-box"); if(b){ b.classList.toggle("hide"); limpiar("acep-msg"); } }
+async function aceptarTraspaso(){
+  let codigo=(document.getElementById("acep-codigo").value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!codigo){ msg("acep-msg","Escribe el código."); return; }
+  if(!usuario){ msg("acep-msg","Entra con tu cuenta primero."); return; }
+  if(!confirm("Vas a convertirte en el dueño de este árbol. ¿Seguro?")) return;
+  const { data, error }=await sb.rpc("aceptar_traspaso",{ p_codigo:codigo });
+  if(error){
+    let m=error.message||"";
+    if(/no valido|ya usado/i.test(m)) m="Ese código no vale o ya se usó.";
+    else if(/caducado/i.test(m)) m="Ese código ha caducado. Pide uno nuevo.";
+    else if(/propio traspaso/i.test(m)) m="No puedes aceptar tu propio traspaso.";
+    else if(/function|does not exist|exist/i.test(m)) m="Falta el pasito de SQL del traspaso.";
+    msg("acep-msg","No se pudo: "+m); return;
+  }
+  try{ localStorage.setItem("arbolSel", data); }catch(e){}
+  msg("acep-msg","¡Ahora eres el dueño! 👑 Entrando…","ok");
+  await entrarAlArbol(data);
+}
 /* ====== FICHA ====== */
 function abrirFicha(id){
   miembroActual=window._miembros[id];
