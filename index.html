@@ -557,6 +557,7 @@
       <div id="especies-cap" class="solo-dueno" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
+      <div id="quien-soy" class="vidrio" style="margin:0 0 12px;display:none"></div>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirRecibidos()">📁 Mensajes guardados</button>
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
@@ -1230,6 +1231,7 @@ let arbolActual = null, miembroActual = null, tipoElegido = null, usuario = null
 let _arboles = [], _invitePend = null;   // árboles a los que tengo acceso + código de invitación pendiente
 let miRol = 'dueno';                       // mi rol en el árbol actual: dueno | colaborador | visitante
 let miNombre = '';                         // nombre con el que firmo lo que subo (se guarda en mi cuenta)
+let miMiembroId = null;                     // qué persona (ficha) del árbol soy yo, para recibir mis mensajes
 let especieElegida = "olivo", mascotaOn = false;
 
 /* ====== UTILIDADES ====== */
@@ -1416,6 +1418,12 @@ async function _calcularRol(){
       miRol=(data&&data.rol)?data.rol:'visitante';
     }
   }catch(e){ miRol='dueno'; }   // si algo falla, no bloqueamos al dueño
+  // ¿qué persona del árbol soy yo? (para recibir mis mensajes)
+  miMiembroId=null;
+  try{
+    const { data:row }=await sb.from("arbol_miembros").select("miembro_id").eq("arbol_id",arbolActual.id).eq("user_id",usuario.id).maybeSingle();
+    miMiembroId=row?row.miembro_id:null;
+  }catch(e){ miMiembroId=null; }
   const cls = miRol==='dueno' ? 'rol-dueno' : (miRol==='colaborador' ? 'rol-colab' : 'rol-visit');
   document.body.classList.remove('rol-dueno','rol-colab','rol-visit');
   document.body.classList.add(cls);
@@ -1463,6 +1471,43 @@ async function cargarMiembros(){
   ["m-padre","m-madre","m-pareja"].forEach(id=>pintaSelect(id,"",null));
   await cargarAvisos();
   lista.innerHTML="";
+  pintarQuienSoy();
+}
+/* ===== ENTREGA REAL · FASE A — "¿quién eres en este árbol?" ===== */
+function _opcionesPersonas(){
+  const arr=(window._arr||[]).filter(m=>m.clase!=="mascota");   // personas (familia y amigos)
+  return arr.map(m=>'<option value="'+m.id+'"'+(m.id===miMiembroId?" selected":"")+'>'+escapar(m.nombre||"—")+'</option>').join("");
+}
+function _selectorQuienSoy(){
+  return '<select id="quien-soy-sel" style="margin:0 0 8px"><option value="">— elige tu nombre —</option>'+_opcionesPersonas()+'</select>'
+    +'<button class="btn" style="margin:0" onclick="guardarQuienSoy()">Guardar</button><div id="quien-soy-msg" class="msg"></div>';
+}
+function pintarQuienSoy(){
+  const box=document.getElementById("quien-soy"); if(!box) return;
+  const arr=(window._arr||[]).filter(m=>m.clase!=="mascota"); const M=window._miembros||{};
+  if(!arr.length){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display="block";
+  if(miMiembroId && M[miMiembroId]){
+    box.innerHTML='<div style="text-align:center;font-size:13.5px;color:var(--texto)">👤 Eres <b style="color:var(--verde)">'+escapar(M[miMiembroId].nombre||"—")+'</b> en este árbol · <button class="link" style="color:var(--verde)" onclick="editarQuienSoy()">cambiar</button></div><div id="quien-soy-edit" class="hide" style="margin-top:8px;text-align:center"></div>';
+  } else {
+    box.innerHTML='<div style="text-align:center"><b style="color:var(--verde)">👤 ¿Quién eres en este árbol?</b><p class="sub" style="margin:4px 0 8px">Elige tu nombre para poder recibir los mensajes que te dejen.</p>'+_selectorQuienSoy()+'</div>';
+  }
+}
+function editarQuienSoy(){
+  const e=document.getElementById("quien-soy-edit"); if(!e) return;
+  if(e.classList.contains("hide")){ e.innerHTML=_selectorQuienSoy(); e.classList.remove("hide"); } else { e.classList.add("hide"); e.innerHTML=""; }
+}
+async function guardarQuienSoy(){
+  const sel=document.getElementById("quien-soy-sel"); if(!sel) return;
+  const mid=sel.value||null;
+  try{
+    const { error }=await sb.rpc("fijar_quien_soy",{ aid:arbolActual.id, mid:mid });
+    if(error){
+      msg("quien-soy-msg", /function|exist|fijar_quien_soy/i.test(error.message||"")?"Esto necesita el pasito de SQL (Fase A).":"No se pudo guardar: "+error.message);
+      return;
+    }
+    miMiembroId=mid; pintarQuienSoy();
+  }catch(e){ msg("quien-soy-msg","No se pudo guardar ahora mismo."); }
 }
 function nivelMiembros(){
   const M=window._miembros||{}, arr=window._arr||[], lvl={};
