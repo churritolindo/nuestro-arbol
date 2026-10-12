@@ -590,6 +590,13 @@
         <button class="btn" style="margin-top:10px" onclick="unirseConCodigo()">Unirme a ese árbol</button>
         <div id="join-msg" class="msg"></div>
       </div>
+      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="abrirComplementar()">🌿 Complementar mi árbol</button>
+      <div id="compl-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
+        <h2 style="font-size:17px">🌿 Complementar mi árbol</h2>
+        <p class="sub">¿Tienes acceso a otro árbol (de un primo, un amigo…)? Trae a tu árbol los familiares o amigos que te falten. Tú eliges a quién copiar.</p>
+        <div id="compl-cont"></div>
+        <div id="compl-msg" class="msg"></div>
+      </div>
       <button class="btn sec" style="margin:0 0 10px" onclick="toggleAceptarTr()">👑 Aceptar un traspaso</button>
       <div id="acep-box" class="hide vidrio" style="margin:0 0 12px">
         <h2 style="font-size:17px">👑 Aceptar un traspaso</h2>
@@ -2328,6 +2335,118 @@ async function aceptarTraspaso(){
   try{ localStorage.setItem("arbolSel", data); }catch(e){}
   msg("acep-msg","¡Ahora eres el dueño! 👑 Entrando…","ok");
   await entrarAlArbol(data);
+}
+/* ===== COMPLEMENTAR ÁRBOL — traer familiares/amigos de otro árbol al mío ===== */
+let _complSrc=[];   // fichas del árbol de origen ya cargadas
+const COMPL_CAMPOS=["nombre","clase","nacimiento","fallecimiento","apellidos","religion","grupo","tipo_pareja","expareja","apodo","historia","lugar_nac","nicho","amigo_desde","aureola","alas"];
+function _norm(s){ return (s||"").toString().trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," "); }
+function _ext(path,def){ const e=(path||"").split("?")[0].split(".").pop(); return (e&&e.length<=5&&/^[a-z0-9]+$/i.test(e))?e.toLowerCase():(def||"dat"); }
+function abrirComplementar(){
+  const b=document.getElementById("compl-box"); if(!b) return;
+  b.classList.toggle("hide");
+  if(!b.classList.contains("hide")) pintarComplementar();
+}
+function pintarComplementar(){
+  limpiar("compl-msg");
+  const cont=document.getElementById("compl-cont"); if(!cont) return;
+  const otros=(_arboles||[]).filter(a=>a.id!==arbolActual.id);
+  if(!otros.length){
+    cont.innerHTML='<p class="sub">Primero necesitas tener acceso a otro árbol. Pídele a esa persona su código, entra con «🔑 Entrar con un código» y luego vuelve aquí.</p>';
+    return;
+  }
+  cont.innerHTML='<label>Traer desde este árbol:</label>'
+    +'<select id="compl-origen">'+otros.map(a=>'<option value="'+a.id+'">'+escapar(a.nombre||"Árbol")+'</option>').join('')+'</select>'
+    +'<button class="btn" style="margin-top:10px" onclick="cargarComplementar()">Ver quién puedo traer</button>'
+    +'<div id="compl-lista" style="margin-top:12px"></div>';
+}
+async function cargarComplementar(){
+  const sel=document.getElementById("compl-origen"); if(!sel) return;
+  const srcId=sel.value; if(!srcId) return;
+  const lista=document.getElementById("compl-lista");
+  lista.innerHTML='<p class="sub">Cargando…</p>'; limpiar("compl-msg");
+  const { data:src, error }=await sb.from("miembros").select("*").eq("arbol_id",srcId).order("creado");
+  if(error){ lista.innerHTML=""; msg("compl-msg","No se pudo leer ese árbol: "+error.message); return; }
+  _complSrc=src||[];
+  if(!_complSrc.length){ lista.innerHTML='<p class="sub">Ese árbol no tiene fichas todavía.</p>'; return; }
+  const mios=new Set((window._arr||[]).map(m=>_norm(m.nombre)+"|"+_norm(m.apellidos)));
+  let filas='';
+  _complSrc.forEach(m=>{
+    const dup=mios.has(_norm(m.nombre)+"|"+_norm(m.apellidos));
+    const ico = m.clase==="mascota"?"🐾":(m.clase==="amigo"?"🧑‍🤝‍🧑":"👤");
+    filas+='<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:14px">'
+      +'<input type="checkbox" class="compl-chk" value="'+m.id+'"'+(dup?"":" checked")+' style="width:auto;margin:0">'
+      +'<span>'+ico+' '+escapar(m.nombre||"—")+(m.apellidos?' '+escapar(m.apellidos):'')
+      +(dup?' <span style="color:#b26b00">· ya lo tienes</span>':'')+'</span></label>';
+  });
+  lista.innerHTML='<div style="display:flex;gap:8px;margin-bottom:6px">'
+    +'<button class="btn sec" style="margin:0;flex:1" onclick="complMarcar(true)">Todos</button>'
+    +'<button class="btn sec" style="margin:0;flex:1" onclick="complMarcar(false)">Ninguno</button></div>'
+    +filas
+    +'<button class="btn" style="margin-top:12px" onclick="complementarCopiar()">Copiar seleccionados a mi árbol</button>'
+    +'<p class="sub" style="margin-top:6px">Se copian sus fotos y vídeos públicos. Lo privado y los mensajes póstumos nunca se copian.</p>';
+}
+function complMarcar(v){ document.querySelectorAll(".compl-chk").forEach(c=>c.checked=v); }
+async function _copiarArchivo(srcPath, destPath){
+  try{
+    const { data:sig }=await sb.storage.from(BUCKET).createSignedUrl(srcPath,3600);
+    if(!sig||!sig.signedUrl) return null;
+    const resp=await fetch(sig.signedUrl); if(!resp.ok) return null;
+    const blob=await resp.blob();
+    const { error }=await sb.storage.from(BUCKET).upload(destPath,blob,{contentType:blob.type||undefined,upsert:true});
+    if(error) return null;
+    return destPath;
+  }catch(e){ return null; }
+}
+async function complementarCopiar(){
+  const ids=[].slice.call(document.querySelectorAll(".compl-chk")).filter(c=>c.checked).map(c=>c.value);
+  if(!ids.length){ msg("compl-msg","Marca al menos a una persona."); return; }
+  const sel=_complSrc.filter(m=>ids.indexOf(m.id)>=0);
+  const total=sel.length;
+  msg("compl-msg","Copiando… 0 de "+total,"ok");
+  const idMap={};
+  // 1) crear las fichas (todavía sin relaciones)
+  for(let i=0;i<sel.length;i++){
+    const m=sel[i];
+    const fila={arbol_id:arbolActual.id};
+    COMPL_CAMPOS.forEach(k=>{ if(k in m) fila[k]=m[k]; });
+    const { data:nuevo, error }=await sb.from("miembros").insert(fila).select().single();
+    if(error || !nuevo){ msg("compl-msg","No se pudo copiar a "+escapar(m.nombre||"")+": "+(error?error.message:"")); return; }
+    idMap[m.id]=nuevo.id;
+    if(m.foto){
+      const np=usuario.id+"/"+nuevo.id+"/perfil_"+Date.now()+"."+_ext(m.foto,"jpg");
+      const ok=await _copiarArchivo(m.foto,np);
+      if(ok) await sb.from("miembros").update({foto:np}).eq("id",nuevo.id);
+    }
+    msg("compl-msg","Copiando… "+(i+1)+" de "+total,"ok");
+  }
+  // 2) reconstruir relaciones entre los copiados (si el familiar también se copió)
+  for(let i=0;i<sel.length;i++){
+    const m=sel[i]; const rel={};
+    ["padre_id","madre_id","pareja_id","hermano_id"].forEach(k=>{ if(m[k] && idMap[m[k]]) rel[k]=idMap[m[k]]; });
+    if(Object.keys(rel).length) await sb.from("miembros").update(rel).eq("id",idMap[m.id]);
+  }
+  // 3) copiar recuerdos PÚBLICOS (fotos, vídeos, audios, anécdotas); nunca lo privado ni "solo yo"
+  let nRec=0;
+  try{
+    const { data:cont }=await sb.from("contenido").select("*").in("miembro_id",Object.keys(idMap));
+    const pub=(cont||[]).filter(c=>!c.privado && !c.solo_autor);
+    for(let i=0;i<pub.length;i++){
+      const c=pub[i]; let np=null;
+      if(c.archivo_path){
+        np=usuario.id+"/"+idMap[c.miembro_id]+"/"+(c.tipo||"arch")+"_"+Date.now()+"_"+i+"."+_ext(c.archivo_path,"dat");
+        np=await _copiarArchivo(c.archivo_path,np);
+        if(!np) continue;   // si no se pudo copiar el archivo, saltamos ese recuerdo
+      }
+      const obj={ miembro_id:idMap[c.miembro_id], tipo:c.tipo, titulo:c.titulo||null, texto:c.texto||null,
+                  autor:c.autor||null, subido_por:usuario.id, archivo_path:np };
+      if("carpeta" in c) obj.carpeta=c.carpeta;
+      const res=await _insContenido(obj);
+      if(!res.error) nRec++;
+      msg("compl-msg","Copiando recuerdos… "+(i+1)+" de "+pub.length,"ok");
+    }
+  }catch(e){}
+  await cargarMiembros();
+  msg("compl-msg","¡Listo! "+total+" fichas y "+nRec+" recuerdos copiados a tu árbol ✔","ok");
 }
 /* ====== FICHA ====== */
 function abrirFicha(id){
