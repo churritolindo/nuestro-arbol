@@ -306,6 +306,13 @@
   /* carteles dorados en cabecera de pantallas (amigos/mascotas) y en el genealógico */
   .cartel-top{display:block;margin:8px auto 2px;width:60%;max-width:250px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
   .cartel-esq{display:block;margin:4px auto 2px;width:54%;max-width:240px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
+  /* flechas del carrusel de la portada (Familia / Amigos / Mascotas) */
+  .arb-flecha{position:absolute;top:46%;transform:translateY(-50%);z-index:7;background:rgba(255,253,247,.92);color:#5a4326;
+    border:1.5px solid var(--oroC);border-radius:50%;width:40px;height:40px;font-size:24px;line-height:36px;text-align:center;
+    cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);padding:0;font-weight:700}
+  .arb-flecha.izq{left:5px}
+  .arb-flecha.der{right:5px}
+  .arb-flecha:active{transform:translateY(-50%) scale(.92)}
   /* rótulo dorado (marco elaborado + letras oro), abajo en el tronco */
   .tree-label{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);width:58%;pointer-events:none}
   .tree-label .marco{width:100%;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
@@ -562,7 +569,7 @@
         <select id="arbol-sel" onchange="cambiarArbol(this.value)" style="max-width:72%;padding:4px 8px;border-radius:10px"></select>
       </div>
       <div id="rol-banner" class="rol-banner"></div>
-      <div id="arbol-visual" onclick="toggleEspecies()" style="cursor:pointer"></div>
+      <div id="arbol-visual" style="cursor:pointer"></div>
       <div id="especies-cap" class="solo-dueno" style="text-align:center;color:#fff;font-size:12.5px;text-shadow:0 1px 4px rgba(0,0,0,.55);margin:2px 0 8px"></div>
       <div id="especies-panel" class="hide" style="margin-bottom:10px"></div>
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
@@ -1642,6 +1649,7 @@ async function mostrarArbol(){
   }
   try{ miNombre=(usuario&&usuario.user_metadata&&usuario.user_metadata.nombre)||""; }catch(e){ miNombre=""; }
   await _calcularRol();
+  _portadaTab=0;            // cada vez que se abre el árbol, empezar en Familia
   pintarArbol();
   await cargarMiembros();
 }
@@ -1995,25 +2003,39 @@ function togAdd(id,btn,label){
   const nowHidden=e.classList.toggle('hide');
   btn.textContent=(nowHidden?'➕ ':'➖ ')+(label||'Añadir');
 }
+// Carrusel de la portada: 0 Familia · 1 Amigos · 2 Mascotas (flechas + deslizar)
+let _portadaTab=0;
+const _PTABS=['familia','amigos','mascota'];
+function _portadaCambia(d){ _portadaTab=(_portadaTab+d+3)%3; pintarArbol(); }
+function _setupSwipeArbol(){
+  const el=document.getElementById("arbol-visual"); if(!el || el._swipe) return; el._swipe=true;
+  let x0=null;
+  el.addEventListener('touchstart',e=>{ x0=e.touches[0].clientX; },{passive:true});
+  el.addEventListener('touchend',e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0; x0=null; if(Math.abs(dx)>45) _portadaCambia(dx<0?1:-1); });
+}
 function pintarArbol(){
-  const esp=(arbolActual&&arbolActual.especie)||"olivo";
-  especieElegida=esp;
-  const a=arbInfo(esp);
-  const arr=window._arr||[];
-  const nMasc=arr.filter(m=>m.clase==='mascota').length;
-  const nAmig=arr.filter(m=>m.clase==='amigo'&&(!m.creado_por||!usuario||m.creado_por===usuario.id)).length;
-  const espA=(arbolActual&&arbolActual.especie_amigos)||'cerezo';
-  const espM=(arbolActual&&arbolActual.especie_mascotas)||'olivo';
-  const insetA='<div class="inset-arb izq" onclick="event.stopPropagation();abrirSub(\'amigo\')" title="Amigos">'
-    +'<img src="diseno/arboles/mini/'+espA+'.png"></div>';
-  const insetM='<div class="inset-arb der" onclick="event.stopPropagation();abrirSub(\'mascota\')" title="Mascotas">'
-    +'<img src="diseno/arboles/mini/'+espM+'.png"></div>';
-  const carteles='<img class="cartel-sub izq" src="diseno/carteles/amigos.png" alt="Amigos">'
-    +'<img class="cartel-fam" src="diseno/carteles/familia.png" alt="Familia">'
-    +'<img class="cartel-sub der" src="diseno/carteles/mascotas.png" alt="Mascotas">';
-  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb"><img class="main" src="'+a.img+'">'+insetA+insetM+carteles+'</div>';
-  document.getElementById("especies-cap").innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>";
-  pintarPlacas();
+  const tab=_PTABS[_portadaTab];
+  const cap=document.getElementById("especies-cap");
+  let imgSrc, cartel, onclickImg;
+  if(tab==='familia'){
+    const esp=(arbolActual&&arbolActual.especie)||"olivo"; especieElegida=esp;
+    const a=arbInfo(esp); imgSrc=a.img; cartel='familia'; onclickImg="toggleEspecies()";
+    if(cap){ cap.innerHTML="🌳 <b>"+a.n+"</b> · "+a.s+" · <u>toca para cambiar</u>"; cap.style.display=''; }
+  } else if(tab==='amigos'){
+    const espA=(arbolActual&&arbolActual.especie_amigos)||'cerezo';
+    imgSrc=arbInfo(espA).img; cartel='amigos'; onclickImg="abrirSub('amigo')";
+    if(cap){ cap.style.display='none'; }
+  } else {
+    const espM=(arbolActual&&arbolActual.especie_mascotas)||'olivo';
+    imgSrc=arbInfo(espM).img; cartel='mascotas'; onclickImg="abrirSub('mascota')";
+    if(cap){ cap.style.display='none'; }
+  }
+  const flechas='<button class="arb-flecha izq" onclick="event.stopPropagation();_portadaCambia(-1)" aria-label="Anterior">‹</button>'
+    +'<button class="arb-flecha der" onclick="event.stopPropagation();_portadaCambia(1)" aria-label="Siguiente">›</button>';
+  const cartelImg='<img class="cartel-fam" src="diseno/carteles/'+cartel+'.png" alt="'+cartel+'">';
+  document.getElementById("arbol-visual").innerHTML='<div class="banner-arb" onclick="'+onclickImg+'"><img class="main" src="'+imgSrc+'">'+flechas+cartelImg+'</div>';
+  _setupSwipeArbol();
+  if(tab==='familia') pintarPlacas();   // las coronas de la familia solo en su pestaña
 }
 function toggleEspecies(){
   const p=document.getElementById("especies-panel");
