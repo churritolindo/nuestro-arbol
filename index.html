@@ -597,32 +597,33 @@
         <div id="compl-cont"></div>
         <div id="compl-msg" class="msg"></div>
       </div>
-      <button class="btn sec" style="margin:0 0 10px" onclick="toggleAceptarTr()">👑 Aceptar un traspaso</button>
-      <div id="acep-box" class="hide vidrio" style="margin:0 0 12px">
-        <h2 style="font-size:17px">👑 Aceptar un traspaso</h2>
+      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="descargarCopia()">⬇️ Descargar una copia</button>
+      <div id="copia-msg" class="msg"></div>
+      <button class="btn sec" style="margin:0 0 10px" onclick="toggleTraspaso()">👑 Aceptar o traspasar la propiedad</button>
+      <div id="traspaso-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">👑 Aceptar o traspasar la propiedad</h2>
+        <h3 style="font-size:15px;margin:2px 0 4px;color:var(--verde)">📥 Tengo un código (aceptar)</h3>
         <p class="sub">¿Alguien te traspasa su árbol? Pega aquí el código. <b>Pasarás a ser el nuevo dueño.</b></p>
         <input id="acep-codigo" placeholder="Ej. 7K3MQ9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;font-size:20px">
         <button class="btn" style="margin-top:10px" onclick="aceptarTraspaso()">Aceptar y ser el nuevo dueño</button>
         <div id="acep-msg" class="msg"></div>
-      </div>
-      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="descargarCopia()">⬇️ Descargar una copia</button>
-      <div id="copia-msg" class="msg"></div>
-      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleTraspaso()">👑 Traspasar la propiedad</button>
-      <div id="traspaso-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
-        <h2 style="font-size:17px">👑 Traspasar la propiedad</h2>
-        <p class="sub">Da el control del árbol a otra persona; será el nuevo dueño cuando acepte el código. <b>Una vez aceptado, no se puede deshacer.</b></p>
-        <label>Cuando acepten, yo quiero…</label>
-        <select id="tr-rol">
-          <option value="familiar">Quedarme como familiar (seguir viendo y añadiendo)</option>
-          <option value="fuera">Salirme del árbol (dejar de tener acceso)</option>
-        </select>
-        <button class="btn" style="margin-top:10px" onclick="crearTraspaso()">Generar código de traspaso</button>
-        <div id="tr-result" class="hide" style="margin-top:12px">
-          <div id="tr-codigo" style="text-align:center;font-size:26px;font-weight:800;letter-spacing:5px;color:var(--verde);background:#fffdf7;border-radius:12px;padding:12px;box-shadow:0 0 0 1.5px var(--oroC)"></div>
-          <a id="tr-wa" class="btn" style="margin-top:10px;display:block;text-align:center;text-decoration:none" target="_blank">📲 Enviar por WhatsApp</a>
-          <button class="btn sec" style="margin-top:8px" onclick="copiarCod('tr')">📋 Copiar código</button>
+        <div class="solo-dueno">
+          <div style="border-top:1px solid rgba(0,0,0,.12);margin:14px 0 10px"></div>
+          <h3 style="font-size:15px;margin:2px 0 4px;color:var(--verde)">📤 Traspasar MI árbol</h3>
+          <p class="sub">Da el control del árbol a otra persona; será el nuevo dueño cuando acepte el código. <b>Una vez aceptado, no se puede deshacer.</b></p>
+          <label>Cuando acepten, yo quiero…</label>
+          <select id="tr-rol">
+            <option value="familiar">Quedarme como familiar (seguir viendo y añadiendo)</option>
+            <option value="fuera">Salirme del árbol (dejar de tener acceso)</option>
+          </select>
+          <button class="btn" style="margin-top:10px" onclick="crearTraspaso()">Generar código de traspaso</button>
+          <div id="tr-result" class="hide" style="margin-top:12px">
+            <div id="tr-codigo" style="text-align:center;font-size:26px;font-weight:800;letter-spacing:5px;color:var(--verde);background:#fffdf7;border-radius:12px;padding:12px;box-shadow:0 0 0 1.5px var(--oroC)"></div>
+            <a id="tr-wa" class="btn" style="margin-top:10px;display:block;text-align:center;text-decoration:none" target="_blank">📲 Enviar por WhatsApp</a>
+            <button class="btn sec" style="margin-top:8px" onclick="copiarCod('tr')">📋 Copiar código</button>
+          </div>
+          <div id="tr-msg" class="msg"></div>
         </div>
-        <div id="tr-msg" class="msg"></div>
       </div>
       <div id="lista"></div>
       <div class="vidrio solo-editar" style="margin-top:16px">
