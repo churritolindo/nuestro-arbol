@@ -1727,7 +1727,12 @@ function pintarQuienSoy(){
   if(!arr.length){ box.style.display="none"; box.innerHTML=""; return; }
   box.style.display="block";
   if(miMiembroId && M[miMiembroId]){
-    box.innerHTML='<div style="text-align:center;font-size:13.5px;color:var(--texto)">👤 Eres <b style="color:var(--verde)">'+escapar(M[miMiembroId].nombre||"—")+'</b> en este árbol · <button class="link" style="color:var(--verde)" onclick="editarQuienSoy()">cambiar</button></div><div id="quien-soy-edit" class="hide" style="margin-top:8px;text-align:center"></div>';
+    // Ya identificado: se reconoce solo al entrar. Solo el DUEÑO puede cambiarlo (evita suplantaciones).
+    const extra = (miRol==='dueno')
+      ? ' · <button class="link" style="color:var(--verde)" onclick="editarQuienSoy()">cambiar</button>'
+      : '';
+    const nota = (miRol==='dueno') ? '' : '<div class="sub" style="text-align:center;font-size:11.5px;margin-top:3px">Si no eres tú, pídele al dueño del árbol que lo corrija.</div>';
+    box.innerHTML='<div style="text-align:center;font-size:13.5px;color:var(--texto)">👤 Eres <b style="color:var(--verde)">'+escapar(M[miMiembroId].nombre||"—")+'</b> en este árbol'+extra+'</div>'+nota+'<div id="quien-soy-edit" class="hide" style="margin-top:8px;text-align:center"></div>';
   } else {
     box.innerHTML='<div style="text-align:center"><b style="color:var(--verde)">👤 ¿Quién eres en este árbol?</b><p class="sub" style="margin:4px 0 8px">Elige tu nombre para poder recibir los mensajes que te dejen.</p>'+_selectorQuienSoy()+'</div>';
   }
