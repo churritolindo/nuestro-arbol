@@ -406,6 +406,11 @@
   .rama-form label{display:block;font-size:13px;font-weight:700;color:var(--tinta);margin:8px 0 3px}
   .rama-form input,.rama-form select{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(120,95,45,.4);
     background:#fffdf7;font-size:15px;font-family:Georgia,serif;color:var(--tinta)}
+  .esq-zoombar{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:62;
+    display:flex;gap:8px;background:rgba(251,244,223,.95);border:1.5px solid var(--oroC);border-radius:30px;padding:5px 8px;box-shadow:0 3px 12px rgba(0,0,0,.3)}
+  .esq-zoombar button{border:none;background:#4a7a5e;color:#fff;width:42px;height:42px;border-radius:50%;font-size:19px;font-weight:700;cursor:pointer;line-height:1;padding:0}
+  .esq-zoombar button.fit{background:#b7892f;font-size:17px}
+  #esq-zoomable{transform-origin:top center}
   .tree{overflow-x:auto;padding:8px 2px 10px;text-align:center}
   .tree ul{display:flex;justify-content:center;padding-top:18px;position:relative;list-style:none}
   .tree li{list-style:none;position:relative;padding:18px 6px 0;text-align:center}
@@ -1075,6 +1080,11 @@
     <div id="v-esquema" class="esq">
       <button class="esq-back" onclick="cerrarEsquema()">‹ Volver</button>
       <button class="esq-add" onclick="toggleRamaForm()">➕ Añadir familiar</button>
+      <div class="esq-zoombar">
+        <button onclick="esqZoom(-0.2)" aria-label="Alejar">➖</button>
+        <button class="fit" onclick="esqFit()" aria-label="Ver todo">⤢</button>
+        <button onclick="esqZoom(0.2)" aria-label="Acercar">➕</button>
+      </div>
       <div class="esq-scroll">
         <div class="top"><img id="esq-cartel" class="cartel-esq" style="display:none" alt=""><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
         <div id="avisos-bar-esq" class="avisos-bar hide" onclick="abrirBuzon()"></div>
@@ -3311,6 +3321,19 @@ function ramaVerTodo(){ esqUpA=esqMaxUpA; esqUpB=esqMaxUpB; redibujaFamilia(); }
 function ramaDesdeAbuelos(){ esqUpA=0; esqUpB=0; redibujaFamilia(); }
 function ramaMostrar(lado){ esqRama = (esqRama===lado) ? 'ambas' : lado; redibujaFamilia(); }
 function ramaAmbas(){ esqRama='ambas'; redibujaFamilia(); }
+/* ===== Zoom del árbol genealógico (que entre bien en el móvil) ===== */
+let _esqZoom=1, _esqFitPend=false;
+function _esqZoomEl(){ return document.getElementById('esq-zoomable'); }
+function _esqAplicaZoom(){ const z=_esqZoomEl(); if(z) z.style.zoom=String(_esqZoom); }
+function esqZoom(d){ _esqZoom=Math.max(0.4,Math.min(1.8,Math.round((_esqZoom+d)*100)/100)); _esqAplicaZoom(); }
+function esqFit(){ const z=_esqZoomEl(); if(!z) return; z.style.zoom='1';
+  const natural=z.scrollWidth||0, avail=Math.max(240, window.innerWidth-36);
+  _esqZoom = (natural>avail) ? Math.max(0.4, Math.round(avail/natural*100)/100) : 1;
+  z.style.zoom=String(_esqZoom);
+}
+function _esqTrasRender(){ if(_esqFitPend){ _esqFitPend=false; esqFit(); } else { _esqAplicaZoom(); } }
+let _esqRT=null;
+window.addEventListener('resize', ()=>{ const ov=document.getElementById('v-esquema'); if(ov && ov.classList.contains('show')){ clearTimeout(_esqRT); _esqRT=setTimeout(esqFit,180); } });
 function controlesFamiliaHTML(){
   // Solo tiene sentido aislar si hay dos lados distintos (padre y madre)
   if(!esqLabA || !esqLabB || esqLabA===esqLabB) return '';
@@ -3325,7 +3348,8 @@ function controlesFamiliaHTML(){
 function redibujaFamilia(){
   const html=familiaHTML(esqFocusId);   // calcula esqMaxUpA/B y coloca según esqUpA/B
   const ctrl=controlesFamiliaHTML();
-  document.getElementById("esq-tree").innerHTML = ctrl + (html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>');
+  document.getElementById("esq-tree").innerHTML = ctrl + '<div id="esq-zoomable">' + (html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>') + '</div>';
+  _esqTrasRender();
 }
 function _topAncestro(id){
   const M=window._miembros||{}; let cur=M[id], seen=new Set(), guard=0;
@@ -3337,6 +3361,7 @@ function _topAncestro(id){
 }
 let esqClase='persona', esqGrupo=null;
 function abrirEsquema(rootId, clase, grupo){
+  _esqFitPend=true;   // al abrir, ajustar el árbol para que entre entero en la pantalla
   esqClase = (clase==='mascota'||clase==='amigo') ? clase : 'persona';
   esqGrupo = (esqClase!=='persona' && grupo) ? grupo : null;
   const M=window._miembros||{};
@@ -3364,7 +3389,8 @@ function abrirEsquema(rootId, clase, grupo){
       }).join('')+'</div>';
     }
     const mh=mascotasHTML(false, esqClase, esqGrupo);
-    document.getElementById("esq-tree").innerHTML = chips + (mh || '<div class="hint" style="margin-top:30px">Aún no hay '+(esAmigo?'amigos':'mascotas')+' en este grupo.<br>Usa ➕ Añadir para empezar.</div>');
+    document.getElementById("esq-tree").innerHTML = chips + '<div id="esq-zoomable">' + (mh || '<div class="hint" style="margin-top:30px">Aún no hay '+(esAmigo?'amigos':'mascotas')+' en este grupo.<br>Usa ➕ Añadir para empezar.</div>') + '</div>';
+    _esqTrasRender();
   } else {
     esqUpA=99; esqUpB=99;      // antepasados: por defecto hasta arriba (bisabuelos…); se clampa al máximo real
     esqRama='ambas';           // empezar mostrando las dos ramas
