@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nuestro Árbol</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,7 +53,7 @@
   h2{font-size:17px;margin:0 0 4px;color:var(--tinta)}
   .sub{font-size:13px;color:var(--suave);margin:0 0 10px}
   label{display:block;font-size:12.5px;color:var(--suave);margin:11px 0 5px;font-weight:600}
-  input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--linea);border-radius:11px;font-size:15px;
+  input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--linea);border-radius:11px;font-size:16px;
     background:rgba(255,255,255,.92);color:var(--texto);font-family:inherit}
   textarea{min-height:90px;resize:vertical}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde)}
@@ -405,7 +405,7 @@
   .rama-form h3{font-family:Georgia,serif;color:var(--verde);margin-bottom:8px;text-align:center}
   .rama-form label{display:block;font-size:13px;font-weight:700;color:var(--tinta);margin:8px 0 3px}
   .rama-form input,.rama-form select{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(120,95,45,.4);
-    background:#fffdf7;font-size:15px;font-family:Georgia,serif;color:var(--tinta)}
+    background:#fffdf7;font-size:16px;font-family:Georgia,serif;color:var(--tinta)}
   .esq-zoombar{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:62;
     display:flex;gap:8px;background:rgba(251,244,223,.95);border:1.5px solid var(--oroC);border-radius:30px;padding:5px 8px;box-shadow:0 3px 12px rgba(0,0,0,.3)}
   .esq-zoombar button{border:none;background:#4a7a5e;color:#fff;width:42px;height:42px;border-radius:50%;font-size:19px;font-weight:700;cursor:pointer;line-height:1;padding:0}
@@ -3332,18 +3332,6 @@ function esqFit(){ const z=_esqZoomEl(); if(!z) return; z.style.zoom='1';
   z.style.zoom=String(_esqZoom);
 }
 function _esqTrasRender(){ if(_esqFitPend){ _esqFitPend=false; esqFit(); } else { _esqAplicaZoom(); } }
-// Pellizco con dos dedos para acercar/alejar SOLO el árbol genealógico
-function _dist2(t){ return Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY); }
-function _esqSetupPinch(){
-  const ov=document.getElementById('v-esquema'); if(!ov || ov._pinch) return; ov._pinch=true;
-  let d0=null, z0=1;
-  ov.addEventListener('touchstart', e=>{ if(e.touches.length===2){ d0=_dist2(e.touches); z0=_esqZoom; } }, {passive:false});
-  ov.addEventListener('touchmove', e=>{ if(e.touches.length===2 && d0){ e.preventDefault();
-    const r=_dist2(e.touches)/d0; _esqZoom=Math.max(0.35, Math.min(2.2, Math.round(z0*r*100)/100)); _esqAplicaZoom();
-  } }, {passive:false});
-  ov.addEventListener('touchend', e=>{ if(e.touches.length<2) d0=null; });
-  ov.addEventListener('touchcancel', ()=>{ d0=null; });
-}
 let _esqRT=null;
 window.addEventListener('resize', ()=>{ const ov=document.getElementById('v-esquema'); if(ov && ov.classList.contains('show')){ clearTimeout(_esqRT); _esqRT=setTimeout(esqFit,180); } });
 function controlesFamiliaHTML(){
@@ -3374,7 +3362,6 @@ function _topAncestro(id){
 let esqClase='persona', esqGrupo=null;
 function abrirEsquema(rootId, clase, grupo){
   _esqFitPend=true;   // al abrir, ajustar el árbol para que entre entero en la pantalla
-  _esqSetupPinch();   // activar el pellizco con dos dedos (una sola vez)
   esqClase = (clase==='mascota'||clase==='amigo') ? clase : 'persona';
   esqGrupo = (esqClase!=='persona' && grupo) ? grupo : null;
   const M=window._miembros||{};
