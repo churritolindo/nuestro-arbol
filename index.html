@@ -582,9 +582,9 @@
         </div>
         <div id="inv-msg" class="msg"></div>
       </div>
-      <button class="btn sec" style="margin:0 0 10px" onclick="abrirComplementar()">➕ Añadir familiares a mi árbol</button>
+      <button class="btn sec" style="margin:0 0 10px" onclick="abrirComplementar()">➕ Añadir familiares desde otro árbol</button>
       <div id="compl-box" class="hide vidrio" style="margin:0 0 12px">
-        <h2 style="font-size:17px">➕ Añadir familiares a mi árbol</h2>
+        <h2 style="font-size:17px">➕ Añadir familiares desde otro árbol</h2>
         <p class="sub">Entra con un código que te compartan y trae a su gente a tu árbol, o comparte el tuyo para que otros añadan a tu familia.</p>
         <div id="compl-cont"></div>
         <div id="compl-msg" class="msg"></div>
@@ -618,8 +618,8 @@
         </div>
       </div>
       <div id="lista"></div>
-      <div class="vidrio solo-editar" style="margin-top:16px">
-        <button class="btn sec" style="margin:0" onclick="togAdd('add-form',this,'Añadir familiar')">➕ Añadir familiar</button>
+      <div id="add-portada" class="vidrio solo-editar" style="margin-top:16px;display:none">
+        <button class="btn sec" style="margin:0" onclick="togAdd('add-form',this,'Añadir la primera persona')">➕ Añadir la primera persona</button>
         <div id="add-form" class="hide" style="margin-top:12px">
         <label>Nombre</label>
         <input id="m-nombre" placeholder="Ej. Abuela Rosa">
@@ -1085,6 +1085,30 @@
               <label>¿Qué relación de pareja?</label>
               <select id="rf-tipo"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select>
             </div>
+            <label>👪 ¿Qué parentesco es? (etiqueta, opcional)</label>
+            <select id="rf-parentesco">
+              <option value="">— Sin especificar —</option>
+              <option value="Padre">Padre</option>
+              <option value="Madre">Madre</option>
+              <option value="Hijo/a">Hijo/a</option>
+              <option value="Hermano/a">Hermano/a</option>
+              <option value="Abuelo/a">Abuelo/a</option>
+              <option value="Bisabuelo/a">Bisabuelo/a</option>
+              <option value="Tatarabuelo/a">Tatarabuelo/a</option>
+              <option value="Nieto/a">Nieto/a</option>
+              <option value="Bisnieto/a">Bisnieto/a</option>
+              <option value="Tío/a">Tío/a</option>
+              <option value="Tío/a abuelo/a">Tío/a abuelo/a</option>
+              <option value="Primo/a">Primo/a</option>
+              <option value="Primo/a segundo/a">Primo/a segundo/a</option>
+              <option value="Sobrino/a">Sobrino/a</option>
+              <option value="Sobrino/a nieto/a">Sobrino/a nieto/a</option>
+              <option value="Pareja">Pareja</option>
+              <option value="Cuñado/a">Cuñado/a</option>
+              <option value="Suegro/a">Suegro/a</option>
+              <option value="Yerno / Nuera">Yerno / Nuera</option>
+              <option value="Otro">Otro</option>
+            </select>
           </div>
           <div id="rf-masc-fields" class="hide">
             <label>¿De quién es?</label>
@@ -1258,7 +1282,7 @@
           </div>
           <ol>
             <li><b>🔗 Invitar a la familia</b> crea un código. Compártelo por WhatsApp o como quieras.</li>
-            <li>Quien lo recibe pulsa <b>➕ Añadir familiares a mi árbol</b>, pega el código en «📥 Tengo un código», y entra en <b>tu</b> árbol.</li>
+            <li>Quien lo recibe pulsa <b>➕ Añadir familiares desde otro árbol</b>, pega el código en «📥 Tengo un código», y entra en <b>tu</b> árbol.</li>
             <li>En la sección de amigos hay su propio botón de invitar (así solo ven el árbol de amigos).</li>
           </ol>
           <p>Hay dos tipos de permiso:</p>
@@ -1649,6 +1673,7 @@ async function cargarMiembros(){
   const { data,error }=await sb.from("miembros").select("*").eq("arbol_id",arbolActual.id).order("creado");
   if(error){ lista.innerHTML=""; msg("add-msg","Error al leer: "+error.message); return; }
   document.getElementById("arbol-cuenta").textContent=(data.length===1?"1 ficha":data.length+" fichas");
+  { const addP=document.getElementById("add-portada"); if(addP) addP.style.display = data.length ? "none":"block"; }
   if(!data.length){ lista.innerHTML='<div class="vacio" style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">Aún no hay nadie.<br>Añade a la primera persona abajo. 👇</div>'; return; }
   window._miembros={}; data.forEach(m=>window._miembros[m.id]=m);
   let urls={};
@@ -3388,6 +3413,9 @@ async function anadirEnRama(){
       await sb.from("miembros").update(upd).eq("id",nuevo.id); }
     else if(rel==='hermano'){ await sb.from("miembros").update({padre_id:base.padre_id||null,madre_id:base.madre_id||null}).eq("id",nuevo.id); }
   }catch(e){}
+  // etiqueta de parentesco (opcional) — si falta la columna, se ignora sin romper
+  const _rp=document.getElementById("rf-parentesco"), _par=_rp?_rp.value:"";
+  if(_par){ try{ await sb.from("miembros").update({parentesco:_par}).eq("id",nuevo.id); }catch(e){} if(_rp) _rp.value=""; }
   msg("rf-msg","Añadido ✔","ok");
   await cargarMiembros();
   abrirEsquema(esqFocusId, esqClase);
