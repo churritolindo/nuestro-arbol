@@ -792,7 +792,33 @@
         </div>
         <div class="fila">
           <div><label>Hermano/a de… (opcional, solo sale en su ficha)</label><select id="e-hermano"></select></div>
-          <div><label>Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 1975"></div>
+          <div id="e-amidesde-wrap"><label>Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 1975"></div>
+        </div>
+        <div id="e-parent-wrap">
+          <label>👪 ¿Qué parentesco tiene? (opcional)</label>
+          <select id="e-parentesco">
+            <option value="">— Sin especificar —</option>
+            <option value="Padre">Padre</option>
+            <option value="Madre">Madre</option>
+            <option value="Hijo/a">Hijo/a</option>
+            <option value="Hermano/a">Hermano/a</option>
+            <option value="Abuelo/a">Abuelo/a</option>
+            <option value="Bisabuelo/a">Bisabuelo/a</option>
+            <option value="Tatarabuelo/a">Tatarabuelo/a</option>
+            <option value="Nieto/a">Nieto/a</option>
+            <option value="Bisnieto/a">Bisnieto/a</option>
+            <option value="Tío/a">Tío/a</option>
+            <option value="Tío/a abuelo/a">Tío/a abuelo/a</option>
+            <option value="Primo/a">Primo/a</option>
+            <option value="Primo/a segundo/a">Primo/a segundo/a</option>
+            <option value="Sobrino/a">Sobrino/a</option>
+            <option value="Sobrino/a nieto/a">Sobrino/a nieto/a</option>
+            <option value="Pareja">Pareja</option>
+            <option value="Cuñado/a">Cuñado/a</option>
+            <option value="Suegro/a">Suegro/a</option>
+            <option value="Yerno / Nuera">Yerno / Nuera</option>
+            <option value="Otro">Otro</option>
+          </select>
         </div>
         <label id="e-oculto-wrap" class="chk-row" style="display:none">
           <input type="checkbox" id="e-oculto">
@@ -2468,7 +2494,8 @@ function abrirFicha(id){
   if(m.clase==="mascota"||m.clase==="amigo"){
     const g=_normG(m.grupo); const deQ = g.toLowerCase()==="familia" ? "de la familia" : "de "+g;
     document.getElementById("f-rel").textContent = (m.clase==="mascota"?"🐾 Mascota ":"🧑‍🤝‍🧑 Amigo/a ")+deQ+hermTxt+adTxt;
-  } else document.getElementById("f-rel").textContent = (m.apellidos||"")+hermTxt;
+  } else { const par=(m.parentesco||"").trim();
+    document.getElementById("f-rel").textContent = (par?"👪 "+par:"")+(par&&m.apellidos?" · ":"")+(m.apellidos||"")+hermTxt; }
   const rb=document.getElementById("f-rama-btn");
   if(rb) rb.textContent = m.clase==='mascota' ? '🐾 Ver el árbol de mascotas' : (m.clase==='amigo' ? '🧑‍🤝‍🧑 Ver el árbol de amigos' : '📜 Ver su rama');
   const hEl=document.getElementById("f-historia");
@@ -2615,6 +2642,12 @@ function abrirEditar(){
   pintaSelect("e-pareja",m.pareja_id,m.id);
   pintaSelect("e-hermano",m.hermano_id,m.id);
   document.getElementById("e-amigodesde").value = m.amigo_desde||"";
+  // "Amigo desde" solo para amigos
+  const amiW=document.getElementById("e-amidesde-wrap"); if(amiW) amiW.style.display = esAmi ? "block":"none";
+  // Parentesco solo para personas de la familia (no amigos ni mascotas)
+  const esPersona = !(m.clase==='amigo'||m.clase==='mascota');
+  const parW=document.getElementById("e-parent-wrap"); if(parW) parW.style.display = esPersona ? "block":"none";
+  const eP=document.getElementById("e-parentesco"); if(eP) eP.value = m.parentesco||"";
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
 }
 function editTipoCambia(){
@@ -2707,11 +2740,17 @@ async function guardarEdicion(){
     madre_id:document.getElementById("e-madre").value||null,
     pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP, hermano_id:hermano,
     amigo_desde:(parseInt(document.getElementById("e-amigodesde").value)||null),
+    parentesco:(document.getElementById("e-parentesco") ? (document.getElementById("e-parentesco").value||null) : null),
     aureola:(document.getElementById("e-religion").value==='cristiana' && document.getElementById("e-aureola").checked),
     alas:(document.getElementById("e-religion").value==='cristiana' && document.getElementById("e-alas").checked),
     oculto:(tipoP==="ex" && document.getElementById("e-oculto").checked) };
-  const { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
-  if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
+  let { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
+  if(error && /parentesco|column|does not exist|could not find/i.test(error.message||"")){
+    const c2=Object.assign({},cambios); delete c2.parentesco;
+    const r2=await sb.from("miembros").update(c2).eq("id",miembroActual.id);
+    if(r2.error){ msg("edit-msg","No se pudo guardar: "+r2.error.message); return; }
+    msg("edit-msg","Guardado ✔ (el parentesco necesita un pasito de SQL en Supabase).","ok");
+  } else if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
   if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   if(hermano) await sb.from("miembros").update({hermano_id:miembroActual.id}).eq("id",hermano);
   const id=miembroActual.id; await cargarMiembros(); abrirFicha(id);
