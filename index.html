@@ -582,18 +582,10 @@
         </div>
         <div id="inv-msg" class="msg"></div>
       </div>
-      <button class="btn sec" style="margin:0 0 10px" onclick="toggleJoin()">🔑 Entrar con un código</button>
-      <div id="join-box" class="hide vidrio" style="margin:0 0 12px">
-        <h2 style="font-size:17px">🔑 Entrar con un código</h2>
-        <p class="sub">¿Te han invitado a otro árbol? Pega aquí el código que te pasaron.</p>
-        <input id="join-codigo" placeholder="Ej. 7K3MQ9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;font-size:20px">
-        <button class="btn" style="margin-top:10px" onclick="unirseConCodigo()">Unirme a ese árbol</button>
-        <div id="join-msg" class="msg"></div>
-      </div>
-      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="abrirComplementar()">🌿 Complementar mi árbol</button>
-      <div id="compl-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
-        <h2 style="font-size:17px">🌿 Complementar mi árbol</h2>
-        <p class="sub">¿Tienes acceso a otro árbol (de un primo, un amigo…)? Trae a tu árbol los familiares o amigos que te falten. Tú eliges a quién copiar.</p>
+      <button class="btn sec" style="margin:0 0 10px" onclick="abrirComplementar()">➕ Añadir familiares a mi árbol</button>
+      <div id="compl-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">➕ Añadir familiares a mi árbol</h2>
+        <p class="sub">Entra con un código que te compartan y trae a su gente a tu árbol, o comparte el tuyo para que otros añadan a tu familia.</p>
         <div id="compl-cont"></div>
         <div id="compl-msg" class="msg"></div>
       </div>
@@ -1266,7 +1258,7 @@
           </div>
           <ol>
             <li><b>🔗 Invitar a la familia</b> crea un código. Compártelo por WhatsApp o como quieras.</li>
-            <li>Quien lo recibe pulsa <b>🔑 Entrar con un código</b>, lo pega, y entra en <b>tu</b> árbol.</li>
+            <li>Quien lo recibe pulsa <b>➕ Añadir familiares a mi árbol</b>, pega el código en «📥 Tengo un código», y entra en <b>tu</b> árbol.</li>
             <li>En la sección de amigos hay su propio botón de invitar (así solo ven el árbol de amigos).</li>
           </ol>
           <p>Hay dos tipos de permiso:</p>
@@ -2377,14 +2369,86 @@ function pintarComplementar(){
   limpiar("compl-msg");
   const cont=document.getElementById("compl-cont"); if(!cont) return;
   const otros=(_arboles||[]).filter(a=>a.id!==arbolActual.id);
-  if(!otros.length){
-    cont.innerHTML='<p class="sub">Primero necesitas tener acceso a otro árbol. Pídele a esa persona su código, entra con «🔑 Entrar con un código» y luego vuelve aquí.</p>';
-    return;
+  let html='';
+  // 1) Tengo un código → entrar y añadir
+  html+='<h3 style="font-size:15px;margin:2px 0 4px;color:var(--verde)">📥 Tengo un código</h3>'
+    +'<p class="sub">¿Alguien te comparte su árbol? Pega el código para entrar y poder añadir a su gente a tu árbol.</p>'
+    +'<input id="compl-codigo" placeholder="Ej. 7K3MQ9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;font-size:20px">'
+    +'<button class="btn" style="margin-top:10px" onclick="canjearCodigo()">Entrar y añadir</button>';
+  // 2) Traer de un árbol al que ya tengo acceso
+  if(otros.length){
+    html+='<div style="border-top:1px solid rgba(0,0,0,.12);margin:14px 0 10px"></div>'
+      +'<h3 style="font-size:15px;margin:2px 0 4px;color:var(--verde)">👪 Traer de un árbol que ya tengo</h3>'
+      +'<label>Traer desde este árbol:</label>'
+      +'<select id="compl-origen">'+otros.map(a=>'<option value="'+a.id+'">'+escapar(a.nombre||"Árbol")+'</option>').join('')+'</select>'
+      +'<button class="btn" style="margin-top:10px" onclick="cargarComplementar()">Ver quién puedo traer</button>'
+      +'<div id="compl-lista" style="margin-top:12px"></div>';
   }
-  cont.innerHTML='<label>Traer desde este árbol:</label>'
-    +'<select id="compl-origen">'+otros.map(a=>'<option value="'+a.id+'">'+escapar(a.nombre||"Árbol")+'</option>').join('')+'</select>'
-    +'<button class="btn" style="margin-top:10px" onclick="cargarComplementar()">Ver quién puedo traer</button>'
-    +'<div id="compl-lista" style="margin-top:12px"></div>';
+  // 3) Compartir MI árbol (solo el dueño)
+  html+='<div class="solo-dueno">'
+    +'<div style="border-top:1px solid rgba(0,0,0,.12);margin:14px 0 10px"></div>'
+    +'<h3 style="font-size:15px;margin:2px 0 4px;color:var(--verde)">📤 Compartir mi árbol</h3>'
+    +'<p class="sub">Genera un código para que otra persona entre y pueda añadir a tu familia a su propio árbol.</p>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn sec" style="margin:0;flex:1" onclick="compartirCodigo(\'una\')">👤 Para una persona</button>'
+    +'<button class="btn sec" style="margin:0;flex:1" onclick="compartirCodigo(\'todos\')">👨‍👩‍👧‍👦 Para todos</button></div>'
+    +'<div id="compl-share-res" class="hide" style="margin-top:10px">'
+    +'<div id="compl-share-cod" style="text-align:center;font-size:24px;font-weight:800;letter-spacing:4px;color:var(--verde);background:#fffdf7;border-radius:12px;padding:10px;box-shadow:0 0 0 1.5px var(--oroC)"></div>'
+    +'<a id="compl-share-wa" class="btn" style="margin-top:8px;display:block;text-align:center;text-decoration:none" target="_blank">📲 Enviar por WhatsApp</a></div>'
+    +'<div id="compl-share-msg" class="msg"></div>'
+    +'</div>';
+  cont.innerHTML=html;
+}
+// Canjear un código: entra en ese árbol y abre la lista para añadir a su gente
+async function canjearCodigo(){
+  const el=document.getElementById("compl-codigo");
+  let c=((el?el.value:"")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!c){ msg("compl-msg","Escribe el código."); return; }
+  if(!usuario){ msg("compl-msg","Entra con tu cuenta primero."); return; }
+  msg("compl-msg","Entrando…","ok");
+  let aid=null, err=null;
+  try{ const r=await sb.rpc("usar_invitacion",{ p_codigo:c }); if(r.error) err=r.error; else aid=r.data; }
+  catch(e){ err=e; }
+  if(err && /function|does not exist|exist|schema cache/i.test(err.message||"")){
+    // Falta el SQL nuevo: método antiguo (sin control de "un solo uso")
+    const { data, error } = await sb.from("invitaciones").select("arbol_id,rol").eq("codigo",c).limit(1);
+    if(error||!data||!data[0]){ msg("compl-msg","Ese código no vale o aún no está activo."); return; }
+    try{ await sb.from("arbol_miembros").insert({arbol_id:data[0].arbol_id,user_id:usuario.id,rol:data[0].rol||"visitante"}); }catch(e){}
+    aid=data[0].arbol_id;
+  } else if(err){
+    let m=err.message||"";
+    if(/ya usado/i.test(m)) m="Ese código ya se usó (era para una sola persona).";
+    else if(/no valido/i.test(m)) m="Ese código no vale o aún no está activo.";
+    msg("compl-msg","No se pudo: "+m); return;
+  }
+  if(!aid){ msg("compl-msg","Ese código no vale."); return; }
+  try{ const { data:arbs }=await sb.from("arboles").select("*").order("creado"); if(arbs) _arboles=arbs; }catch(e){}
+  if(el) el.value="";
+  msg("compl-msg","¡Acceso conseguido! Elige a quién añadir. ✔","ok");
+  pintarComplementar();
+  const sel=document.getElementById("compl-origen"); if(sel){ sel.value=aid; cargarComplementar(); }
+}
+// Compartir mi árbol: generar código para una persona (1 uso) o para todos
+async function compartirCodigo(tipo){
+  if(!arbolActual||!usuario){ msg("compl-share-msg","Abre tu árbol primero."); return; }
+  const uso=(tipo==='una');
+  const codigo=_codigoAlea();
+  let { error }=await sb.from("invitaciones").insert({arbol_id:arbolActual.id, codigo, rol:'visitante', creado_por:usuario.id, ambito:'familia', un_solo_uso:uso});
+  if(error && /un_solo_uso|column|does not exist|could not find|schema cache/i.test(error.message||"")){
+    const r2=await sb.from("invitaciones").insert({arbol_id:arbolActual.id, codigo, rol:'visitante', creado_por:usuario.id, ambito:'familia'});
+    if(r2.error){ msg("compl-share-msg","No se pudo: "+r2.error.message); return; }
+    msg("compl-share-msg","Código creado ✔ (el control de «una sola persona» necesita el pasito de SQL).","ok");
+  } else if(error){
+    const falta = error.code==="42P01" || /relation .* does not exist/i.test(error.message||"");
+    msg("compl-share-msg", falta?"Falta la tabla de invitaciones en Supabase.":"No se pudo: "+error.message); return;
+  } else {
+    msg("compl-share-msg",(uso?"Código para UNA persona":"Código para TODOS")+" creado ✔","ok");
+  }
+  const url=location.origin+location.pathname+"?invite="+codigo;
+  document.getElementById("compl-share-cod").textContent=codigo;
+  const texto="Te comparto nuestro Árbol 🌳 para que añadas a tu familia. Entra aquí: "+url+" y pon el código: "+codigo;
+  document.getElementById("compl-share-wa").href="https://wa.me/?text="+encodeURIComponent(texto);
+  document.getElementById("compl-share-res").classList.remove("hide");
 }
 async function cargarComplementar(){
   const sel=document.getElementById("compl-origen"); if(!sel) return;
