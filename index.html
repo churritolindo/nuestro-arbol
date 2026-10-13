@@ -170,6 +170,11 @@
     margin:0 0 10px;font-size:14px;text-align:center;cursor:pointer;box-shadow:0 4px 12px rgba(150,40,20,.4);
     animation:latidoBar 1.6s ease-in-out infinite}
   .avisos-bar b{text-decoration:underline}
+  .avisos-bar.grande{font-size:17px;padding:16px 15px;font-weight:700;box-shadow:0 6px 18px rgba(150,40,20,.5)}
+  /* sobre parpadeando encima de la persona en el árbol genealógico */
+  .tree .pnode.avisa-n{position:relative}
+  .tree .pnode.avisa-n .lauro{animation:parpadeo 1.1s ease-in-out infinite}
+  .tree .pnode.avisa-n::after{content:"💌";position:absolute;top:-6px;right:8px;font-size:17px;z-index:6;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));pointer-events:none}
   /* aniversarios: barra dorada + foto festejando con su emoji */
   .anivs-bar{background:linear-gradient(90deg,#b7892f,#d8b24a);color:#3a2d12;border-radius:14px;padding:11px 15px;
     margin:0 0 10px;font-size:14px;text-align:center;box-shadow:0 4px 12px rgba(150,110,30,.35);font-family:Georgia,serif}
@@ -564,7 +569,6 @@
       <div id="quien-soy" class="vidrio" style="margin:0 0 12px;display:none"></div>
       <div id="confirmar-quien" class="vidrio solo-dueno" style="margin:0 0 12px;display:none"></div>
       <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
-      <button class="btn sec" style="margin:0 0 10px" onclick="abrirRecibidos()">📁 Mensajes guardados</button>
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
       <div id="invitar-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
         <h2 style="font-size:17px">🔗 Invitar por WhatsApp</h2>
@@ -1066,6 +1070,7 @@
       <button class="esq-add" onclick="toggleRamaForm()">➕ Añadir familiar</button>
       <div class="esq-scroll">
         <div class="top"><img id="esq-cartel" class="cartel-esq" style="display:none" alt=""><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
+        <div id="avisos-bar-esq" class="avisos-bar hide" onclick="abrirBuzon()"></div>
         <div id="rama-form" class="rama-form hide">
           <h3 id="rf-titulo">Añadir un familiar a la rama</h3>
           <label>Nombre</label>
@@ -2886,7 +2891,8 @@ function _aur(m){
 }
 function _persTree(m){
   const sub=(m.clase&&m.clase!=="persona")?(m.clase==="mascota"?"mascota":"amigo/a"):"";
-  return '<div class="pnode" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
+  const avisa=(typeof _avisos!=="undefined" && _avisos.has(m.id))?" avisa-n":"";
+  return '<div class="pnode'+avisa+'" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
     +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
     +'<div class="pn">'+escapar(m.nombre)+'</div><div class="pr">'+sub+'</div></div>';
 }
@@ -3324,6 +3330,7 @@ function abrirEsquema(rootId, clase, grupo){
     esqAbiertoInit=false;      // recalcular la apertura por defecto (línea directa completa abierta, colaterales plegados)
     redibujaFamilia();
   }
+  try{ pintarAvisosBar(); }catch(e){}   // sobre "para todos" también en el genealógico
   // Las mascotas YA NO salen en el árbol de la familia: cada cosa en su árbol.
   // (Para ver las mascotas de alguien se abre el árbol de mascotas de su grupo.)
   const mp=document.getElementById("esq-mascotas");
@@ -4092,14 +4099,26 @@ async function cargarAvisos(){
   pintarPlacas();
 }
 function pintarAvisosBar(){
-  const bar=document.getElementById("avisos-bar"); if(!bar) return;
+  const bars=[document.getElementById("avisos-bar"), document.getElementById("avisos-bar-esq")];
   const n=_avisosLista.length;
-  if(!n){ bar.classList.add("hide"); bar.innerHTML=""; return; }
-  const M=window._miembros||{};
-  const autores=[...new Set(_avisosLista.map(r=>{ const a=M[r.miembro_id]; return a?a.nombre:""; }).filter(Boolean))];
-  const quien = autores.length===1 ? "de "+autores[0] : "de "+autores.length+" personas";
-  bar.innerHTML = "💌 " + (n===1?"Hay un mensaje para ti ":"Hay "+n+" mensajes para ti ") + escapar(quien) + " · <b>toca para verlo</b>";
-  bar.classList.remove("hide");
+  let html="", grande=false, hide=true;
+  if(n){
+    hide=false;
+    const M=window._miembros||{};
+    const nTodos=_avisosLista.filter(r=>r.destino==='todos').length;
+    if(nTodos>0){
+      grande=true;
+      html = "📨 <b>Mensaje para todos</b> · toca para abrirlo";
+    } else {
+      const autores=[...new Set(_avisosLista.map(r=>{ const a=M[r.miembro_id]; return a?a.nombre:""; }).filter(Boolean))];
+      const quien = autores.length===1 ? "de "+autores[0] : "de "+autores.length+" personas";
+      html = "💌 " + (n===1?"Hay un mensaje para ti ":"Hay "+n+" mensajes para ti ") + escapar(quien) + " · <b>toca para verlo</b>";
+    }
+  }
+  bars.forEach(bar=>{ if(!bar) return;
+    if(hide){ bar.classList.add("hide"); bar.innerHTML=""; }
+    else { bar.innerHTML=html; bar.classList.toggle("grande",grande); bar.classList.remove("hide"); }
+  });
 }
 function abrirBuzon(){ fondo("bgL"); ver("v-buzon"); window.scrollTo(0,0); renderBuzon(); }
 function cerrarBuzon(){ fondo("bgL"); ver("v-arbol"); }
