@@ -369,6 +369,11 @@
   .faq details[open] summary:before{content:"–"}
   .faq p{font-size:13.5px;color:var(--texto);line-height:1.55;margin:8px 0 2px;padding-left:20px}
   /* ===== guía ilustrada de ayuda ===== */
+  .ayuda-op{cursor:pointer;margin-bottom:12px;transition:transform .08s,box-shadow .12s}
+  .ayuda-op:active{transform:scale(.99)}
+  .ayuda-op h3{display:flex;align-items:center}
+  .ayuda-op .gsub{font-style:normal}
+  .ayuda-fl{margin-left:auto;font-size:26px;line-height:1;color:var(--verde,#4a7a5e);font-weight:700}
   .guia .gcard{margin-bottom:12px}
   .guia h3{font-family:Georgia,serif;color:var(--verde);font-size:17px;margin:0;display:flex;align-items:center;gap:9px;line-height:1.2}
   .guia h3 .ge{font-size:24px;flex:none}
@@ -1123,10 +1128,83 @@
 
     <!-- AYUDA -->
     <div id="v-ayuda" class="hide">
-      <button class="btn sec" style="margin-top:4px" onclick="cerrarAyuda()">‹ Volver</button>
+      <!-- PORTADA DE AYUDA: legal arriba + 3 botones -->
+      <div id="ayuda-home">
+        <button class="btn sec" style="margin-top:4px" onclick="cerrarAyuda()">‹ Volver</button>
+        <div class="setiq">Ayuda</div>
+        <div class="vidrio" style="text-align:center">
+          <button class="btn sec" style="margin:0 0 6px" onclick="abrirLegal(false)">📄 Privacidad, Condiciones y Aviso legal</button>
+          <p class="sub" style="margin:0">Léelo primero: así sabes cómo se guardan y se protegen tus recuerdos.</p>
+        </div>
 
-      <div class="setiq">Guía de uso</div>
-      <div class="guia">
+        <div class="setiq">¿Qué quieres ver?</div>
+        <div class="vidrio gcard ayuda-op" onclick="ayudaSec('general')"><h3><span class="ge">📘</span> Uso general <span class="ayuda-fl">›</span></h3><div class="gsub">Qué es Nuestro Árbol y qué puedes hacer. <b>Empieza por aquí.</b></div></div>
+        <div class="vidrio gcard ayuda-op" onclick="ayudaSec('guia')"><h3><span class="ge">👣</span> Guía de uso (paso a paso) <span class="ayuda-fl">›</span></h3><div class="gsub">Cómo empezar de cero: 1º, 2º, 3º… hasta tenerlo montado.</div></div>
+        <div class="vidrio gcard ayuda-op" onclick="ayudaSec('particular')"><h3><span class="ge">🔧</span> Uso particular <span class="ayuda-fl">›</span></h3><div class="gsub">Cada botón y cada función de la app, explicados uno a uno.</div></div>
+
+        <div class="setiq">¿Necesitas ayuda?</div>
+      <div class="vidrio faq">
+        <details><summary>¿Cómo subo una foto, vídeo, audio o texto?</summary>
+          <p>Toca a la persona en la lista para abrir su ficha. Pulsa 📷 Foto, 🎬 Vídeo, 🎤 Audio o ✍️ Texto, elige el archivo (o escribe el texto) y se guarda solo en la nube.</p></details>
+        <details><summary>No me aparece el icono en el móvil o veo la versión antigua</summary>
+          <p>Borra el icono viejo de la pantalla de inicio, abre la web en Chrome, recárgala (desliza hacia abajo) y vuelve a "Añadir a pantalla de inicio". Así coge la última versión.</p></details>
+        <details><summary>Subí una foto pero no la veo</summary>
+          <p>Recarga la página. Si sigue sin aparecer, revisa tu conexión a internet y prueba de nuevo en unos segundos.</p></details>
+        <details><summary>¿Cómo entro desde otro móvil u ordenador?</summary>
+          <p>Con el mismo correo y la misma contraseña. Todos tus datos están en la nube y se ven igual en cualquier dispositivo.</p></details>
+        <details><summary>¿Qué es gratis y qué se paga?</summary>
+          <p>Subir y guardar tus fotos, vídeos, audios y textos es gratis. Solo se paga "fabricar" cosas especiales (restaurar o colorear fotos, etc.) y ampliar la memoria si necesitas más espacio.</p></details>
+        <details><summary>¿Cómo marco que alguien ha fallecido?</summary>
+          <p>Al añadir a la persona, rellena la fecha de "Fallecimiento". Su ficha cambiará sola al fondo del atardecer, como homenaje.</p></details>
+        <details><summary>¿Se pueden perder mis datos?</summary>
+          <p>No. Están guardados de forma segura en la nube y son tuyos. Más adelante podrás descargarlos a tu ordenador cuando quieras.</p></details>
+        <details><summary>Tengo otra duda o me da un error</summary>
+          <p>Muy pronto podrás preguntar aquí mismo a nuestro asistente y te ayudará al instante con cualquier duda (funcionamiento, errores o costes). De momento, esta sección irá creciendo.</p></details>
+      </div>
+
+        <div class="setiq">Cuenta</div>
+        <div class="vidrio" style="text-align:center">
+          <button class="btn sec" style="margin:0;color:#b4462f" onclick="borrarCuenta()">🗑️ Borrar mi cuenta</button>
+          <div id="borrar-msg" class="msg"></div>
+        </div>
+      </div>
+
+      <!-- 📘 USO GENERAL -->
+      <div id="ayuda-general" class="hide">
+        <button class="btn sec" style="margin-top:4px" onclick="ayudaSec('home')">‹ Volver a Ayuda</button>
+        <div class="setiq">📘 Uso general</div>
+        <div class="guia">
+          <div class="vidrio gcard"><p class="gintro">🌳 <b>Nuestro Árbol</b> guarda a tu familia para siempre: sus <b>fotos</b>, sus <b>vídeos</b>, su <b>voz</b> y sus <b>historias</b>. Cada persona tiene su ficha con todos sus recuerdos. 💛</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">📷</span> Qué puedes guardar</h3><p>De cada persona puedes subir <b>📷 fotos</b>, <b>🎬 vídeos</b>, <b>🎤 audios</b> (su voz contando cosas) y <b>✍️ textos</b>. Las fotos la app las encoge solas; los vídeos, mejor cortos.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">👁️</span> Quién lo ve (lo decides tú)</h3><p>Cada recuerdo puede ser para <b>👥 todo el grupo</b> o <b>🔒 solo para ti</b>. Y para que entre más gente la <b>invitas con un código</b>: unos solo <b>miran</b> (invitados) y otros también pueden <b>añadir</b> (familiares). Tus hijos, tus padres, tus amigos… solo entran los que tú invites.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">💌</span> Mensajes para el futuro</h3><p>En la <b>zona privada</b> dejas cosas que aún no ve nadie: tú eliges <b>para quién</b> son y <b>cuándo</b> se abren. Una carta para tu hija el día que cumpla 18, un vídeo para tu familia para cuando tú faltes… Se abre su día, ni un minuto antes.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">🔒</span> Tus datos, seguros y tuyos</h3><p>Todo se guarda en la nube (servidores de la Unión Europea). Puedes <b>descargar una copia</b> cuando quieras. No vendemos tus datos ni los usamos para publicidad.</p></div>
+          <div class="vidrio gcard"><div class="eg">👉 Cuando tengas claro el <b>qué</b>, pasa a la <b>👣 Guía de uso</b> para ver el <b>cómo</b>, paso a paso.</div></div>
+        </div>
+      </div>
+
+      <!-- 👣 GUÍA DE USO -->
+      <div id="ayuda-guia" class="hide">
+        <button class="btn sec" style="margin-top:4px" onclick="ayudaSec('home')">‹ Volver a Ayuda</button>
+        <div class="setiq">👣 Guía de uso</div>
+        <div class="guia">
+          <div class="vidrio gcard"><p class="gintro">👣 Para empezar de cero, sigue estos pasos en orden. Sin prisa. 💛</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">1️⃣</span> Crea tu cuenta</h3><p>Pon tu <b>correo</b> y una <b>contraseña</b>, marca la casilla de ser mayor de 18 y <b>aceptar las condiciones</b> (la primera vez te pedimos leerlas) y pulsa <b>Crear cuenta nueva</b>. Usa el mismo correo en todos tus móviles.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">2️⃣</span> Pon la primera persona</h3><p>En la portada sale <b>➕ Añadir la primera persona</b>. Puedes empezar por <b>ti</b> o por un <b>abuelo</b>. Solo el nombre, y listo.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">3️⃣</span> Añade a tu familia</h3><p>Entra en <b>📜 Ver árbol genealógico</b> → <b>➕ Añadir familiar</b> y di si es <b>padre / madre / hijo / hermano</b> de alguien. Si quieres, ponle el parentesco exacto (bisabuelo, tío, primo…).</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">4️⃣</span> Sube sus recuerdos</h3><p>Toca a una persona para abrir su <b>ficha</b> y baja a <b>«Añadir un recuerdo»</b>: <b>📷 foto</b>, <b>🎬 vídeo</b>, <b>🎤 su voz</b> o <b>✍️ texto</b>. Elige si lo ve <b>todo el grupo</b> o <b>solo tú</b>.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">5️⃣</span> Di quién eres</h3><p>En <b>👤 ¿Quién eres en este árbol?</b> elige tu nombre de la lista <b>una sola vez</b>. Así los mensajes que sean para ti te llegan a ti.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">6️⃣</span> Invita a tu familia</h3><p><b>🔗 Invitar a la familia</b> crea un <b>código</b> para que entren a ver o a colaborar. Tú decides quién solo mira y quién puede añadir.</p></div>
+          <div class="vidrio gcard"><h3><span class="ge">7️⃣</span> Deja mensajes para el futuro</h3><p>En <b>🔒 Zona privada</b> guarda cartas, vídeos o audios para <b>quien tú elijas</b> y para el <b>día que tú decidas</b>. Es lo más especial de todo.</p></div>
+          <div class="vidrio gcard"><div class="eg">💡 ¿Dudas con algún botón concreto? Míralo en <b>🔧 Uso particular</b>.</div></div>
+        </div>
+      </div>
+
+      <!-- 🔧 USO PARTICULAR (la guía detallada de siempre) -->
+      <div id="ayuda-particular" class="hide">
+        <button class="btn sec" style="margin-top:4px" onclick="ayudaSec('home')">‹ Volver a Ayuda</button>
+        <div class="setiq">🔧 Uso particular</div>
+        <div class="guia">
 
         <div class="vidrio gcard">
           <p class="gintro">🌳 <b>Nuestro Árbol</b> guarda a tu familia para siempre: sus fotos, sus vídeos, su voz y sus historias. Aquí te explicamos, con dibujitos, para qué sirve cada botón y cómo hacer cada cosa. Sin prisa. 💛</p>
@@ -1341,32 +1419,6 @@
         </div>
 
       </div>
-
-      <div class="setiq">¿Necesitas ayuda?</div>
-      <div class="vidrio faq">
-        <details><summary>¿Cómo subo una foto, vídeo, audio o texto?</summary>
-          <p>Toca a la persona en la lista para abrir su ficha. Pulsa 📷 Foto, 🎬 Vídeo, 🎤 Audio o ✍️ Texto, elige el archivo (o escribe el texto) y se guarda solo en la nube.</p></details>
-        <details><summary>No me aparece el icono en el móvil o veo la versión antigua</summary>
-          <p>Borra el icono viejo de la pantalla de inicio, abre la web en Chrome, recárgala (desliza hacia abajo) y vuelve a "Añadir a pantalla de inicio". Así coge la última versión.</p></details>
-        <details><summary>Subí una foto pero no la veo</summary>
-          <p>Recarga la página. Si sigue sin aparecer, revisa tu conexión a internet y prueba de nuevo en unos segundos.</p></details>
-        <details><summary>¿Cómo entro desde otro móvil u ordenador?</summary>
-          <p>Con el mismo correo y la misma contraseña. Todos tus datos están en la nube y se ven igual en cualquier dispositivo.</p></details>
-        <details><summary>¿Qué es gratis y qué se paga?</summary>
-          <p>Subir y guardar tus fotos, vídeos, audios y textos es gratis. Solo se paga "fabricar" cosas especiales (restaurar o colorear fotos, etc.) y ampliar la memoria si necesitas más espacio.</p></details>
-        <details><summary>¿Cómo marco que alguien ha fallecido?</summary>
-          <p>Al añadir a la persona, rellena la fecha de "Fallecimiento". Su ficha cambiará sola al fondo del atardecer, como homenaje.</p></details>
-        <details><summary>¿Se pueden perder mis datos?</summary>
-          <p>No. Están guardados de forma segura en la nube y son tuyos. Más adelante podrás descargarlos a tu ordenador cuando quieras.</p></details>
-        <details><summary>Tengo otra duda o me da un error</summary>
-          <p>Muy pronto podrás preguntar aquí mismo a nuestro asistente y te ayudará al instante con cualquier duda (funcionamiento, errores o costes). De momento, esta sección irá creciendo.</p></details>
-      </div>
-
-      <div class="setiq">Legal y cuenta</div>
-      <div class="vidrio" style="text-align:center">
-        <button class="btn sec" style="margin:0 0 8px" onclick="abrirLegal(false)">📄 Política de Privacidad, Condiciones y Aviso legal</button>
-        <button class="btn sec" style="margin:0;color:#b4462f" onclick="borrarCuenta()">🗑️ Borrar mi cuenta</button>
-        <div id="borrar-msg" class="msg"></div>
       </div>
     </div>
 
@@ -1433,8 +1485,9 @@ function ver(id){
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
   document.getElementById("btn-ayuda").classList.toggle("hide", id==="v-ayuda"||id==="v-carga");
 }
-function abrirAyuda(){ const vs=["v-auth","v-crear","v-arbol","v-ficha"]; vistaPrevia=vs.find(v=>!document.getElementById(v).classList.contains("hide"))||"v-arbol"; ver("v-ayuda"); window.scrollTo(0,0); }
+function abrirAyuda(){ const vs=["v-auth","v-crear","v-arbol","v-ficha"]; vistaPrevia=vs.find(v=>!document.getElementById(v).classList.contains("hide"))||"v-arbol"; ver("v-ayuda"); ayudaSec('home'); window.scrollTo(0,0); }
 function cerrarAyuda(){ ver(vistaPrevia); window.scrollTo(0,0); }
+function ayudaSec(sec){ ['home','general','guia','particular'].forEach(s=>{ const el=document.getElementById('ayuda-'+s); if(el) el.classList.toggle('hide', s!==sec); }); window.scrollTo(0,0); }
 /* ====== LEGAL / CONSENTIMIENTO ====== */
 let _legalGate=false, _legalPrev="v-ayuda";
 function _aceptado(){ try{ return !!(usuario && usuario.user_metadata && usuario.user_metadata.acepto_ver===LEGAL_VER); }catch(e){ return false; } }
