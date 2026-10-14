@@ -1108,11 +1108,25 @@
             <input id="rf-parentesco" list="dl-parentesco" autocomplete="off" placeholder="Ej. bisabuelo · padre de mi padre · tatarabuelo de mis sobrinos…">
           </div>
           <div id="rf-masc-fields" class="hide">
+            <div id="rf-especie-wrap" class="hide">
+              <label>Especie (perro, gato, pájaro…)</label>
+              <input id="rf-especie" placeholder="Ej. Perro">
+            </div>
             <label>¿De quién es?</label>
             <select id="rf-grupo"></select>
             <div class="fila">
-              <div style="flex:1"><label>Nació</label><input type="date" id="rf-nac"></div>
+              <div style="flex:1"><label>Año (nació)</label><input type="date" id="rf-nac"></div>
               <div style="flex:1"><label>Se fue (opcional)</label><input type="date" id="rf-fall"></div>
+            </div>
+            <label id="rf-mrel-lbl">¿Tiene relación con otro/a? (opcional)</label>
+            <select id="rf-mrel" onchange="onMRelChange()">
+              <option value="">— suelto/a —</option>
+              <option value="pareja">es pareja de…</option>
+              <option value="hijo">es hijo/a de… (cría / camada)</option>
+            </select>
+            <div id="rf-mbase-wrap" class="hide">
+              <label id="rf-mbase-lbl">¿de quién?</label>
+              <select id="rf-mbase"></select>
             </div>
           </div>
           <button class="btn" style="margin-top:12px" onclick="anadirEnRama()">＋ Añadir</button>
@@ -3493,10 +3507,20 @@ function rellenarRamaBase(){
   document.getElementById("rf-nombre").value=""; limpiar("rf-msg");
   document.getElementById("rf-nombre").placeholder = esMasc ? (esqClase==='amigo'?"Ej. Marcos":"Ej. Nova") : "Ej. Bisabuelo Antonio";
   if(esMasc){
+    const esMascota = esqClase==='mascota';
+    const ew=document.getElementById("rf-especie-wrap"); if(ew) ew.classList.toggle("hide", !esMascota);
+    const ei=document.getElementById("rf-especie"); if(ei) ei.value="";
     const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
     document.getElementById("rf-grupo").innerHTML='<option value="Familia">👨‍👩‍👧‍👦 Toda la familia</option>'
       +personas.map(p=>'<option value="'+escapar(p.nombre)+'">de '+escapar(p.nombre)+'</option>').join('');
     document.getElementById("rf-nac").value=""; document.getElementById("rf-fall").value="";
+    // relación opcional con otro amigo/mascota que ya exista
+    const mrel=document.getElementById("rf-mrel"); if(mrel) mrel.value="";
+    const lbl=document.getElementById("rf-mrel-lbl"); if(lbl) lbl.textContent = esMascota ? "¿Es cría o pareja de otra mascota? (opcional)" : "¿Es pareja o hijo/a de otro amigo/a? (opcional)";
+    const yo=(window._arr||[]).filter(m=>m.clase===esqClase).slice()
+      .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))||String(a.nacimiento||'').localeCompare(String(b.nacimiento||'')));
+    const mb=document.getElementById("rf-mbase"); if(mb) mb.innerHTML=yo.map(p=>'<option value="'+p.id+'">'+_etiqPersona(p)+'</option>').join('');
+    onMRelChange();
   } else {
     const base=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
     const sel=document.getElementById("rf-base");
@@ -3512,6 +3536,13 @@ function onRelChange(){
   const map={padre:'¿de quién es el padre?',madre:'¿de quién es la madre?',pareja:'¿pareja de quién?',hijo:'¿hijo/a de quién?',hermano:'¿hermano/a de quién?'};
   document.getElementById("rf-baselbl").textContent=map[rel]||'¿de quién?';
 }
+// relación opcional en el árbol de amigos/mascotas (pareja / cría)
+function onMRelChange(){
+  const rel=(document.getElementById("rf-mrel")||{}).value||"";
+  const w=document.getElementById("rf-mbase-wrap"); if(w) w.classList.toggle("hide", !rel);
+  const lbl=document.getElementById("rf-mbase-lbl");
+  if(lbl) lbl.textContent = rel==='pareja' ? '¿pareja de quién?' : (rel==='hijo' ? '¿hijo/a de quién? (su padre/madre)' : '¿de quién?');
+}
 async function pinRaizSiHaceFalta(baseId){
   if(!arbolActual || arbolActual.raiz_id) return;
   const top=_topAncestro(baseId); if(!top) return;
@@ -3522,15 +3553,31 @@ async function anadirEnRama(){
   limpiar("rf-msg");
   const nombre=document.getElementById("rf-nombre").value.trim();
   if(!nombre){ msg("rf-msg","Escribe un nombre."); return; }
-  // MASCOTA/AMIGO: por antigüedad (fecha), sin parentesco
+  // MASCOTA/AMIGO: por antigüedad (año) + relación opcional (pareja / cría)
   if(esqClase==='mascota'||esqClase==='amigo'){
+    const esMascota=esqClase==='mascota';
+    const M=window._miembros||{};
+    const rel=(document.getElementById("rf-mrel")||{}).value||"";
+    const baseId=(document.getElementById("rf-mbase")||{}).value||"";
+    const base = (rel && baseId && M[baseId]) ? M[baseId] : null;
     const ins={arbol_id:arbolActual.id,nombre,clase:esqClase,
-      grupo:document.getElementById("rf-grupo").value||'Familia',
+      grupo:(base&&base.grupo) ? base.grupo : (document.getElementById("rf-grupo").value||'Familia'),
       nacimiento:document.getElementById("rf-nac").value||null,
       fallecimiento:document.getElementById("rf-fall").value||null};
-    const { error }=await sb.from("miembros").insert(ins);
-    if(error){ msg("rf-msg","No se pudo guardar: "+error.message); return; }
-    msg("rf-msg","Añadido ✔","ok"); await cargarMiembros(); abrirEsquema(null,esqClase); return;
+    if(esMascota){ const e=(document.getElementById("rf-especie")||{}).value; if(e&&e.trim()) ins.especie=e.trim(); }
+    else { ins.rol = (rel==='pareja') ? 'pareja' : 'amigo'; }
+    const { data:nuevo, error }=await sb.from("miembros").insert(ins).select().single();
+    if(error||!nuevo){ msg("rf-msg","No se pudo guardar: "+((error&&error.message)||"")); return; }
+    if(base){ try{
+      if(rel==='pareja'){
+        await sb.from("miembros").update({pareja_id:base.id,tipo_pareja:'pareja',expareja:false}).eq("id",nuevo.id);
+        await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:'pareja',expareja:false}).eq("id",base.id);
+      } else if(rel==='hijo'){
+        const upd={padre_id:base.id}; if(base.pareja_id && M[base.pareja_id]) upd.madre_id=base.pareja_id;
+        await sb.from("miembros").update(upd).eq("id",nuevo.id);
+      }
+    }catch(e){} }
+    msg("rf-msg","Añadido ✔","ok"); await cargarMiembros(); abrirEsquema(null,esqClase,esqGrupo); return;
   }
   const rel=document.getElementById("rf-rel").value;
   const baseId=document.getElementById("rf-base").value;
