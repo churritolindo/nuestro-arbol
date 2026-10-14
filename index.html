@@ -3079,10 +3079,10 @@ function _subBloque(all, clase, owner){
 function familiaHTML(focalId){
   const M=window._miembros||{};
   const persona = m => !!m && (!m.clase || m.clase==='persona');
-  const arr=Object.values(M).filter(persona);
+  const arr=Object.values(M).filter(m=>persona(m)&&!m.oculto);   // respeta la casilla "ocultar"
   if(!arr.length) return "";
   const P=id=>M[id];
-  const parejaDe = m => (m && m.pareja_id && persona(P(m.pareja_id))) ? P(m.pareja_id) : null;
+  const parejaDe = m => { if(!m||!m.pareja_id) return null; const p=P(m.pareja_id); return (persona(p)&&!p.oculto)?p:null; };
   const hijosDe = pIds => arr.filter(c=> pIds.includes(c.padre_id)||pIds.includes(c.madre_id));
   let focal = persona(P(focalId)) ? P(focalId) : null;
   if(!focal){ focal = arr.find(m=>(m.padre_id||m.madre_id) && hijosDe([m.id]).length===0) || arr.find(m=>m.padre_id||m.madre_id) || arr[0]; }
@@ -3462,20 +3462,35 @@ async function anadirEnRama(){
   if(!base){ msg("rf-msg","Elige de quién es."); return; }
   const { data:nuevo, error }=await sb.from("miembros").insert({arbol_id:arbolActual.id,nombre,clase:'persona'}).select().single();
   if(error||!nuevo){ msg("rf-msg","No se pudo guardar: "+((error&&error.message)||"")); return; }
+  // Solo enlazamos a personas que EXISTEN de verdad. Si la "pareja/padre/madre" de referencia
+  // ya no existe (borrada), NO se copia: así un hijo de progenitor soltero se guarda igual.
+  const _vive = id => !!(id && M[id] && (!M[id].clase || M[id].clase==='persona'));
+  const _upd = async (id,campos)=>{ const { error }=await sb.from("miembros").update(campos).eq("id",id); return error||null; };
+  let _linkErr=null;
   try{
-    if(rel==='padre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({padre_id:nuevo.id}).eq("id",base.id);
-      if(base.madre_id){ await sb.from("miembros").update({pareja_id:base.madre_id,tipo_pareja:'casados',expareja:false}).eq("id",nuevo.id);
-        await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:'casados',expareja:false}).eq("id",base.madre_id); } }
-    else if(rel==='madre'){ await pinRaizSiHaceFalta(baseId); await sb.from("miembros").update({madre_id:nuevo.id}).eq("id",base.id);
-      if(base.padre_id){ await sb.from("miembros").update({pareja_id:base.padre_id,tipo_pareja:'casados',expareja:false}).eq("id",nuevo.id);
-        await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:'casados',expareja:false}).eq("id",base.padre_id); } }
+    if(rel==='padre'){ await pinRaizSiHaceFalta(baseId);
+      _linkErr = await _upd(base.id,{padre_id:nuevo.id});
+      if(!_linkErr && _vive(base.madre_id)){
+        await _upd(nuevo.id,{pareja_id:base.madre_id,tipo_pareja:'casados',expareja:false});
+        await _upd(base.madre_id,{pareja_id:nuevo.id,tipo_pareja:'casados',expareja:false}); } }
+    else if(rel==='madre'){ await pinRaizSiHaceFalta(baseId);
+      _linkErr = await _upd(base.id,{madre_id:nuevo.id});
+      if(!_linkErr && _vive(base.padre_id)){
+        await _upd(nuevo.id,{pareja_id:base.padre_id,tipo_pareja:'casados',expareja:false});
+        await _upd(base.padre_id,{pareja_id:nuevo.id,tipo_pareja:'casados',expareja:false}); } }
     else if(rel==='pareja'){ const tipo=document.getElementById("rf-tipo").value;
-      await sb.from("miembros").update({pareja_id:base.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",nuevo.id);
-      await sb.from("miembros").update({pareja_id:nuevo.id,tipo_pareja:tipo,expareja:tipo==='ex'}).eq("id",base.id); }
-    else if(rel==='hijo'){ const upd={padre_id:base.id}; if(base.pareja_id) upd.madre_id=base.pareja_id;
-      await sb.from("miembros").update(upd).eq("id",nuevo.id); }
-    else if(rel==='hermano'){ await sb.from("miembros").update({padre_id:base.padre_id||null,madre_id:base.madre_id||null}).eq("id",nuevo.id); }
-  }catch(e){}
+      _linkErr = await _upd(nuevo.id,{pareja_id:base.id,tipo_pareja:tipo,expareja:tipo==='ex'});
+      if(!_linkErr) await _upd(base.id,{pareja_id:nuevo.id,tipo_pareja:tipo,expareja:tipo==='ex'}); }
+    else if(rel==='hijo'){ const upd={padre_id:base.id}; if(_vive(base.pareja_id)) upd.madre_id=base.pareja_id;
+      _linkErr = await _upd(nuevo.id,upd); }
+    else if(rel==='hermano'){ _linkErr = await _upd(nuevo.id,{padre_id:_vive(base.padre_id)?base.padre_id:null, madre_id:_vive(base.madre_id)?base.madre_id:null}); }
+  }catch(e){ _linkErr={message:String((e&&e.message)||e)}; }
+  if(_linkErr){
+    // No dejamos a la persona suelta: borramos el intento fallido y avisamos (sin tapar el error).
+    try{ await sb.from("miembros").delete().eq("id",nuevo.id); }catch(e){}
+    msg("rf-msg","No se pudo enlazar: "+((_linkErr&&_linkErr.message)||"")+". No se ha creado, inténtalo de nuevo.");
+    return;
+  }
   // etiqueta de parentesco (opcional) — si falta la columna, se ignora sin romper
   const _rp=document.getElementById("rf-parentesco"), _par=_rp?_rp.value:"";
   if(_par){ try{ await sb.from("miembros").update({parentesco:_par}).eq("id",nuevo.id); }catch(e){} if(_rp) _rp.value=""; }
