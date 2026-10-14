@@ -3482,6 +3482,8 @@ async function anadirEnRama(){
   msg("rf-msg","Añadido ✔","ok");
   await cargarMiembros();
   abrirEsquema(esqFocusId, esqClase);
+  // abre la rama donde acabamos de añadir, para que la nueva persona se vea al momento (no escondida tras un ➕)
+  try{ if(base&&base.id) esqAbierto.add(base.id); if(nuevo&&nuevo.id) esqAbierto.add(nuevo.id); redibujaFamilia(); }catch(e){}
 }
 async function setCabeza(){
   if(!miembroActual||!arbolActual) return;
