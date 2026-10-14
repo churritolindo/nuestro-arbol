@@ -3169,21 +3169,24 @@ function familiaHTML(focalId){
     }
   }
   // padres de A por encima del grupo [hermanos de A + A]; padres de B por encima de [B + hermanos de B]
-  function abuelosDe(person, groupX, maxUp){
+  function abuelosDe(person, groupX, maxUp, side){
     const fa=P(person.padre_id), mo=P(person.madre_id);
     if(!persona(fa)&&!persona(mo)) return;
-    const gmin=Math.min.apply(null,groupX), gmax=Math.max.apply(null,groupX), gc=(gmin+gmax)/2;
+    const gmin=Math.min.apply(null,groupX), gmax=Math.max.apply(null,groupX), gc0=(gmin+gmax)/2;
     const y=-GENH, my=-GENH/2, span=130;
+    // separa la pareja de abuelos PATERNOS (izquierda) de los MATERNOS (derecha) para que no se solapen
+    const shift = side==='L' ? -span : side==='R' ? span : 0;
+    const gc = gc0 + shift;
     if(persona(fa)&&persona(mo)){
       const fx=gc-span/2, mx=gc+span/2;
       if(!placed.has(fa.id)){ placed.add(fa.id); nodes.push({id:fa.id,x:fx,y}); }
       if(!placed.has(mo.id)){ placed.add(mo.id); nodes.push({id:mo.id,x:mx,y}); }
       hearts.push({x:gc,y,s:_simboloRel(fa.tipo_pareja||mo.tipo_pareja||'casados')});
-      links.push([gc,y+26,gc,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
+      links.push([gc,y+26,gc0,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
       if(maxUp>=1){ up(fa.id,fx,2,1+maxUp); up(mo.id,mx,2,1+maxUp); }
     } else { const o=persona(fa)?fa:mo;
       if(!placed.has(o.id)){ placed.add(o.id); nodes.push({id:o.id,x:gc,y}); }
-      links.push([gc,y+26,gc,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
+      links.push([gc,y+26,gc0,my]); links.push([gmin,my,gmax,my]); groupX.forEach(x=>links.push([x,my,x,-26]));
       if(maxUp>=1) up(o.id,gc,2,1+maxUp);
     }
   }
@@ -3197,8 +3200,8 @@ function familiaHTML(focalId){
   }
   esqMaxUpA=profAncestros(A); esqMaxUpB=B?profAncestros(B):0;
   esqUpA=Math.max(0,Math.min(esqUpA,esqMaxUpA)); esqUpB=Math.max(0,Math.min(esqUpB,esqMaxUpB));
-  if(verA) abuelosDe(A, lc.concat([Ax]), esqUpA);
-  if(B && verB) abuelosDe(B, rc.concat([Bx]), esqUpB);
+  if(verA) abuelosDe(A, lc.concat([Ax]), esqUpA, B?'L':null);
+  if(B && verB) abuelosDe(B, rc.concat([Bx]), esqUpB, 'R');
 
   if(!nodes.length) return "";
   const xs=nodes.map(n=>n.x).concat(toggles.map(t=>t.x)), ys=nodes.map(n=>n.y).concat(toggles.map(t=>t.y)), PADX=46, PADY=50;
