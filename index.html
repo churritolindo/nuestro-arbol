@@ -2691,6 +2691,8 @@ function abrirFicha(id){
     document.getElementById("f-rel").textContent = (par?"👪 "+par:"")+(par&&m.apellidos?" · ":"")+(m.apellidos||"")+hermTxt; }
   const rb=document.getElementById("f-rama-btn");
   if(rb) rb.textContent = m.clase==='mascota' ? '🐾 Ver el árbol de mascotas' : (m.clase==='amigo' ? '🧑‍🤝‍🧑 Ver el árbol de amigos' : '📜 Ver su rama');
+  // Las mascotas no dejan mensajes póstumos: nada de Zona privada en su ficha (amigos y familia sí)
+  const pbtn=document.getElementById("f-priv-btn"); if(pbtn) pbtn.classList.toggle("hide", m.clase==='mascota');
   const hEl=document.getElementById("f-historia");
   const h=(m.historia||"").trim(), lug=(m.lugar_nac||"").trim();
   const cuerpo=(lug?("📍 Nació en "+lug+"\n\n"):"")+h;
