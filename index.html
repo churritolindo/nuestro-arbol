@@ -587,7 +587,7 @@
       <div class="setiq">Tu familia · <span id="arbol-cuenta">0 fichas</span></div>
       <div id="quien-soy" class="vidrio" style="margin:0 0 12px;display:none"></div>
       <div id="confirmar-quien" class="vidrio solo-dueno" style="margin:0 0 12px;display:none"></div>
-      <button class="btn sec" style="margin:0 0 10px" onclick="abrirEsquema(null)">📜 Ver árbol genealógico</button>
+      <button class="btn sec" id="ver-arbol-btn" style="margin:0 0 10px" onclick="verArbolActual()">📜 Ver árbol genealógico</button>
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
       <div id="invitar-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
         <h2 style="font-size:17px">🔗 Invitar por WhatsApp</h2>
@@ -2083,7 +2083,17 @@ function pintarArbol(){
   const cartelImg='<img class="cartel-fam" src="diseno/carteles/'+cartel+'.png" alt="'+cartel+'">';
   document.getElementById("arbol-visual").innerHTML='<div class="banner-arb" onclick="'+onclickImg+'"><img class="main" src="'+imgSrc+'">'+flechas+cartelImg+'</div>';
   _setupSwipeArbol();
+  // El botón "Ver árbol genealógico" sigue la pestaña del carrusel (familia / amigos / mascotas)
+  const vb=document.getElementById('ver-arbol-btn');
+  if(vb) vb.textContent = tab==='amigos' ? '🧑‍🤝‍🧑 Ver árbol de amigos' : (tab==='mascota' ? '🐾 Ver árbol de mascotas' : '📜 Ver árbol genealógico');
   if(tab==='familia') pintarPlacas();   // las coronas de la familia solo en su pestaña
+}
+// Abre el árbol genealógico de la pestaña en la que estás (no siempre la familia)
+function verArbolActual(){
+  const tab=_PTABS[_portadaTab];
+  if(tab==='amigos'){ subClase='amigo'; subGrupo=null; subAbierto=new Set(); abrirEsquema(null,'amigo',null); }
+  else if(tab==='mascota'){ subClase='mascota'; subGrupo=null; subAbierto=new Set(); abrirEsquema(null,'mascota',null); }
+  else abrirEsquema(null);
 }
 function toggleEspecies(){
   const p=document.getElementById("especies-panel");
