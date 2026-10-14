@@ -1833,7 +1833,7 @@ function pintarPlacas(){
   function layout(m, depth){
     if(vis.has(m.id)) return null;
     vis.add(m.id);
-    const parejas=_parejasDe(m).filter(p=>!vis.has(p.id));
+    const parejas=_parejasDe(m).filter(p=>!vis.has(p.id) && !p.oculto);   // no pintar parejas ocultas (ex ocultado)
     parejas.forEach(p=>vis.add(p.id));
     const ids=[m.id,...parejas.map(p=>p.id)];
     const kids = depth>=2 ? [] : hijosDe(ids).filter(c=>!vis.has(c.id));
