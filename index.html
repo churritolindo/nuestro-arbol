@@ -805,30 +805,20 @@
           <div id="e-amidesde-wrap"><label>Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 1975"></div>
         </div>
         <div id="e-parent-wrap">
-          <label>👪 ¿Qué parentesco tiene? (opcional)</label>
-          <select id="e-parentesco">
-            <option value="">— Sin especificar —</option>
-            <option value="Padre">Padre</option>
-            <option value="Madre">Madre</option>
-            <option value="Hijo/a">Hijo/a</option>
-            <option value="Hermano/a">Hermano/a</option>
-            <option value="Abuelo/a">Abuelo/a</option>
-            <option value="Bisabuelo/a">Bisabuelo/a</option>
-            <option value="Tatarabuelo/a">Tatarabuelo/a</option>
-            <option value="Nieto/a">Nieto/a</option>
-            <option value="Bisnieto/a">Bisnieto/a</option>
-            <option value="Tío/a">Tío/a</option>
-            <option value="Tío/a abuelo/a">Tío/a abuelo/a</option>
-            <option value="Primo/a">Primo/a</option>
-            <option value="Primo/a segundo/a">Primo/a segundo/a</option>
-            <option value="Sobrino/a">Sobrino/a</option>
-            <option value="Sobrino/a nieto/a">Sobrino/a nieto/a</option>
-            <option value="Pareja">Pareja</option>
-            <option value="Cuñado/a">Cuñado/a</option>
-            <option value="Suegro/a">Suegro/a</option>
-            <option value="Yerno / Nuera">Yerno / Nuera</option>
-            <option value="Otro">Otro</option>
-          </select>
+          <label>👪 ¿Qué parentesco tiene? (opcional — puedes escribirlo a mano)</label>
+          <input id="e-parentesco" list="dl-parentesco" autocomplete="off" placeholder="Ej. bisabuelo · padre de mi padre · tatarabuelo de mis sobrinos…">
+          <datalist id="dl-parentesco">
+            <option value="Padre"></option><option value="Madre"></option>
+            <option value="Hijo/a"></option><option value="Hermano/a"></option>
+            <option value="Abuelo/a"></option><option value="Bisabuelo/a"></option>
+            <option value="Tatarabuelo/a"></option><option value="Nieto/a"></option>
+            <option value="Bisnieto/a"></option><option value="Tío/a"></option>
+            <option value="Tío/a abuelo/a"></option><option value="Primo/a"></option>
+            <option value="Primo/a segundo/a"></option><option value="Sobrino/a"></option>
+            <option value="Sobrino/a nieto/a"></option><option value="Pareja"></option>
+            <option value="Cuñado/a"></option><option value="Suegro/a"></option>
+            <option value="Yerno / Nuera"></option>
+          </datalist>
         </div>
         <label id="e-oculto-wrap" class="chk-row" style="display:none">
           <input type="checkbox" id="e-oculto">
@@ -1109,30 +1099,8 @@
               <label>¿Qué relación de pareja?</label>
               <select id="rf-tipo"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select>
             </div>
-            <label>👪 ¿Qué parentesco es? (etiqueta, opcional)</label>
-            <select id="rf-parentesco">
-              <option value="">— Sin especificar —</option>
-              <option value="Padre">Padre</option>
-              <option value="Madre">Madre</option>
-              <option value="Hijo/a">Hijo/a</option>
-              <option value="Hermano/a">Hermano/a</option>
-              <option value="Abuelo/a">Abuelo/a</option>
-              <option value="Bisabuelo/a">Bisabuelo/a</option>
-              <option value="Tatarabuelo/a">Tatarabuelo/a</option>
-              <option value="Nieto/a">Nieto/a</option>
-              <option value="Bisnieto/a">Bisnieto/a</option>
-              <option value="Tío/a">Tío/a</option>
-              <option value="Tío/a abuelo/a">Tío/a abuelo/a</option>
-              <option value="Primo/a">Primo/a</option>
-              <option value="Primo/a segundo/a">Primo/a segundo/a</option>
-              <option value="Sobrino/a">Sobrino/a</option>
-              <option value="Sobrino/a nieto/a">Sobrino/a nieto/a</option>
-              <option value="Pareja">Pareja</option>
-              <option value="Cuñado/a">Cuñado/a</option>
-              <option value="Suegro/a">Suegro/a</option>
-              <option value="Yerno / Nuera">Yerno / Nuera</option>
-              <option value="Otro">Otro</option>
-            </select>
+            <label>👪 ¿Qué parentesco es? (opcional — puedes escribirlo a mano)</label>
+            <input id="rf-parentesco" list="dl-parentesco" autocomplete="off" placeholder="Ej. bisabuelo · padre de mi padre · tatarabuelo de mis sobrinos…">
           </div>
           <div id="rf-masc-fields" class="hide">
             <label>¿De quién es?</label>
