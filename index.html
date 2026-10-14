@@ -1078,6 +1078,7 @@
         <button onclick="esqZoom(0.2)" aria-label="Acercar">➕</button>
         <button class="fit" onclick="diagLinks()" aria-label="Diagnóstico" title="Diagnóstico" style="background:#8a4a4a;font-size:16px">🔧</button>
         <button class="fit" onclick="limpiarArbol()" aria-label="Limpiar duplicados" title="Limpiar duplicados" style="background:#5a6e8a;font-size:16px">🧹</button>
+        <button class="fit" onclick="soloFamilia()" aria-label="Dejar solo mi familia directa" title="Dejar solo mi familia directa" style="background:#4a7a5e;font-size:15px">👪</button>
       </div>
       <div class="esq-scroll">
         <div class="top"><img id="esq-cartel" class="cartel-esq" style="display:none" alt=""><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
@@ -1718,8 +1719,9 @@ async function cargarMiembros(){
 }
 /* ===== ENTREGA REAL · FASE A — "¿quién eres en este árbol?" ===== */
 function _opcionesPersonas(){
-  const arr=(window._arr||[]).filter(m=>m.clase!=="mascota");   // personas (familia y amigos)
-  return arr.map(m=>'<option value="'+m.id+'"'+(m.id===miMiembroId?" selected":"")+'>'+escapar(m.nombre||"—")+'</option>').join("");
+  const arr=(window._arr||[]).filter(m=>m.clase!=="mascota")   // personas (familia y amigos)
+    .slice().sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))||String(a.nacimiento||'').localeCompare(String(b.nacimiento||'')));
+  return arr.map(m=>'<option value="'+m.id+'"'+(m.id===miMiembroId?" selected":"")+'>'+_etiqPersona(m)+'</option>').join("");
 }
 function _selectorQuienSoy(){
   return '<select id="quien-soy-sel" style="margin:0 0 8px"><option value="">— elige tu nombre —</option>'+_opcionesPersonas()+'</select>'
@@ -1776,7 +1778,7 @@ async function cargarConfirmaciones(){
 function _filaConfirm(r,M){
   const nom = r.miembro_id && M[r.miembro_id] ? escapar(M[r.miembro_id].nombre||"—") : "";
   const sel = '<select id="conf-sel-'+r.user_id+'" style="margin:0;flex:1;min-width:0"><option value="">— elige —</option>'
-    +(window._arr||[]).filter(m=>m.clase!=="mascota").map(m=>'<option value="'+m.id+'"'+(m.id===r.miembro_id?" selected":"")+'>'+escapar(m.nombre||"—")+'</option>').join("")+'</select>';
+    +(window._arr||[]).filter(m=>m.clase!=="mascota").slice().sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))||String(a.nacimiento||'').localeCompare(String(b.nacimiento||''))).map(m=>'<option value="'+m.id+'"'+(m.id===r.miembro_id?" selected":"")+'>'+_etiqPersona(m)+'</option>').join("")+'</select>';
   let estado;
   if(!r.miembro_id) estado='<span style="color:#9a6a2a">aún no ha dicho quién es</span>';
   else if(r.miembro_ok) estado='<span style="color:#2f7d3a">✔ confirmado: <b>'+nom+'</b></span>';
@@ -2892,10 +2894,21 @@ function volverArbol(){
 }
 
 /* ===== Parentesco + árbol genealógico ===== */
+// Etiqueta para distinguir personas con el mismo nombre en los desplegables:
+// "José Pérez (1895) · bisabuelo"  —  año, apellidos y parentesco si los tiene
+function _etiqPersona(m){
+  if(!m) return '—';
+  const y=(m.nacimiento||'').slice(0,4);
+  const ap=m.apellidos?(' '+m.apellidos):'';
+  const par=m.parentesco?(' · '+String(m.parentesco).slice(0,24)):'';
+  const cl=m.clase==='mascota'?' 🐾':(m.clase==='amigo'?' · amigo/a':'');
+  return escapar((m.nombre||'—')+ap+(y?(' ('+y+')'):'')+par+cl);
+}
 function pintaSelect(id, current, excludeId){
   const s=document.getElementById(id); if(!s) return;
-  const arr=Object.values(window._miembros||{}).filter(m=>m.id!==excludeId);
-  s.innerHTML='<option value="">— nadie —</option>'+arr.map(m=>'<option value="'+m.id+'">'+escapar(m.nombre)+'</option>').join("");
+  const arr=Object.values(window._miembros||{}).filter(m=>m.id!==excludeId)
+    .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))||String(a.nacimiento||'').localeCompare(String(b.nacimiento||'')));
+  s.innerHTML='<option value="">— nadie —</option>'+arr.map(m=>'<option value="'+m.id+'">'+_etiqPersona(m)+'</option>').join("");
   s.value=current||"";
 }
 function _caraTree(m){
@@ -3380,6 +3393,79 @@ function limpiarArbol(){
     }catch(e){ alert('Error al limpiar: '+((e&&e.message)||e)); btn.disabled=false; btn.textContent='Aplicar limpieza'; }
   };
 }
+// —— Dejar SOLO la familia directa (temporal). Borra tíos, primos y morralla de pruebas. ——
+function _famDirecta(selfId, M, arr){
+  const keep=new Set([selfId]); const P=id=>M[id];
+  // ancestros hasta abuelos (2 niveles): padres y abuelos
+  (function up(id,lvl){ if(!id||lvl>2) return; const m=P(id); if(!m) return;
+    [m.padre_id,m.madre_id].forEach(pid=>{ if(pid&&M[pid]&&!keep.has(pid)){ keep.add(pid); up(pid,lvl+1); } }); })(selfId,1);
+  // hermanos (comparten padre o madre conmigo) + yo
+  const self=P(selfId)||{}; const sp=[self.padre_id,self.madre_id].filter(Boolean);
+  const sibSelf=new Set([selfId]);
+  arr.forEach(x=>{ if(x.id!==selfId && (sp.includes(x.padre_id)||sp.includes(x.madre_id))) { keep.add(x.id); sibSelf.add(x.id); } });
+  // descendientes míos y de mis hermanos (sobrinos, etc.)
+  (function down(ids){ arr.forEach(c=>{ if((ids.includes(c.padre_id)||ids.includes(c.madre_id))&&!keep.has(c.id)){ keep.add(c.id); down([c.id]); } }); })([...sibSelf]);
+  // parejas de todos los que se quedan (otro abuelo/a, cónyuges de hermanos y sobrinos)
+  let add=true; while(add){ add=false; [...keep].forEach(id=>{ const m=P(id); if(m&&m.pareja_id&&M[m.pareja_id]&&!keep.has(m.pareja_id)){ keep.add(m.pareja_id); add=true; } }); }
+  return keep;
+}
+function soloFamilia(){
+  const M=window._miembros||{};
+  const arr=Object.values(M).filter(m=>!m.clase||m.clase==='persona');
+  const opts=arr.slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)))
+    .map(m=>'<option value="'+m.id+'"'+(m.id===esqFocusId?' selected':'')+'>'+escapar(m.nombre||'?')+'</option>').join('');
+  let ov=document.getElementById('sf-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='sf-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#1a1a1a;color:#fff;padding:16px;overflow:auto;-webkit-overflow-scrolling:touch;font:14px sans-serif';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML='<button onclick="document.getElementById(\'sf-ov\').style.display=\'none\'" style="float:right;background:#8a4a4a;color:#fff;border:none;padding:8px 12px;border-radius:8px">✕ cerrar</button>'
+    +'<h2 style="margin:0 0 8px">👪 Dejar solo mi familia directa</h2>'
+    +'<p style="margin:0 0 10px;color:#ffd9a0">Conserva: tú, tus padres, tus abuelos, tus hermanos (con parejas) y tus sobrinos. Borra tíos, primos y pruebas.</p>'
+    +'<label>¿Quién eres tú?<br><select id="sf-self" style="width:100%;padding:8px;margin:6px 0;font-size:16px">'+opts+'</select></label>'
+    +'<button id="sf-calc" style="background:#5a6e8a;color:#fff;border:none;padding:10px 16px;border-radius:8px;width:100%;margin:6px 0">Ver qué se conserva y qué se borra</button>'
+    +'<div id="sf-prev"></div>';
+  ov.style.display='block';
+  const calc=()=>{
+    const selfId=document.getElementById('sf-self').value;
+    const keep=_famDirecta(selfId, M, arr);
+    const del=arr.filter(m=>!keep.has(m.id));
+    const nom=m=>escapar(m.nombre||'?');
+    const keepL=[...keep].map(id=>M[id]).filter(Boolean).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+    let html='<div style="border:1px solid #4a7a5e;border-radius:10px;padding:10px;margin:10px 0">'
+      +'<b style="color:#9f9">SE QUEDAN ('+keepL.length+'):</b><br>'+keepL.map(nom).join(', ')+'</div>'
+      +'<div style="border:1px solid #8a4a4a;border-radius:10px;padding:10px;margin:10px 0">'
+      +'<b style="color:#ffb3b3">SE BORRAN ('+del.length+'):</b><br>'+(del.map(nom).join(', ')||'—')+'</div>';
+    if(del.length) html+='<button id="sf-go" style="background:#8a4a4a;color:#fff;border:none;padding:12px 18px;border-radius:10px;width:100%;font-size:16px">Borrar los '+del.length+' que sobran</button>';
+    document.getElementById('sf-prev').innerHTML=html;
+    const go=document.getElementById('sf-go');
+    if(go) go.onclick=async()=>{
+      if(!confirm('Se van a BORRAR '+del.length+' personas (tíos, primos y pruebas). Esto no se puede deshacer. ¿Seguro?')) return;
+      go.disabled=true; go.textContent='Borrando…';
+      try{
+        const ids=del.map(m=>m.id);
+        // 1) soltar enlaces de los que se van (evita conflictos de borrado)
+        for(let i=0;i<ids.length;i+=50){ const chunk=ids.slice(i,i+50);
+          await sb.from('miembros').update({padre_id:null,madre_id:null,pareja_id:null}).in('id',chunk); }
+        // 2) por si alguien que se queda apuntaba a uno que se va, lo dejamos en blanco
+        for(const m of keepL){ const u={};
+          if(m.padre_id && !keep.has(m.padre_id)) u.padre_id=null;
+          if(m.madre_id && !keep.has(m.madre_id)) u.madre_id=null;
+          if(m.pareja_id && !keep.has(m.pareja_id)) u.pareja_id=null;
+          if(Object.keys(u).length) await sb.from('miembros').update(u).eq('id',m.id);
+        }
+        // 3) borrar
+        for(let i=0;i<ids.length;i+=50){ const chunk=ids.slice(i,i+50);
+          await sb.from('miembros').delete().in('id',chunk); }
+        ov.style.display='none';
+        await cargarMiembros(); esqAbiertoInit=false; abrirEsquema(esqFocusId, esqClase);
+        alert('Listo ✔  Se ha quedado tu familia directa. Empieza a añadir desde ahí.');
+      }catch(e){ alert('Error al borrar: '+((e&&e.message)||e)); go.disabled=false; go.textContent='Borrar los '+del.length+' que sobran'; }
+    };
+  };
+  document.getElementById('sf-calc').onclick=calc;
+  document.getElementById('sf-self').onchange=calc;
+}
 // —— Diagnóstico temporal: muestra los enlaces padre/madre guardados de verdad ——
 function diagLinks(){
   const M=window._miembros||{};
@@ -3538,7 +3624,8 @@ function rellenarRamaBase(){
   } else {
     const base=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
     const sel=document.getElementById("rf-base");
-    sel.innerHTML=base.map(p=>'<option value="'+p.id+'">'+escapar(p.nombre)+(p.apellidos?' '+escapar(p.apellidos):'')+'</option>').join('');
+    base.sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))||String(a.nacimiento||'').localeCompare(String(b.nacimiento||'')));
+    sel.innerHTML=base.map(p=>'<option value="'+p.id+'">'+_etiqPersona(p)+'</option>').join('');
     if(esqFocusId && base.some(p=>p.id===esqFocusId)) sel.value=esqFocusId;
     document.getElementById("rf-rel").onchange=onRelChange;
   }
