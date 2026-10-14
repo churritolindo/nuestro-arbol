@@ -3181,7 +3181,9 @@ function familiaHTML(focalId){
   const rc=[]; if(verB) rightSibs.forEach(s=>{ const c=down(s.id,0); if(c!=null) rc.push(c); });
   const Ax = B? cAB-NW/2 : cAB, Bx = cAB+NW/2;
   // ancestros en abanico (padre a la izq, madre a la der)
+  const _upSeen=new Set();
   function up(pid, cx, gen, maxGen){
+    if(_upSeen.has(pid)) return; _upSeen.add(pid);   // evita bucles (antepasado de sí mismo)
     const m=P(pid); if(!m || gen>maxGen) return;
     const fa=P(m.padre_id), mo=P(m.madre_id);
     if(!persona(fa)&&!persona(mo)) return;
@@ -3218,8 +3220,8 @@ function familiaHTML(focalId){
     }
   }
   // ¿cuántas generaciones hay por ENCIMA de los abuelos de `person`? (bisabuelos=1, tatarabuelos=2…)
-  function profAncestros(person){ let mx=0;
-    function rec(id,lvl){ const m=P(id); if(!m) return; const f=P(m.padre_id),o=P(m.madre_id);
+  function profAncestros(person){ let mx=0; const seen=new Set();
+    function rec(id,lvl){ if(seen.has(id)) return; seen.add(id); const m=P(id); if(!m) return; const f=P(m.padre_id),o=P(m.madre_id);
       if(persona(f)){ mx=Math.max(mx,lvl); rec(f.id,lvl+1); } if(persona(o)){ mx=Math.max(mx,lvl); rec(o.id,lvl+1); } }
     const f=P(person.padre_id), o=P(person.madre_id);   // padres de person = abuelos; sus padres = bisabuelos (nivel 1)
     if(persona(f)) rec(f.id,1); if(persona(o)) rec(o.id,1);
@@ -3360,7 +3362,8 @@ function controlesFamiliaHTML(){
     +'</div></div>';
 }
 function redibujaFamilia(){
-  const html=familiaHTML(esqFocusId);   // calcula esqMaxUpA/B y coloca según esqUpA/B
+  let html=''; try{ html=familiaHTML(esqFocusId); }   // calcula esqMaxUpA/B y coloca según esqUpA/B
+  catch(e){ html='<div class="hint" style="margin-top:40px">No se pudo dibujar el árbol.<br>Puede haber un <b>parentesco en bucle</b> (alguien puesto como antepasado de sí mismo).<br>Abre la ficha de la última persona que enlazaste y revisa su padre/madre.</div>'; }
   const ctrl=controlesFamiliaHTML();
   document.getElementById("esq-tree").innerHTML = ctrl + '<div id="esq-zoomable">' + (html || '<div class="hint" style="margin-top:40px">Aún no has enlazado a nadie.<br>Usa ➕ Añadir para empezar.</div>') + '</div>';
   _esqTrasRender();
