@@ -1076,6 +1076,7 @@
         <button onclick="esqZoom(-0.2)" aria-label="Alejar">➖</button>
         <button class="fit" onclick="esqFit()" aria-label="Ver todo">⤢</button>
         <button onclick="esqZoom(0.2)" aria-label="Acercar">➕</button>
+        <button class="fit" onclick="diagLinks()" aria-label="Diagnóstico" title="Diagnóstico" style="background:#8a4a4a;font-size:16px">🔧</button>
       </div>
       <div class="esq-scroll">
         <div class="top"><img id="esq-cartel" class="cartel-esq" style="display:none" alt=""><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
@@ -3297,6 +3298,36 @@ function ramaDesdeAbuelos(){ esqUpA=0; esqUpB=0; redibujaFamilia(); }
 function ramaMostrar(lado){ esqRama = (esqRama===lado) ? 'ambas' : lado; redibujaFamilia(); }
 function ramaAmbas(){ esqRama='ambas'; redibujaFamilia(); }
 /* ===== Zoom del árbol genealógico (que entre bien en el móvil) ===== */
+// —— Diagnóstico temporal: muestra los enlaces padre/madre guardados de verdad ——
+function diagLinks(){
+  const M=window._miembros||{};
+  const arr=Object.values(M).filter(m=>!m.clase||m.clase==='persona');
+  const nom=id=>{ if(!id) return '∅'; const m=M[id]; return m?(m.nombre||'?'):'⚠️ROTO'; };
+  const dang=id=> !!(id && !M[id]);
+  const rotos=[], sueltos=[], lineas=[];
+  arr.forEach(m=>{
+    const p=m.padre_id, md=m.madre_id;
+    if(dang(p)||dang(md)) rotos.push(m.nombre||'?');
+    if(!p && !md) sueltos.push(m.nombre||'?');
+    lineas.push((m.nombre||'?')+'  →  padre: '+nom(p)+'  ·  madre: '+nom(md)+'  ·  pareja: '+nom(m.pareja_id));
+  });
+  lineas.sort();
+  const txt='PERSONAS: '+arr.length+'\n'
+    +'SIN PADRE NI MADRE: '+(sueltos.join(', ')||'—')+'\n'
+    +'ENLACES ROTOS (padre/madre/pareja borrado): '+(rotos.join(', ')||'—')+'\n'
+    +'──────────────────────\n'+lineas.join('\n');
+  let ov=document.getElementById('diag-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='diag-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);color:#fff;font:13px/1.55 monospace;padding:16px;overflow:auto;white-space:pre-wrap;-webkit-overflow-scrolling:touch';
+    const btn=document.createElement('button'); btn.textContent='✕ cerrar'; btn.onclick=()=>{ov.style.display='none';};
+    btn.style.cssText='position:sticky;top:0;float:right;background:#8a4a4a;color:#fff;border:none;padding:8px 12px;border-radius:8px;font:14px sans-serif;margin-bottom:8px';
+    ov.appendChild(btn);
+    const pre=document.createElement('div'); pre.id='diag-txt'; ov.appendChild(pre);
+    document.body.appendChild(ov);
+  }
+  document.getElementById('diag-txt').textContent=txt;
+  ov.style.display='block';
+}
 let _esqZoom=1, _esqFitPend=false;
 function _esqZoomEl(){ return document.getElementById('esq-zoomable'); }
 function _esqAplicaZoom(){ const z=_esqZoomEl(); if(z) z.style.zoom=String(_esqZoom); }
