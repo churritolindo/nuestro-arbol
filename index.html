@@ -1112,18 +1112,18 @@
               <label>Especie (perro, gato, pájaro…)</label>
               <input id="rf-especie" placeholder="Ej. Perro">
             </div>
-            <label>¿De quién es?</label>
+            <label id="rf-grupo-lbl">¿De quién es?</label>
             <select id="rf-grupo"></select>
             <div class="fila">
               <div style="flex:1"><label>Año (nació)</label><input type="date" id="rf-nac"></div>
               <div style="flex:1"><label>Se fue (opcional)</label><input type="date" id="rf-fall"></div>
             </div>
+            <div id="rf-amigodesde-wrap" class="hide">
+              <label>🤝 ¿Desde cuándo es amigo/a? (año) — opcional</label>
+              <input type="number" id="rf-amigodesde" min="1900" max="2100" placeholder="Ej. 2005">
+            </div>
             <label id="rf-mrel-lbl">¿Tiene relación con otro/a? (opcional)</label>
-            <select id="rf-mrel" onchange="onMRelChange()">
-              <option value="">— suelto/a —</option>
-              <option value="pareja">es pareja de…</option>
-              <option value="hijo">es hijo/a de… (cría / camada)</option>
-            </select>
+            <select id="rf-mrel" onchange="onMRelChange()"></select>
             <div id="rf-mbase-wrap" class="hide">
               <label id="rf-mbase-lbl">¿de quién?</label>
               <select id="rf-mbase"></select>
@@ -3510,13 +3510,22 @@ function rellenarRamaBase(){
     const esMascota = esqClase==='mascota';
     const ew=document.getElementById("rf-especie-wrap"); if(ew) ew.classList.toggle("hide", !esMascota);
     const ei=document.getElementById("rf-especie"); if(ei) ei.value="";
+    // "¿de quién es amigo?" vs "¿de quién es?"
+    const glbl=document.getElementById("rf-grupo-lbl"); if(glbl) glbl.textContent = esMascota ? "¿De quién es?" : "¿De quién es amigo/a?";
     const personas=(window._arr||[]).filter(m=>!m.clase||m.clase==='persona');
     document.getElementById("rf-grupo").innerHTML='<option value="Familia">👨‍👩‍👧‍👦 Toda la familia</option>'
       +personas.map(p=>'<option value="'+escapar(p.nombre)+'">de '+escapar(p.nombre)+'</option>').join('');
     document.getElementById("rf-nac").value=""; document.getElementById("rf-fall").value="";
-    // relación opcional con otro amigo/mascota que ya exista
-    const mrel=document.getElementById("rf-mrel"); if(mrel) mrel.value="";
-    const lbl=document.getElementById("rf-mrel-lbl"); if(lbl) lbl.textContent = esMascota ? "¿Es cría o pareja de otra mascota? (opcional)" : "¿Es pareja o hijo/a de otro amigo/a? (opcional)";
+    // "amigo desde" solo para amigos
+    const adw=document.getElementById("rf-amigodesde-wrap"); if(adw) adw.classList.toggle("hide", esMascota);
+    const adi=document.getElementById("rf-amigodesde"); if(adi) adi.value="";
+    // relación: amigos solo "pareja de"; mascotas "cría de" o "pareja de"
+    const mrel=document.getElementById("rf-mrel");
+    if(mrel){ mrel.innerHTML = esMascota
+        ? '<option value="">— suelta/o —</option><option value="hijo">es cría de… (hijo/a)</option><option value="pareja">es pareja de…</option>'
+        : '<option value="">— suelto/a —</option><option value="pareja">es pareja de un amigo/a…</option>';
+      mrel.value=""; }
+    const lbl=document.getElementById("rf-mrel-lbl"); if(lbl) lbl.textContent = esMascota ? "¿Es cría o pareja de otra mascota? (opcional)" : "¿Es pareja de un amigo/a? (opcional)";
     const yo=(window._arr||[]).filter(m=>m.clase===esqClase).slice()
       .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''))||String(a.nacimiento||'').localeCompare(String(b.nacimiento||'')));
     const mb=document.getElementById("rf-mbase"); if(mb) mb.innerHTML=yo.map(p=>'<option value="'+p.id+'">'+_etiqPersona(p)+'</option>').join('');
@@ -3565,7 +3574,8 @@ async function anadirEnRama(){
       nacimiento:document.getElementById("rf-nac").value||null,
       fallecimiento:document.getElementById("rf-fall").value||null};
     if(esMascota){ const e=(document.getElementById("rf-especie")||{}).value; if(e&&e.trim()) ins.especie=e.trim(); }
-    else { ins.rol = (rel==='pareja') ? 'pareja' : 'amigo'; }
+    else { ins.rol = (rel==='pareja') ? 'pareja' : 'amigo';
+      const ad=parseInt((document.getElementById("rf-amigodesde")||{}).value); if(!isNaN(ad)) ins.amigo_desde=ad; }
     const { data:nuevo, error }=await sb.from("miembros").insert(ins).select().single();
     if(error||!nuevo){ msg("rf-msg","No se pudo guardar: "+((error&&error.message)||"")); return; }
     if(base){ try{
