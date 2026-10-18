@@ -57,6 +57,11 @@
     background:rgba(255,255,255,.92);color:var(--texto);font-family:inherit}
   textarea{min-height:90px;resize:vertical}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde)}
+  /* ojito para ver/ocultar la contraseña */
+  .pass-wrap{position:relative}
+  .pass-wrap input{padding-right:48px}
+  .pass-eye{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:34px;min-width:0;padding:0;margin:0;border:none;background:transparent;cursor:pointer;font-size:19px;line-height:1;opacity:.7;border-radius:8px;box-shadow:none}
+  .pass-eye:active{opacity:1}
   .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:14px;border:none;border-radius:14px;
     background:linear-gradient(135deg,#4a7a5e,#2f5340);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px;
     font-family:Georgia,serif;box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 6px 16px rgba(20,40,28,.42)}
@@ -523,7 +528,10 @@
         <label>Correo</label>
         <input id="email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
         <label>Contraseña</label>
-        <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+        <div class="pass-wrap">
+          <input id="pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+          <button type="button" class="pass-eye" aria-label="Ver u ocultar la contraseña" onclick="verPass('pass',this)">👁️</button>
+        </div>
         <button class="btn" onclick="entrar()">Entrar</button>
         <button class="btn sec" onclick="crearCuenta()">Crear cuenta nueva</button>
         <label class="chk-row" style="margin-top:8px;font-size:12px;align-items:flex-start;gap:7px;text-align:left">
@@ -533,7 +541,10 @@
         <button class="link" style="margin-top:6px" onclick="recuperarPass()">¿Olvidaste tu contraseña?</button>
         <div id="reset-box" class="hide" style="margin-top:10px;border-top:1px solid var(--linea);padding-top:10px">
           <label>Nueva contraseña</label>
-          <input id="newpass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+          <div class="pass-wrap">
+            <input id="newpass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+            <button type="button" class="pass-eye" aria-label="Ver u ocultar la contraseña" onclick="verPass('newpass',this)">👁️</button>
+          </div>
           <button class="btn" style="margin-top:8px" onclick="guardarNuevaPass()">Guardar nueva contraseña</button>
         </div>
         <div id="auth-msg" class="msg"></div>
@@ -1498,6 +1509,10 @@ function ver(id){
   });
   document.getElementById("btn-back").classList.toggle("hide", id!=="v-ficha");
   document.getElementById("btn-ayuda").classList.toggle("hide", id==="v-ayuda"||id==="v-carga");
+}
+function verPass(id,btn){ const i=document.getElementById(id); if(!i) return;
+  const oculto=i.type==='password'; i.type=oculto?'text':'password';
+  if(btn) btn.textContent=oculto?'🙈':'👁️';
 }
 function abrirAyuda(){ const vs=["v-auth","v-crear","v-arbol","v-ficha"]; vistaPrevia=vs.find(v=>!document.getElementById(v).classList.contains("hide"))||"v-arbol"; ver("v-ayuda"); ayudaSec('home'); window.scrollTo(0,0); }
 function cerrarAyuda(){ ver(vistaPrevia); window.scrollTo(0,0); }
