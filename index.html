@@ -62,6 +62,23 @@
   .pass-wrap input{padding-right:48px}
   .pass-eye{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:34px;min-width:0;padding:0;margin:0;border:none;background:transparent;cursor:pointer;font-size:19px;line-height:1;opacity:.7;border-radius:8px;box-shadow:none}
   .pass-eye:active{opacity:1}
+  /* Origen de los apellidos */
+  #esq-apellidos-btn{align-items:center;justify-content:center;gap:9px;margin:0 auto 10px;max-width:340px}
+  #esq-apellidos-btn img{height:40px;width:auto;flex:none}
+  .ap-ov{position:fixed;inset:0;z-index:99999;background:rgba(40,28,14,.82);display:none;align-items:flex-start;justify-content:center;overflow:auto;-webkit-overflow-scrolling:touch;padding:20px 12px}
+  .ap-card{background:#f5ecd6;color:#3a2b16;max-width:460px;width:100%;border-radius:16px;padding:18px 16px 24px;box-shadow:0 10px 40px rgba(0,0,0,.4);position:relative;font-family:Georgia,serif}
+  .ap-close{position:absolute;right:10px;top:10px;width:34px;height:34px;border:none;background:#8a6d3b;color:#fff;border-radius:50%;font-size:16px;cursor:pointer}
+  .ap-head{display:flex;align-items:center;gap:12px;margin:0 36px 2px 0}
+  .ap-head img{height:54px;width:auto;flex:none}
+  .ap-head h2{margin:0;font-size:20px;color:#5a4326}
+  .ap-sub{margin:4px 0 14px;font-size:13px;font-style:italic;opacity:.8}
+  .ap-item{border:1px solid #d8c69a;border-radius:10px;margin:0 0 8px;background:rgba(255,255,255,.5);overflow:hidden}
+  .ap-item summary{padding:11px 13px;cursor:pointer;font-weight:700;font-size:16px;color:#5a4326;list-style:none}
+  .ap-item summary::-webkit-details-marker{display:none}
+  .ap-item summary::before{content:'📖 '}
+  .ap-item[open] summary{border-bottom:1px solid #e3d5ad}
+  .ap-item p{margin:0;padding:10px 14px 14px;font-size:14.5px;line-height:1.55}
+  .ap-nota{margin-top:12px;font-size:12.5px;color:#7a5e2e;background:rgba(255,255,255,.45);border:1px dashed #c9b585;border-radius:10px;padding:10px 12px}
   .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:14px;border:none;border-radius:14px;
     background:linear-gradient(135deg,#4a7a5e,#2f5340);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px;
     font-family:Georgia,serif;box-shadow:0 0 0 1.5px var(--oroO),0 0 0 3px var(--oroC),0 6px 16px rgba(20,40,28,.42)}
@@ -1096,6 +1113,7 @@
       <div class="esq-scroll">
         <div class="top"><img id="esq-cartel" class="cartel-esq" style="display:none" alt=""><div class="rama">Rama de la familia</div><h1 id="esq-titulo">Árbol genealógico</h1></div>
         <div id="avisos-bar-esq" class="avisos-bar hide" onclick="abrirBuzon()"></div>
+        <button class="btn sec" id="esq-apellidos-btn" style="display:none" onclick="abrirApellidos()"><img src="diseno/libro-apellidos.png" alt="">Origen de los apellidos</button>
         <div id="rama-form" class="rama-form hide">
           <h3 id="rf-titulo">Añadir un familiar a la rama</h3>
           <label>Nombre</label>
@@ -1441,6 +1459,19 @@
             <li>Arriba eliges ver solo la <b>rama del padre</b>, solo la de la <b>madre</b>, o <b>👁️ Ver ambas</b>.</li>
             <li>Toca una corona para abrir la ficha de esa persona.</li>
           </ol>
+        </div>
+
+        <div class="vidrio gcard">
+          <h3><span class="ge">📖</span> Origen de los apellidos</h3>
+          <div class="gsub">De dónde vienen los apellidos de tu familia (y de tus amigos).</div>
+          <div class="btns"><span class="gbtn"><span class="gic">📖</span><b>Origen de<br>apellidos</b></span></div>
+          <ol>
+            <li>Dentro del <b>árbol genealógico</b> (o el de amigos) pulsa <b>📖 Origen de los apellidos</b>.</li>
+            <li>Se abre un libro con <b>todos los apellidos</b> de la gente de ese árbol, sin repetir. Toca cada uno para ver su historia.</li>
+            <li>Coge los apellidos de las fichas que ya tienes: si a alguien le falta, ponlo en <b>✏️ Editar → Apellidos</b> y aparecerá solo.</li>
+            <li>Los apellidos compuestos se separan solos: «Rodríguez Barbero Moreno» → <b>Rodríguez</b>, <b>Barbero</b> y <b>Moreno</b>, cada uno con lo suyo.</li>
+          </ol>
+          <div class="eg">💡 Trae de serie los apellidos más comunes. Los más raros se podrán buscar más adelante (quedarán guardados en tu árbol).</div>
         </div>
 
       </div>
@@ -3498,9 +3529,127 @@ function abrirEsquema(rootId, clase, grupo){
   const mp=document.getElementById("esq-mascotas");
   if(mp) mp.classList.add("hide");
   document.getElementById("rama-form").classList.add("hide");
+  // «Origen de los apellidos»: en familia y amigos sí (tienen apellidos), en mascotas no
+  const apb=document.getElementById("esq-apellidos-btn"); if(apb) apb.style.display = (esqClase==='mascota') ? 'none' : 'flex';
   const ov=document.getElementById("v-esquema"); ov.classList.add("show"); ov.scrollTop=0;
 }
 function abrirMascotasPapiro(){ abrirEsquema(null,'mascota'); }
+
+/* ===== 📖 Origen de los apellidos ===== */
+// Separa un apellido compuesto en sus partes, dejando las partículas (de, del, de la…) con su palabra.
+function partirApellidos(str){
+  const words=String(str||'').trim().split(/\s+/).filter(Boolean);
+  const part=new Set(['de','del','la','las','los','e','da','do','dos','das','san','santa','von','van']);
+  const out=[]; let buf=[];
+  for(const w of words){
+    const lw=_norm(w);
+    if(lw==='y'||lw==='i'){ if(buf.length){ out.push(buf.join(' ')); buf=[]; } continue; }  // "y"/"i" separa dos apellidos
+    if(part.has(lw) && buf.length===0){ buf.push(w); continue; }      // partícula al principio del apellido
+    if(part.has(lw)){ buf.push(w); continue; }                         // partícula intermedia (de la…)
+    buf.push(w); out.push(buf.join(' ')); buf=[];                      // palabra normal: cierra el apellido
+  }
+  if(buf.length) out.push(buf.join(' '));
+  return out;
+}
+// Diccionario base (muestra). Clave = apellido normalizado con _norm. Se irá ampliando.
+const APELLIDOS_DB={
+ "garcia":"Uno de los apellidos más comunes de España y Latinoamérica. De origen muy antiguo (prerromano, probablemente vasco); su significado se discute, pero suele relacionarse con «joven» o con el oso. Pasó de nombre de pila a apellido en la Edad Media.",
+ "rodriguez":"Patronímico: «hijo de Rodrigo». Rodrigo es un nombre germánico (visigodo) que significa «famoso y poderoso». Muy extendido por toda la península y América.",
+ "gonzalez":"Patronímico: «hijo de Gonzalo», nombre de origen germánico ligado a la batalla. De los apellidos más frecuentes en el mundo hispano.",
+ "fernandez":"Patronímico: «hijo de Fernando», nombre germánico que une «viaje/atrevido» y «valiente». Muy común en toda España.",
+ "hernandez":"Patronímico: «hijo de Hernando» (variante de Fernando). Muy abundante en Latinoamérica, sobre todo en México y el Caribe.",
+ "lopez":"Patronímico: «hijo de Lope». Lope viene del latín «lupus», lobo. Antiquísimo y muy repartido.",
+ "martinez":"Patronímico: «hijo de Martín», nombre derivado de Marte, el dios romano de la guerra.",
+ "sanchez":"Patronímico: «hijo de Sancho». Sancho procede del latín «sanctus», santo.",
+ "perez":"Patronímico: «hijo de Pedro», del latín/griego «piedra». Uno de los apellidos más extendidos del mundo hispano.",
+ "gomez":"Patronímico: «hijo de Gome o Gomo», nombre medieval de raíz germánica que significa «hombre».",
+ "martin":"Del nombre Martín, derivado de Marte (dios de la guerra). También por devoción a San Martín. Muy común en España y Francia.",
+ "jimenez":"Patronímico: «hijo de Jimeno (Ximeno)», nombre medieval de probable origen vasco-navarro.",
+ "ruiz":"Patronímico: «hijo de Ruy», forma corta de Rodrigo. Castellano y muy antiguo.",
+ "diaz":"Patronímico: «hijo de Diego» (Diago). Muy frecuente en España y América.",
+ "moreno":"Apodo descriptivo por el color moreno del pelo o de la piel. Se hizo apellido en toda la península.",
+ "muñoz":"Patronímico: «hijo de Munio o Nuño», nombre medieval castellano.",
+ "alvarez":"Patronímico: «hijo de Álvaro», nombre germánico que significa «guardián prudente». Muy astur-leonés.",
+ "romero":"Por el «romero», el peregrino que iba a Roma; también pudo venir de la planta aromática. Toponímico y de oficio devoto.",
+ "alonso":"Del nombre Alonso, variante de Alfonso (germánico: «noble y dispuesto»). De los reyes medievales.",
+ "gutierrez":"Patronímico: «hijo de Gutierre», nombre germánico. Muy castellano-leonés.",
+ "navarro":"Gentilicio: «el de Navarra» o procedente de allí. Indica el origen geográfico de la familia.",
+ "torres":"Toponímico: de lugares con torres o fortalezas. Muy repartido por España y América.",
+ "dominguez":"Patronímico: «hijo de Domingo», del latín «dominicus», «del Señor» (día del Señor).",
+ "vazquez":"Patronímico gallego: «hijo de Vasco (Velasco)», nombre de probable raíz vasca. También se escribe Vásquez.",
+ "ramos":"Toponímico o devoto: por lugares con ramas/ramaje o por el Domingo de Ramos.",
+ "gil":"Del nombre Gil, forma de Egidio (del griego «escudo, protección»). Catalán y castellano.",
+ "ramirez":"Patronímico: «hijo de Ramiro», nombre germánico que significa «consejo famoso».",
+ "serrano":"Apodo/toponímico: «el que vive en la sierra». Muy extendido por el interior peninsular.",
+ "blanco":"Apodo descriptivo por el pelo o la piel clara. Uno de los apellidos de color más comunes.",
+ "suarez":"Patronímico: «hijo de Suero», nombre medieval. Muy astur-leonés.",
+ "molina":"Toponímico: de lugares con molino (hay varias localidades llamadas Molina).",
+ "morales":"Toponímico: por los «morales» (los árboles de la mora). Hay muchos pueblos con ese nombre.",
+ "ortega":"Del ave llamada ortega (una ganga); también toponímico. Castellano y aragonés.",
+ "delgado":"Apodo descriptivo por la persona delgada.",
+ "castro":"Toponímico: del latín «castrum», poblado fortificado en alto. Muy gallego.",
+ "ortiz":"Patronímico: «hijo de Orduño u Ortún», nombre de origen vasco-navarro.",
+ "rubio":"Apodo descriptivo por el pelo rubio.",
+ "nuñez":"Patronímico: «hijo de Nuño», nombre medieval castellano.",
+ "medina":"Del árabe «madina» (ciudad). Toponímico de las varias Medinas de España.",
+ "iglesias":"Toponímico: «el que vivía junto a la iglesia». Muy gallego.",
+ "cortes":"Apodo por ser «cortés» (educado) o toponímico por lugares llamados Cortes.",
+ "castillo":"Toponímico: «junto al castillo». Muy repartido.",
+ "santos":"Devoto: por la fiesta de Todos los Santos; también patronímico.",
+ "guerrero":"Apodo por el guerrero o soldado.",
+ "lozano":"Apodo: persona «lozana», es decir gallarda, de buen aspecto.",
+ "cano":"Apodo por el pelo cano (blanco).",
+ "prieto":"Apodo: en castellano antiguo «prieto» era oscuro o moreno.",
+ "mendez":"Patronímico: «hijo de Mendo (Menendo)». Gallego-portugués.",
+ "cruz":"Devoto: por la Santa Cruz. Muy común en Latinoamérica.",
+ "flores":"Devoto/toponímico: por las flores (Santa María de las Flores) o lugares así llamados.",
+ "herrera":"Toponímico: lugar de herreros o donde se trabajaba el hierro.",
+ "peña":"Toponímico: por una «peña» o roca grande.",
+ "leon":"Toponímico: de la ciudad y reino de León (del latín «legio», legión); a veces asociado al animal.",
+ "marquez":"Patronímico: «hijo de Marcos», nombre derivado de Marte.",
+ "vidal":"Del latín «vitalis», «lleno de vida». Catalán y aragonés.",
+ "barbero":"Apellido de oficio: el barbero, que además de afeitar hacía pequeñas curas y sangrías. Muy repartido por Castilla.",
+ "pulgar":"Toponímico/apodo: ligado a localidades como El Pulgar (Toledo); como apodo pudo aludir al dedo pulgar.",
+ "de la fuente":"Toponímico: «el que vivía junto a la fuente». Las partículas «de la» indican el lugar.",
+ "vega":"Toponímico: por la «vega», la tierra llana y fértil junto a un río.",
+ "reyes":"Devoto: por los Reyes Magos (Epifanía). Muy común en el mundo hispano.",
+ "aguilar":"Toponímico: por el águila o por localidades llamadas Aguilar.",
+ "vargas":"Toponímico: «varga» era una cuesta o terreno en pendiente.",
+ "sanz":"Variante catalano-aragonesa de Sánchez: «hijo de Sancho».",
+ "carmona":"Toponímico: de Carmona (Sevilla), ciudad de nombre de origen árabe.",
+ "soto":"Toponímico: por el «soto», el bosquecillo junto al río.",
+ "roman":"Del latín «romanus» (romano); nombre y advocación (San Román).",
+ "pascual":"Devoto: nacido por Pascua. Nombre que pasó a apellido."
+};
+// Abre el libro con los apellidos presentes en este árbol
+function abrirApellidos(){
+  const esAmigo=esqClase==='amigo';
+  const arr=(window._arr||[]).filter(m=> esAmigo ? m.clase==='amigo' : (!m.clase||m.clase==='persona'));
+  const seen=new Map(); const sinAp=[];
+  arr.forEach(m=>{ const aps=partirApellidos(m.apellidos);
+    if(!aps.length){ sinAp.push((m.nombre||'?').split(' ')[0]); return; }
+    aps.forEach(ap=>{ const k=_norm(ap); if(k && !seen.has(k)) seen.set(k,ap); });
+  });
+  const lista=[...seen.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
+  let body;
+  if(!lista.length){
+    body='<p style="opacity:.85">Aún no hay apellidos guardados en este árbol. Abre una ficha → <b>Editar</b> y rellena el campo <b>Apellidos</b>; aquí irán apareciendo solos.</p>';
+  } else {
+    body=lista.map(([k,disp])=>{
+      const hist=APELLIDOS_DB[k];
+      const txt = hist || 'Todavía no tenemos la historia de este apellido en la versión gratuita. Muy pronto podrás pedirla y se guardará aquí.';
+      return '<details class="ap-item"><summary>'+escapar(disp)+'</summary><p>'+escapar(txt)+'</p></details>';
+    }).join('');
+  }
+  const nota = sinAp.length ? '<div class="ap-nota">📝 Estas fichas aún no tienen apellido (ponlo en <b>Editar</b> para que aparezcan aquí): '+sinAp.slice(0,25).map(escapar).join(', ')+(sinAp.length>25?'…':'')+'</div>' : '';
+  let ov=document.getElementById('ap-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='ap-ov'; ov.className='ap-ov'; document.body.appendChild(ov); }
+  ov.innerHTML='<div class="ap-card"><button class="ap-close" aria-label="Cerrar" onclick="document.getElementById(\'ap-ov\').style.display=\'none\'">✕</button>'
+    +'<div class="ap-head"><img src="diseno/libro-apellidos.png" alt=""><h2>Origen de los apellidos</h2></div>'
+    +'<p class="ap-sub">Toca cada apellido para ver de dónde viene.</p>'
+    +body+nota+'</div>';
+  ov.style.display='flex';
+}
 function verSuRama(){
   if(!miembroActual) return;
   if(miembroActual.clase==='mascota') abrirSub('mascota');
