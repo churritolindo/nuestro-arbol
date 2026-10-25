@@ -821,6 +821,8 @@
         <h2>Editar familiar</h2>
         <label>Nombre</label>
         <input id="e-nombre">
+        <label>Apellidos (opcional)</label>
+        <input id="e-apellidos" placeholder="Rodríguez Barbero">
         <div id="e-mote-wrap" style="display:none">
           <label>Mote / apodo (opcional)</label>
           <input id="e-apodo" placeholder="Ej. El guapo, el gordi…">
@@ -833,10 +835,7 @@
           <div><label>Pareja de… (opcional)</label><select id="e-pareja"></select></div>
           <div><label>¿Qué relación?</label><select id="e-tipopareja" onchange="editTipoCambia()"><option value="casados">Casados ❤️</option><option value="pareja">Pareja 💗</option><option value="novios">Novios ❤️💗</option><option value="ex">Expareja 💔</option></select></div>
         </div>
-        <div class="fila">
-          <div><label>Hermano/a de… (opcional, solo sale en su ficha)</label><select id="e-hermano"></select></div>
-          <div id="e-amidesde-wrap"><label>Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 1975"></div>
-        </div>
+        <div id="e-amidesde-wrap"><label>🤝 Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 2005"></div>
         <div id="e-parent-wrap">
           <label>👪 ¿Qué parentesco tiene? (opcional — puedes escribirlo a mano)</label>
           <input id="e-parentesco" list="dl-parentesco" autocomplete="off" placeholder="Ej. bisabuelo · padre de mi padre · tatarabuelo de mis sobrinos…">
@@ -868,12 +867,6 @@
             <option value="pareja">💗 Pareja de un amigo/a (sale a su lado)</option>
             <option value="familiar">👪 Familiar de un amigo/a</option>
           </select>
-        </div>
-        <div class="fila">
-          <div><label>Apellidos (opcional)</label><input id="e-apellidos" placeholder="Rodríguez Barbero"></div>
-          <div id="e-clase-wrap"><label>Tipo</label>
-            <select id="e-clase"><option value="persona">Persona</option><option value="mascota">Mascota</option><option value="amigo">Amigo</option></select>
-          </div>
         </div>
         <div class="fila">
           <div><label>Nacimiento</label><input type="date" id="e-nac"></div>
@@ -2858,7 +2851,6 @@ function abrirEditar(){
   if(!miembroActual) return; const m=miembroActual;
   document.getElementById("e-nombre").value=m.nombre||"";
   document.getElementById("e-apodo").value=m.apodo||"";
-  document.getElementById("e-clase").value=m.clase||"persona";
   document.getElementById("e-nac").value=m.nacimiento||"";
   document.getElementById("e-fall").value=m.fallecimiento||"";
   document.getElementById("e-boda").value=m.fecha_boda||"";
@@ -2875,13 +2867,11 @@ function abrirEditar(){
   document.getElementById("e-especie").value = m.especie||"";
   const esAmi=(m.clase==='amigo');
   document.getElementById("e-rol-wrap").style.display = esAmi ? "block":"none";
-  document.getElementById("e-clase-wrap").style.display = esAmi ? "none":"block";
   document.getElementById("e-rol").value = m.rol||"amigo";
   editTipoCambia();
   pintaSelect("e-padre",m.padre_id,m.id);
   pintaSelect("e-madre",m.madre_id,m.id);
   pintaSelect("e-pareja",m.pareja_id,m.id);
-  pintaSelect("e-hermano",m.hermano_id,m.id);
   document.getElementById("e-amigodesde").value = m.amigo_desde||"";
   // "Amigo desde" solo para amigos
   const amiW=document.getElementById("e-amidesde-wrap"); if(amiW) amiW.style.display = esAmi ? "block":"none";
@@ -2966,12 +2956,14 @@ async function guardarEdicion(){
   if(!nombre){ msg("edit-msg","El nombre no puede estar vacío."); return; }
   const pareja=document.getElementById("e-pareja").value||null;
   const tipoP=document.getElementById("e-tipopareja").value;
-  const hermano=document.getElementById("e-hermano").value||null;
+  // El "tipo" (persona/mascota/amigo) ya no se edita: lo decide el árbol. Conservamos el de la ficha.
+  const clase=(miembroActual && miembroActual.clase) || 'persona';
+  const hermano=(miembroActual && miembroActual.hermano_id) || null;
   const cambios={ nombre,
     apodo:document.getElementById("e-apodo").value.trim()||null,
-    clase:document.getElementById("e-clase").value,
-    especie:(document.getElementById("e-clase").value==='mascota' ? (document.getElementById("e-especie").value.trim()||null) : null),
-    rol:(document.getElementById("e-clase").value==='amigo' ? (document.getElementById("e-rol").value||'amigo') : null),
+    clase:clase,
+    especie:(clase==='mascota' ? (document.getElementById("e-especie").value.trim()||null) : null),
+    rol:(clase==='amigo' ? (document.getElementById("e-rol").value||'amigo') : null),
     nacimiento:document.getElementById("e-nac").value.trim()||null,
     fallecimiento:document.getElementById("e-fall").value.trim()||null,
     fecha_boda:document.getElementById("e-boda").value.trim()||null,
@@ -3108,9 +3100,14 @@ function _cap(s){ s=(s||'').trim(); return s.charAt(0).toUpperCase()+s.slice(1);
 // filas por año (etiqueta a la izquierda), generaciones en columnas, +/- por familia.
 // Mascotas: un bloque por especie (perro, gato, pájaro…).
 function _subPedHTML(arr, clase, grupo){
+  const M=window._miembros||{};
   let owner=null;
   if(grupo && _normG(grupo).toLowerCase()!=='familia')
     owner=(window._arr||[]).find(x=>(!x.clase||x.clase==='persona') && (x.nombre||'').trim().toLowerCase()===grupo.trim().toLowerCase());
+  // En el árbol de AMIGOS, si no hay un dueño concreto por el grupo, aparezco YO de serie
+  // (la persona que soy en este árbol), aunque aún no haya amigos añadidos.
+  if(!owner && clase==='amigo' && miMiembroId && M[miMiembroId] && (!M[miMiembroId].clase||M[miMiembroId].clase==='persona'))
+    owner=M[miMiembroId];
   const base = arr.slice();
   if(!base.length && !owner) return "";
   if(clase==='mascota'){
