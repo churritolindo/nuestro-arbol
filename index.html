@@ -823,6 +823,8 @@
         <input id="e-nombre">
         <label>Apellidos (opcional)</label>
         <input id="e-apellidos" placeholder="Rodríguez Barbero">
+        <label>🌍 Nacionalidad (opcional)</label>
+        <select id="e-nac-pais"></select>
         <div id="e-mote-wrap" style="display:none">
           <label>Mote / apodo (opcional)</label>
           <input id="e-apodo" placeholder="Ej. El guapo, el gordi…">
@@ -837,7 +839,7 @@
         </div>
         <div id="e-amidesde-wrap"><label>🤝 Amigo desde (año) — opcional</label><input type="number" id="e-amigodesde" min="1900" max="2100" placeholder="Ej. 2005"></div>
         <div id="e-parent-wrap">
-          <label>👪 ¿Qué parentesco tiene? (opcional — puedes escribirlo a mano)</label>
+          <label id="e-parent-label">👪 ¿Qué parentesco tiene? (opcional — puedes escribirlo a mano)</label>
           <input id="e-parentesco" list="dl-parentesco" autocomplete="off" placeholder="Ej. bisabuelo · padre de mi padre · tatarabuelo de mis sobrinos…">
           <datalist id="dl-parentesco">
             <option value="Padre"></option><option value="Madre"></option>
@@ -2847,8 +2849,33 @@ async function fotoPerfilElegida(){
   await pintarFotoFicha(miembroActual);
   msg("rec-msg","¡Foto de perfil guardada! ✔","ok"); setTimeout(()=>limpiar("rec-msg"),1800);
 }
+/* --- Nacionalidad + banderita --------------------------------------- */
+const PAISES=[
+["ES","España"],["MX","México"],["AR","Argentina"],["CO","Colombia"],["PE","Perú"],["VE","Venezuela"],["CL","Chile"],["EC","Ecuador"],["GT","Guatemala"],["CU","Cuba"],["BO","Bolivia"],["DO","República Dominicana"],["HN","Honduras"],["PY","Paraguay"],["SV","El Salvador"],["NI","Nicaragua"],["CR","Costa Rica"],["PA","Panamá"],["UY","Uruguay"],["PR","Puerto Rico"],["GQ","Guinea Ecuatorial"],
+["PT","Portugal"],["FR","Francia"],["IT","Italia"],["DE","Alemania"],["GB","Reino Unido"],["IE","Irlanda"],["NL","Países Bajos"],["BE","Bélgica"],["CH","Suiza"],["AT","Austria"],["PL","Polonia"],["RO","Rumanía"],["RU","Rusia"],["UA","Ucrania"],["GR","Grecia"],["SE","Suecia"],["NO","Noruega"],["DK","Dinamarca"],["FI","Finlandia"],["IS","Islandia"],["CZ","Chequia"],["HU","Hungría"],["BG","Bulgaria"],["HR","Croacia"],["RS","Serbia"],["SK","Eslovaquia"],["SI","Eslovenia"],["LT","Lituania"],["LV","Letonia"],["EE","Estonia"],["LU","Luxemburgo"],["MT","Malta"],["AD","Andorra"],["MC","Mónaco"],["BY","Bielorrusia"],["GE","Georgia"],["AM","Armenia"],["AZ","Azerbaiyán"],
+["US","Estados Unidos"],["CA","Canadá"],["BR","Brasil"],
+["MA","Marruecos"],["DZ","Argelia"],["TN","Túnez"],["EG","Egipto"],["SN","Senegal"],["NG","Nigeria"],["ZA","Sudáfrica"],["GH","Ghana"],["CM","Camerún"],["CI","Costa de Marfil"],["KE","Kenia"],["ET","Etiopía"],["AO","Angola"],["MZ","Mozambique"],
+["CN","China"],["JP","Japón"],["KR","Corea del Sur"],["IN","India"],["PK","Pakistán"],["BD","Bangladés"],["ID","Indonesia"],["PH","Filipinas"],["VN","Vietnam"],["TH","Tailandia"],["MY","Malasia"],["SG","Singapur"],["KZ","Kazajistán"],["UZ","Uzbekistán"],
+["TR","Turquía"],["IL","Israel"],["SA","Arabia Saudí"],["AE","Emiratos Árabes Unidos"],["QA","Catar"],["LB","Líbano"],["SY","Siria"],["IQ","Irak"],["IR","Irán"],["JO","Jordania"],
+["AU","Australia"],["NZ","Nueva Zelanda"]
+];
+function _bandera(m){
+  const c=((m&&m.nacionalidad)||"").trim().toUpperCase();
+  if(c.length!==2 || !/^[A-Z]{2}$/.test(c)) return "";
+  return String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0)));
+}
+function _nomPais(code){ const c=(code||"").toUpperCase(); const p=PAISES.find(x=>x[0]===c); return p?p[1]:""; }
+function _llenarPaises(){
+  const sel=document.getElementById("e-nac-pais"); if(!sel||sel.options.length) return;
+  const lista=PAISES.slice().sort((a,b)=>a[1].localeCompare(b[1],"es"));
+  let h='<option value="">— Sin especificar —</option>';
+  lista.forEach(p=>{ h+='<option value="'+p[0]+'">'+_bandera({nacionalidad:p[0]})+' '+p[1]+'</option>'; });
+  sel.innerHTML=h;
+}
 function abrirEditar(){
   if(!miembroActual) return; const m=miembroActual;
+  _llenarPaises();
+  document.getElementById("e-nac-pais").value = m.nacionalidad || "";
   document.getElementById("e-nombre").value=m.nombre||"";
   document.getElementById("e-apodo").value=m.apodo||"";
   document.getElementById("e-nac").value=m.nacimiento||"";
@@ -2877,8 +2904,26 @@ function abrirEditar(){
   const amiW=document.getElementById("e-amidesde-wrap"); if(amiW) amiW.style.display = esAmi ? "block":"none";
   // Parentesco solo para personas de la familia (no amigos ni mascotas)
   const esPersona = !(m.clase==='amigo'||m.clase==='mascota');
-  const parW=document.getElementById("e-parent-wrap"); if(parW) parW.style.display = esPersona ? "block":"none";
+  const parW=document.getElementById("e-parent-wrap");
   const eP=document.getElementById("e-parentesco"); if(eP) eP.value = m.parentesco||"";
+  // Etiqueta de parentesco RELATIVA a mí (el dueño del árbol = "¿quién soy?")
+  const _M=window._miembros||{}; const _yo = miMiembroId && _M[miMiembroId];
+  const lab=document.getElementById("e-parent-label");
+  if(parW){
+    if(esPersona && _yo && m.id===miMiembroId){
+      parW.style.display="none"; // tu propia ficha: parentesco contigo mismo no aplica
+    } else if(esPersona){
+      parW.style.display="block";
+      if(lab){
+        if(_yo){
+          const quien=escapar((_yo.nombre||"").trim())+(_yo.apellidos?(" "+escapar(String(_yo.apellidos).split(" ")[0])):"");
+          lab.innerHTML='👪 ¿Qué parentesco tiene con <b>'+quien+'</b>? <span style="font-weight:400">(ej: su hermano, su abuela, su primo…)</span>';
+        } else {
+          lab.innerHTML='👪 ¿Qué parentesco tiene <b>contigo</b>? <span style="font-weight:400">(ej: tu hermano, tu abuela, tu primo…)</span>';
+        }
+      }
+    } else { parW.style.display="none"; }
+  }
   limpiar("edit-msg"); ver("v-editar"); window.scrollTo(0,0);
 }
 function editTipoCambia(){
@@ -2974,15 +3019,16 @@ async function guardarEdicion(){
     pareja_id:pareja, expareja:tipoP==="ex", tipo_pareja:tipoP, hermano_id:hermano,
     amigo_desde:(parseInt(document.getElementById("e-amigodesde").value)||null),
     parentesco:(document.getElementById("e-parentesco") ? (document.getElementById("e-parentesco").value||null) : null),
+    nacionalidad:(document.getElementById("e-nac-pais") ? (document.getElementById("e-nac-pais").value||null) : null),
     aureola:(document.getElementById("e-religion").value==='cristiana' && document.getElementById("e-aureola").checked),
     alas:(document.getElementById("e-religion").value==='cristiana' && document.getElementById("e-alas").checked),
     oculto:(tipoP==="ex" && document.getElementById("e-oculto").checked) };
   let { error }=await sb.from("miembros").update(cambios).eq("id",miembroActual.id);
-  if(error && /parentesco|column|does not exist|could not find/i.test(error.message||"")){
-    const c2=Object.assign({},cambios); delete c2.parentesco;
+  if(error && /parentesco|nacionalidad|column|does not exist|could not find/i.test(error.message||"")){
+    const c2=Object.assign({},cambios); delete c2.parentesco; delete c2.nacionalidad;
     const r2=await sb.from("miembros").update(c2).eq("id",miembroActual.id);
     if(r2.error){ msg("edit-msg","No se pudo guardar: "+r2.error.message); return; }
-    msg("edit-msg","Guardado ✔ (el parentesco necesita un pasito de SQL en Supabase).","ok");
+    msg("edit-msg","Guardado ✔ (el parentesco y la nacionalidad necesitan un pasito de SQL en Supabase).","ok");
   } else if(error){ msg("edit-msg","No se pudo guardar: "+error.message); return; }
   if(pareja) await sb.from("miembros").update({pareja_id:miembroActual.id,expareja:tipoP==="ex",tipo_pareja:tipoP}).eq("id",pareja);
   if(hermano) await sb.from("miembros").update({hermano_id:miembroActual.id}).eq("id",hermano);
@@ -3051,7 +3097,8 @@ function _mascNode(m){
   const cara=m._url?'<img src="'+m._url+'">':ph;
   const g=_normG(m.grupo); const de = g.toLowerCase()==='familia'?'':escapar(g);
   const anio = m.nacimiento?String(m.nacimiento).slice(0,4):'';
-  const meta=[anio,de].filter(Boolean).join(' · ');
+  const ban=_bandera(m); const pri=[ban,anio].filter(Boolean).join(' ');
+  const meta=[pri,de].filter(Boolean).join(' · ');
   return '<div class="masc-node" onclick="abrirDesdeEsquema(\''+m.id+'\')">'
     +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+cara+'</div></div>'
     +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'
@@ -3202,7 +3249,7 @@ function _subBloque(all, clase, owner){
     const y4=(m.nacimiento||'').slice(0,4);
     nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
       +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
-      +'<div class="pn">'+nm+'</div>'+(y4?'<div class="pny">'+y4+'</div>':'')+'</div>';
+      +'<div class="pn">'+nm+'</div>'+((y4||_bandera(m))?'<div class="pny">'+(_bandera(m)?_bandera(m)+' ':'')+y4+'</div>':'')+'</div>';
   });
   hearts.forEach(h=>nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>');
   toggles.forEach(t=>nod+='<div class="ped-tog'+(t.abierto?' on':'')+'" style="left:'+(t.x+ox)+'px;top:'+(t.y+oy)+'px" onclick="subTog(event,\''+t.id+'\')" title="'+(t.abierto?'Plegar':'Desplegar la familia')+'">'+(t.abierto?'−':'+')+'</div>');
@@ -3348,7 +3395,7 @@ function familiaHTML(focalId){
     const y4=(m.nacimiento||"").slice(0,4);
     nod+='<div class="ped-node" style="left:'+(n.x+ox)+'px;top:'+(n.y+oy)+'px" onclick="abrirDesdeEsquema(\''+n.id+'\')">'
       +'<div class="lauro"><img class="lau" src="corona.png">'+_aur(m)+'<div class="foto">'+_caraTree(m)+'</div></div>'
-      +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'+(y4?'<div class="pny">'+y4+'</div>':'')+'</div>';
+      +'<div class="pn">'+escapar((m.nombre||"").split(" ")[0])+'</div>'+((y4||_bandera(m))?'<div class="pny">'+(_bandera(m)?_bandera(m)+' ':'')+y4+'</div>':'')+'</div>';
   });
   hearts.forEach(h=>{ nod+='<div class="ped-heart" style="left:'+(h.x+ox)+'px;top:'+(h.y+oy)+'px">'+h.s+'</div>'; });
   toggles.forEach(t=>{ nod+='<div class="ped-tog'+(t.abierto?' on':'')+'" style="left:'+(t.x+ox)+'px;top:'+(t.y+oy)+'px" onclick="toggleGen(event,\''+t.id+'\')" title="'+(t.abierto?'Plegar':'Desplegar')+'">'+(t.abierto?'−':'+')+'</div>'; });
