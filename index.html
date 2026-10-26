@@ -486,6 +486,8 @@
   .ped-node .pn{font-size:10.5px;font-weight:700;color:var(--tinta);line-height:1.05;margin-top:1px;
     text-shadow:0 1px 2px rgba(255,250,235,.9)}
   .ped-node .pny{font-size:10px;font-weight:800;color:#8a5a1e;line-height:1;margin-top:1px;text-shadow:0 1px 2px rgba(255,250,235,.9)}
+  .ban{height:9px;width:auto;border-radius:1.5px;vertical-align:baseline;margin-right:2px;box-shadow:0 0 1px rgba(0,0,0,.45);display:inline-block}
+  .masc-node .ban,.pr .ban{height:8px}
   .ped-heart{position:absolute;transform:translate(-50%,-50%);font-size:13px;z-index:3}
   .ped-tog{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;z-index:5;cursor:pointer;
     display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;line-height:1;color:#fff;
@@ -2859,17 +2861,24 @@ const PAISES=[
 ["TR","Turquía"],["IL","Israel"],["SA","Arabia Saudí"],["AE","Emiratos Árabes Unidos"],["QA","Catar"],["LB","Líbano"],["SY","Siria"],["IQ","Irak"],["IR","Irán"],["JO","Jordania"],
 ["AU","Australia"],["NZ","Nueva Zelanda"]
 ];
-function _bandera(m){
-  const c=((m&&m.nacionalidad)||"").trim().toUpperCase();
+// Emoji de bandera (para el desplegable; en móvil sale la bandera, en PC las letras)
+function _banderaEmoji(code){
+  const c=((code)||"").trim().toUpperCase();
   if(c.length!==2 || !/^[A-Z]{2}$/.test(c)) return "";
   return String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0)));
+}
+// Bandera como IMAGEN (se ve igual en móvil, Mac y PC/Windows). Fuente gratuita flagcdn.com
+function _bandera(m){
+  const c=((m&&m.nacionalidad)||"").trim().toLowerCase();
+  if(!/^[a-z]{2}$/.test(c)) return "";
+  return '<img class="ban" src="https://flagcdn.com/'+c+'.svg" alt="'+c.toUpperCase()+'" loading="lazy" onerror="this.style.display=\'none\'">';
 }
 function _nomPais(code){ const c=(code||"").toUpperCase(); const p=PAISES.find(x=>x[0]===c); return p?p[1]:""; }
 function _llenarPaises(){
   const sel=document.getElementById("e-nac-pais"); if(!sel||sel.options.length) return;
   const lista=PAISES.slice().sort((a,b)=>a[1].localeCompare(b[1],"es"));
   let h='<option value="">— Sin especificar —</option>';
-  lista.forEach(p=>{ h+='<option value="'+p[0]+'">'+_bandera({nacionalidad:p[0]})+' '+p[1]+'</option>'; });
+  lista.forEach(p=>{ h+='<option value="'+p[0]+'">'+_banderaEmoji(p[0])+' '+p[1]+'</option>'; });
   sel.innerHTML=h;
 }
 function abrirEditar(){
