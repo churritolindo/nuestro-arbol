@@ -621,11 +621,11 @@
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
       <div id="invitar-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
         <h2 style="font-size:17px">🔗 Invitar por WhatsApp</h2>
-        <p class="sub">Comparte un código para que tu familia entre a tu árbol. Elige qué podrá hacer quien entre y mándaselo por WhatsApp.</p>
+        <p class="sub"><b>Un solo código para toda la familia.</b> Mándalo por tu grupo de WhatsApp: quien entre con él se une a <b>tu mismo árbol</b> y, según vais añadiendo cada uno a los suyos, crece entre todos. Sin fusionar nada.</p>
         <label>¿Qué podrá hacer quien entre?</label>
         <select id="inv-rol">
+          <option value="colaborador">✍️ Familiar — ver y también añadir fotos, vídeos y fichas (lo normal)</option>
           <option value="visitante">👀 Visitante — solo mirar y dejar recuerdos/ofrendas</option>
-          <option value="colaborador">✍️ Familiar — también añadir fotos, vídeos y fichas</option>
         </select>
         <button class="btn" style="margin-top:10px" onclick="crearInvitacion()">Generar código</button>
         <div id="inv-result" class="hide" style="margin-top:12px">
@@ -635,12 +635,13 @@
         </div>
         <div id="inv-msg" class="msg"></div>
       </div>
-      <button class="btn sec" style="margin:0 0 10px" onclick="abrirComplementar()">➕ Añadir familiares desde otro árbol</button>
-      <div id="compl-box" class="hide vidrio" style="margin:0 0 12px">
-        <h2 style="font-size:17px">➕ Añadir familiares desde otro árbol</h2>
-        <p class="sub">Entra con un código que te compartan y trae a su gente a tu árbol, o comparte el tuyo para que otros añadan a tu familia.</p>
-        <div id="compl-cont"></div>
-        <div id="compl-msg" class="msg"></div>
+      <button class="btn sec" style="margin:0 0 10px" onclick="toggleUnirme()">📥 Tengo un código (unirme a un árbol)</button>
+      <div id="unirme-box" class="hide vidrio" style="margin:0 0 12px">
+        <h2 style="font-size:17px">📥 Unirme a un árbol</h2>
+        <p class="sub">¿Te han pasado el código de un árbol? Escríbelo aquí y entrarás en él.</p>
+        <input id="join2-codigo" placeholder="Ej. 7K3MQ9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;font-size:20px">
+        <button class="btn" style="margin-top:10px" onclick="unirmeArbol()">Entrar en el árbol</button>
+        <div id="join2-msg" class="msg"></div>
       </div>
       <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="descargarCopia()">⬇️ Descargar una copia</button>
       <div id="copia-msg" class="msg"></div>
@@ -1703,6 +1704,20 @@ async function unirseConCodigo(codigoArg){
   try{ localStorage.setItem("arbolSel", inv.arbol_id); }catch(e){}
   await entrarAlArbol(inv.arbol_id);
 }
+function toggleUnirme(){ const b=document.getElementById("unirme-box"); if(b) b.classList.toggle("hide"); }
+async function unirmeArbol(){
+  const el=document.getElementById("join2-codigo");
+  let c=((el?el.value:"")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!c){ msg("join2-msg","Escribe el código."); return; }
+  if(!usuario){ msg("join2-msg","Entra con tu cuenta primero."); return; }
+  msg("join2-msg","Entrando…","ok");
+  const { data, error } = await sb.from("invitaciones").select("arbol_id,rol").eq("codigo",c).limit(1);
+  if(error || !data || !data[0]){ msg("join2-msg","Ese código no vale o aún no está activo. Pídele a quien te invitó que lo compruebe."); return; }
+  const inv=data[0];
+  try{ await sb.from("arbol_miembros").insert({arbol_id:inv.arbol_id, user_id:usuario.id, rol:inv.rol||"visitante"}); }catch(e){}
+  try{ localStorage.setItem("arbolSel", inv.arbol_id); }catch(e){}
+  await entrarAlArbol(inv.arbol_id);
+}
 function montarCrear(){
   especieElegida="olivo"; mascotaOn=false;
   const c=document.getElementById("sel-arbol"); if(c) c.innerHTML=tarjetasArbol("crear");
@@ -2164,7 +2179,7 @@ function abrirSub(clase){
   document.getElementById("sub-rollbl").style.display=esAmi?"block":"none";
   const srol=document.getElementById("sub-rol"); srol.style.display=esAmi?"block":"none"; srol.value="amigo";
   document.getElementById("sub-nombre").value="";
-  const pb=document.getElementById("sub-papiro-btn"); if(pb) pb.textContent=esAmigo?"🌳 Ver el árbol de la amistad":"📜 Ver el árbol genealógico";
+  const pb=document.getElementById("sub-papiro-btn"); if(pb) pb.textContent=esAmigo?"🌳 Ver el árbol de la amistad":"🐾 Ver el árbol de mascotas";
   rellenarGrupoSelect();
   document.getElementById("sub-especies").classList.add("hide");
   limpiar("sub-msg");
