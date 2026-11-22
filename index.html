@@ -618,10 +618,10 @@
       <div id="quien-soy" class="vidrio" style="margin:0 0 12px;display:none"></div>
       <div id="confirmar-quien" class="vidrio solo-dueno" style="margin:0 0 12px;display:none"></div>
       <button class="btn sec" id="ver-arbol-btn" style="margin:0 0 10px" onclick="verArbolActual()">📜 Ver árbol genealógico</button>
-      <button class="btn sec solo-dueno" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
+      <button class="btn sec solo-dueno" id="inv-ctx-btn" style="margin:0 0 10px" onclick="toggleInvitar()">🔗 Invitar a la familia</button>
       <div id="invitar-box" class="hide vidrio solo-dueno" style="margin:0 0 12px">
         <h2 style="font-size:17px">🔗 Invitar por WhatsApp</h2>
-        <p class="sub"><b>Un solo código para toda la familia.</b> Mándalo por tu grupo de WhatsApp: quien entre con él se une a <b>tu mismo árbol</b> y, según vais añadiendo cada uno a los suyos, crece entre todos. Sin fusionar nada.</p>
+        <p class="sub" id="inv-sub"><b>Un solo código para toda la familia.</b> Mándalo por tu grupo de WhatsApp: quien entre con él se une a <b>tu mismo árbol</b> y, según vais añadiendo cada uno a los suyos, crece entre todos. Sin fusionar nada.</p>
         <label>¿Qué podrá hacer quien entre?</label>
         <select id="inv-rol">
           <option value="colaborador">✍️ Familiar — ver y también añadir fotos, vídeos y fichas (lo normal)</option>
@@ -2106,7 +2106,7 @@ function togAdd(id,btn,label){
 // Carrusel de la portada: 0 Familia · 1 Amigos · 2 Mascotas (flechas + deslizar)
 let _portadaTab=0;
 const _PTABS=['familia','amigos','mascota'];
-function _portadaCambia(d){ _portadaTab=(_portadaTab+d+3)%3; pintarArbol(); }
+function _portadaCambia(d){ _portadaTab=(_portadaTab+d+3)%3; const ib=document.getElementById('invitar-box'); if(ib) ib.classList.add('hide'); pintarArbol(); }
 function _setupSwipeArbol(){
   const el=document.getElementById("arbol-visual"); if(!el || el._swipe) return; el._swipe=true;
   let x0=null;
@@ -2138,6 +2138,13 @@ function pintarArbol(){
   // El botón "Ver árbol genealógico" sigue la pestaña del carrusel (familia / amigos / mascotas)
   const vb=document.getElementById('ver-arbol-btn');
   if(vb) vb.textContent = tab==='amigos' ? '🧑‍🤝‍🧑 Ver árbol de amigos' : (tab==='mascota' ? '🐾 Ver árbol de mascotas' : '📜 Ver árbol genealógico');
+  // El botón de invitar también sigue la pestaña (familia / amigos; en mascotas no se invita)
+  const ivb=document.getElementById('inv-ctx-btn');
+  if(ivb){
+    if(tab==='amigos'){ ivb.textContent='🔗 Invitar amigos'; ivb.style.display=''; }
+    else if(tab==='mascota'){ ivb.style.display='none'; }
+    else { ivb.textContent='🔗 Invitar a la familia'; ivb.style.display=''; }
+  }
   if(tab==='familia') pintarPlacas();   // las coronas de la familia solo en su pestaña
 }
 // Abre el árbol genealógico de la pestaña en la que estás (no siempre la familia)
@@ -2459,7 +2466,15 @@ function dictar(targetId, btn){
   try{ rec.start(); }catch(e){ _pararDictado(); }
 }
 /* ====== Fase 2: invitar por código (parte segura: generar y compartir) ====== */
-function toggleInvitar(){ const b=document.getElementById("invitar-box"); if(!b) return; b.classList.toggle("hide"); document.getElementById("inv-result").classList.add("hide"); limpiar("inv-msg"); }
+function toggleInvitar(){
+  const b=document.getElementById("invitar-box"); if(!b) return;
+  const esAmigos=_PTABS[_portadaTab]==='amigos';
+  const sub=document.getElementById("inv-sub");
+  if(sub) sub.innerHTML = esAmigos
+    ? '<b>Un solo código para todos tus amigos.</b> Mándalo por el grupo de WhatsApp: quien entre con él se une a <b>tu árbol de amigos</b> y puede ir añadiendo. (El de la familia es otro distinto: cada árbol tiene el suyo.)'
+    : '<b>Un solo código para toda la familia.</b> Mándalo por tu grupo de WhatsApp: quien entre con él se une a <b>tu mismo árbol</b> y, según vais añadiendo cada uno a los suyos, crece entre todos. Sin fusionar nada.';
+  b.classList.toggle("hide"); document.getElementById("inv-result").classList.add("hide"); limpiar("inv-msg");
+}
 function toggleInv(pre){ const b=document.getElementById(pre+"-box"); if(!b) return; b.classList.toggle("hide"); document.getElementById(pre+"-result").classList.add("hide"); limpiar(pre+"-msg"); }
 function _codigoAlea(){ const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
 async function crearInv(ambito, pre){
@@ -2482,7 +2497,7 @@ async function crearInv(ambito, pre){
   document.getElementById(pre+"-result").classList.remove("hide");
   msg(pre+"-msg","Código creado ✔","ok");
 }
-function crearInvitacion(){ return crearInv('familia','inv'); }
+function crearInvitacion(){ return crearInv(_PTABS[_portadaTab]==='amigos'?'amigos':'familia','inv'); }
 function copiarCod(pre){ const el=document.getElementById(pre+"-codigo"); const c=el?el.textContent.trim():""; if(c && navigator.clipboard){ navigator.clipboard.writeText(c).then(()=>msg(pre+"-msg","Código copiado ✔","ok")).catch(()=>{}); } }
 function copiarInv(){ return copiarCod('inv'); }
 /* ====== TRASPASO DE PROPIEDAD ====== */
