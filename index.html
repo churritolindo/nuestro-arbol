@@ -1508,6 +1508,7 @@ let _arboles = [], _invitePend = null;   // árboles a los que tengo acceso + c�
 let miRol = 'dueno';                       // mi rol en el árbol actual: dueno | colaborador | visitante
 let miNombre = '';                         // nombre con el que firmo lo que subo (se guarda en mi cuenta)
 let miMiembroId = null;                     // qué persona (ficha) del árbol soy yo, para recibir mis mensajes
+let miAmbito = 'familia';                    // mi ámbito en el árbol: familia (ve todo) | amigos (solo amigos)
 let especieElegida = "olivo", mascotaOn = false;
 
 /* ====== UTILIDADES ====== */
@@ -1694,13 +1695,13 @@ async function unirseConCodigo(codigoArg){
   if(!codigo){ msg(box,"Escribe el código."); return; }
   if(!usuario){ _invitePend=codigo; ver("v-auth"); msg("auth-msg","Entra o crea tu cuenta y te uniremos al árbol.","ok"); return; }
   ver("v-carga");
-  const { data, error } = await sb.from("invitaciones").select("arbol_id,rol").eq("codigo",codigo).limit(1);
+  const { data, error } = await sb.from("invitaciones").select("arbol_id,rol,ambito").eq("codigo",codigo).limit(1);
   if(error || !data || !data[0]){
     if(codigoArg){ await entrarAlArbol(); } else { ver("v-arbol"); }
     msg(box,"Ese código no vale o aún no está activo. Pídele a quien te invitó que lo compruebe."); return;
   }
   const inv=data[0];
-  try{ await sb.from("arbol_miembros").insert({arbol_id:inv.arbol_id, user_id:usuario.id, rol:inv.rol||"visitante"}); }catch(e){}
+  try{ await sb.from("arbol_miembros").insert({arbol_id:inv.arbol_id, user_id:usuario.id, rol:inv.rol||"visitante", ambito:inv.ambito||"familia"}); }catch(e){}
   try{ localStorage.setItem("arbolSel", inv.arbol_id); }catch(e){}
   await entrarAlArbol(inv.arbol_id);
 }
@@ -1711,10 +1712,10 @@ async function unirmeArbol(){
   if(!c){ msg("join2-msg","Escribe el código."); return; }
   if(!usuario){ msg("join2-msg","Entra con tu cuenta primero."); return; }
   msg("join2-msg","Entrando…","ok");
-  const { data, error } = await sb.from("invitaciones").select("arbol_id,rol").eq("codigo",c).limit(1);
+  const { data, error } = await sb.from("invitaciones").select("arbol_id,rol,ambito").eq("codigo",c).limit(1);
   if(error || !data || !data[0]){ msg("join2-msg","Ese código no vale o aún no está activo. Pídele a quien te invitó que lo compruebe."); return; }
   const inv=data[0];
-  try{ await sb.from("arbol_miembros").insert({arbol_id:inv.arbol_id, user_id:usuario.id, rol:inv.rol||"visitante"}); }catch(e){}
+  try{ await sb.from("arbol_miembros").insert({arbol_id:inv.arbol_id, user_id:usuario.id, rol:inv.rol||"visitante", ambito:inv.ambito||"familia"}); }catch(e){}
   try{ localStorage.setItem("arbolSel", inv.arbol_id); }catch(e){}
   await entrarAlArbol(inv.arbol_id);
 }
@@ -1748,20 +1749,21 @@ async function mostrarArbol(){
   }
   try{ miNombre=(usuario&&usuario.user_metadata&&usuario.user_metadata.nombre)||""; }catch(e){ miNombre=""; }
   await _calcularRol();
-  _portadaTab=0;            // cada vez que se abre el árbol, empezar en Familia
+  _portadaTab = (miAmbito==='amigos') ? 1 : 0;   // amigos-only arranca en Amigos; el resto en Familia
   pintarArbol();
   await cargarMiembros();
 }
 // Calcula mi rol en el árbol actual y adapta la interfaz (oculta botones que no me tocan)
 async function _calcularRol(){
-  miRol='visitante';
+  miRol='visitante'; miAmbito='familia';
   try{
-    if(arbolActual && usuario && arbolActual.dueno===usuario.id){ miRol='dueno'; }
+    if(arbolActual && usuario && arbolActual.dueno===usuario.id){ miRol='dueno'; miAmbito='familia'; }
     else if(arbolActual && usuario){
-      const { data }=await sb.from("arbol_miembros").select("rol").eq("arbol_id",arbolActual.id).eq("user_id",usuario.id).maybeSingle();
+      const { data }=await sb.from("arbol_miembros").select("rol,ambito").eq("arbol_id",arbolActual.id).eq("user_id",usuario.id).maybeSingle();
       miRol=(data&&data.rol)?data.rol:'visitante';
+      miAmbito=(data&&data.ambito)?data.ambito:'familia';
     }
-  }catch(e){ miRol='dueno'; }   // si algo falla, no bloqueamos al dueño
+  }catch(e){ miRol='dueno'; miAmbito='familia'; }   // si algo falla, no bloqueamos al dueño
   // ¿qué persona del árbol soy yo? (para recibir mis mensajes)
   miMiembroId=null;
   try{
@@ -2114,6 +2116,7 @@ function _setupSwipeArbol(){
   el.addEventListener('touchend',e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0; x0=null; if(Math.abs(dx)>45) _portadaCambia(dx<0?1:-1); });
 }
 function pintarArbol(){
+  if(miAmbito==='amigos' && _portadaTab!==1) _portadaTab=1;   // amigos-only: bloqueado en Amigos
   const tab=_PTABS[_portadaTab];
   const cap=document.getElementById("especies-cap");
   let imgSrc, cartel, onclickImg;
@@ -2130,11 +2133,11 @@ function pintarArbol(){
     imgSrc=arbInfo(espM).img; cartel='mascotas'; onclickImg="abrirSub('mascota')";
     if(cap){ cap.style.display='none'; }
   }
-  const flechas='<button class="arb-flecha izq" onclick="event.stopPropagation();_portadaCambia(-1)" aria-label="Anterior">‹</button>'
-    +'<button class="arb-flecha der" onclick="event.stopPropagation();_portadaCambia(1)" aria-label="Siguiente">›</button>';
+  const flechas=(miAmbito==='amigos') ? '' : ('<button class="arb-flecha izq" onclick="event.stopPropagation();_portadaCambia(-1)" aria-label="Anterior">‹</button>'
+    +'<button class="arb-flecha der" onclick="event.stopPropagation();_portadaCambia(1)" aria-label="Siguiente">›</button>');
   const cartelImg='<img class="cartel-fam" src="diseno/carteles/'+cartel+'.png" alt="'+cartel+'">';
   document.getElementById("arbol-visual").innerHTML='<div class="banner-arb" onclick="'+onclickImg+'"><img class="main" src="'+imgSrc+'">'+flechas+cartelImg+'</div>';
-  _setupSwipeArbol();
+  if(miAmbito!=='amigos') _setupSwipeArbol();
   // El botón "Ver árbol genealógico" sigue la pestaña del carrusel (familia / amigos / mascotas)
   const vb=document.getElementById('ver-arbol-btn');
   if(vb) vb.textContent = tab==='amigos' ? '🧑‍🤝‍🧑 Ver árbol de amigos' : (tab==='mascota' ? '🐾 Ver árbol de mascotas' : '📜 Ver árbol genealógico');
@@ -2593,7 +2596,7 @@ async function canjearCodigo(){
   catch(e){ err=e; }
   if(err && /function|does not exist|exist|schema cache/i.test(err.message||"")){
     // Falta el SQL nuevo: método antiguo (sin control de "un solo uso")
-    const { data, error } = await sb.from("invitaciones").select("arbol_id,rol").eq("codigo",c).limit(1);
+    const { data, error } = await sb.from("invitaciones").select("arbol_id,rol,ambito").eq("codigo",c).limit(1);
     if(error||!data||!data[0]){ msg("compl-msg","Ese código no vale o aún no está activo."); return; }
     try{ await sb.from("arbol_miembros").insert({arbol_id:data[0].arbol_id,user_id:usuario.id,rol:data[0].rol||"visitante"}); }catch(e){}
     aid=data[0].arbol_id;
