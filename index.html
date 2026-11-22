@@ -1048,11 +1048,11 @@
       <button class="btn sec" id="sub-invitar-btn" style="margin:0 0 10px;display:none" onclick="toggleInv('inva')">🔗 Invitar amigos</button>
       <div id="inva-box" class="hide vidrio" style="margin:0 0 12px">
         <h2 style="font-size:17px">🔗 Invitar amigos</h2>
-        <p class="sub">Comparte un código para que tus amigos entren <b>solo</b> al árbol de amigos. Elige qué podrán hacer y mándaselo por WhatsApp.</p>
+        <p class="sub"><b>Un solo código para todos tus amigos.</b> Mándalo por el grupo de WhatsApp: quien entre con él se une a <b>tu árbol de amigos</b> y puede ir añadiendo. (El código de la familia es otro distinto: cada árbol tiene el suyo.)</p>
         <label>¿Qué podrá hacer quien entre?</label>
         <select id="inva-rol">
+          <option value="colaborador">✍️ Amigo — ver y también añadir amigos y fotos (lo normal)</option>
           <option value="visitante">👀 Visitante — solo mirar y dejar recuerdos</option>
-          <option value="colaborador">✍️ Familiar — también añadir amigos y fotos</option>
         </select>
         <button class="btn" style="margin-top:10px" onclick="crearInv('amigos','inva')">Generar código</button>
         <div id="inva-result" class="hide" style="margin-top:12px">
